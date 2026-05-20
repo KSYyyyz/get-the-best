@@ -15,7 +15,7 @@ public partial class RoomFootprintStore : Node
 
     public bool CanReserve(Vector2I startCell, Vector2I endCell)
     {
-        var candidate = RoomFootprint.FromCells(0, startCell, endCell);
+        var candidate = RoomFootprint.FromCells(0, RoomBuildType.ResearchRoom, startCell, endCell);
         if (candidate.CellCount <= 0)
         {
             return false;
@@ -32,7 +32,7 @@ public partial class RoomFootprintStore : Node
         return true;
     }
 
-    public bool TryReserve(Vector2I startCell, Vector2I endCell, out RoomFootprint? room)
+    public bool TryReserve(RoomBuildType roomType, Vector2I startCell, Vector2I endCell, out RoomFootprint? room)
     {
         if (!CanReserve(startCell, endCell))
         {
@@ -40,7 +40,7 @@ public partial class RoomFootprintStore : Node
             return false;
         }
 
-        room = RoomFootprint.FromCells(_nextRoomId, startCell, endCell);
+        room = RoomFootprint.FromCells(_nextRoomId, roomType, startCell, endCell);
         _nextRoomId++;
         _rooms.Add(room);
         return true;
@@ -63,21 +63,28 @@ public partial class RoomFootprintStore : Node
 
 public sealed class RoomFootprint
 {
-    private RoomFootprint(int id, Vector2I minCell, Vector2I maxCell)
+    private RoomFootprint(int id, RoomBuildType roomType, Vector2I minCell, Vector2I maxCell)
     {
         Id = id;
+        RoomType = roomType;
         MinCell = minCell;
         MaxCell = maxCell;
     }
 
     public int Id { get; }
+    public RoomBuildType RoomType { get; }
     public Vector2I MinCell { get; }
     public Vector2I MaxCell { get; }
     public int Width => MaxCell.X - MinCell.X + 1;
     public int Height => MaxCell.Y - MinCell.Y + 1;
     public int CellCount => Width * Height;
 
-    public static RoomFootprint FromCells(int id, Vector2I startCell, Vector2I endCell)
+    public static RoomFootprint FromCells(
+        int id,
+        RoomBuildType roomType,
+        Vector2I startCell,
+        Vector2I endCell
+    )
     {
         var minCell = new Vector2I(
             Mathf.Min(startCell.X, endCell.X),
@@ -87,7 +94,7 @@ public sealed class RoomFootprint
             Mathf.Max(startCell.X, endCell.X),
             Mathf.Max(startCell.Y, endCell.Y)
         );
-        return new RoomFootprint(id, minCell, maxCell);
+        return new RoomFootprint(id, roomType, minCell, maxCell);
     }
 
     public bool Contains(Vector2I cell)

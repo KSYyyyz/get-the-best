@@ -154,3 +154,36 @@ def test_get_the_best_v2_0_2_room_footprint_baseline_exists() -> None:
     assert "RoomOverlayRenderer" in scripts["OfficeSelectionController.cs"]
     assert "ShowOccupiedRoom" in scripts["OfficeSelectionController.cs"]
     assert "RefreshRooms" in scripts["RoomOverlayRenderer.cs"]
+
+
+def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "BuildModePanel" in scene_text
+    assert "BuildModeLabel" in scene_text
+    assert "ResearchRoomButton" in scene_text
+    assert "MarketRoomButton" in scene_text
+    assert "ServerRoomButton" in scene_text
+    assert "BuildModeHudController" in scene_text
+
+    assert "BuildModeHudController.cs" in scripts
+    assert "enum RoomBuildType" in scripts["BuildModeController.cs"]
+    assert "ResearchRoom" in scripts["BuildModeController.cs"]
+    assert "MarketRoom" in scripts["BuildModeController.cs"]
+    assert "ServerRoom" in scripts["BuildModeController.cs"]
+    assert "SetActiveRoomType" in scripts["BuildModeController.cs"]
+    assert "GetActiveRoomType" in scripts["BuildModeController.cs"]
+    assert "GetActiveRoomTypeLabel" in scripts["BuildModeController.cs"]
+    assert "RoomBuildType RoomType" in scripts["RoomFootprintStore.cs"]
+    assert "GetRoomFillColor" in scripts["RoomOverlayRenderer.cs"]
+    assert "ResearchRoomButton" in scripts["BuildModeHudController.cs"]
+    assert "MarketRoomButton" in scripts["BuildModeHudController.cs"]
+    assert "ServerRoomButton" in scripts["BuildModeHudController.cs"]
+    assert "_researchRoomButton.Text" in scripts["BuildModeHudController.cs"]
+    assert "_marketRoomButton.Text" in scripts["BuildModeHudController.cs"]
+    assert "_serverRoomButton.Text" in scripts["BuildModeHudController.cs"]

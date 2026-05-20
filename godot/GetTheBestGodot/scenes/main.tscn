@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://bs2sxocrmf52g" path="res://scripts/OfficeCameraController.cs" id="2_camera"]
 [ext_resource type="Script" uid="uid://b8a73fywwlab7" path="res://scripts/OfficeSelectionController.cs" id="3_selection"]
 [ext_resource type="Script" uid="uid://dbm47tftogskb" path="res://scripts/V2CoreBridge.cs" id="4_bridge"]
+[ext_resource type="Script" uid="uid://dpe4uh4dibdn3" path="res://scripts/BuildModeHudController.cs" id="5_choun"]
 [ext_resource type="Script" uid="uid://co06yttcveq8h" path="res://scripts/OfficeGridRenderer.cs" id="5_grid"]
 [ext_resource type="Script" uid="uid://c3tf1aq1gsjbr" path="res://scripts/BuildModeController.cs" id="6_o6xl0"]
 [ext_resource type="Script" uid="uid://bdbsxu26s6162" path="res://scripts/PlacementPreviewController.cs" id="7_tipki"]
@@ -55,6 +56,35 @@ mouse_filter = 2
 layout_mode = 2
 text = "未选中对象"
 autowrap_mode = 3
+
+[node name="BuildModePanel" type="PanelContainer" parent="HudRoot" unique_id=1758798614]
+offset_left = 760.0
+offset_top = 12.0
+offset_right = 1248.0
+offset_bottom = 84.0
+script = ExtResource("5_choun")
+
+[node name="BuildModeRows" type="VBoxContainer" parent="HudRoot/BuildModePanel" unique_id=536325811]
+layout_mode = 2
+
+[node name="BuildModeLabel" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=580237773]
+layout_mode = 2
+text = "????:???"
+
+[node name="RoomTypeButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1291022369]
+layout_mode = 2
+
+[node name="ResearchRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=2131082528]
+layout_mode = 2
+text = "???"
+
+[node name="MarketRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1397749704]
+layout_mode = 2
+text = "???"
+
+[node name="ServerRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=646221106]
+layout_mode = 2
+text = "????"
 
 [node name="InteractionRoot" type="Node2D" parent="." unique_id=327777287]
 

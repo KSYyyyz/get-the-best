@@ -147,7 +147,7 @@ public partial class OfficeSelectionController : Node2D
     private void ShowOccupiedRoom(RoomFootprint room)
     {
         SetContextText(
-            $"临时房间 #{room.Id}：{room.CellCount} 格\n"
+            $"{BuildModeController.GetRoomTypeLabel(room.RoomType)} #{room.Id}：{room.CellCount} 格\n"
                 + $"范围 x={room.MinCell.X}-{room.MaxCell.X}，y={room.MinCell.Y}-{room.MaxCell.Y}"
         );
     }
