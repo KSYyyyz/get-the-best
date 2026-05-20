@@ -4,7 +4,6 @@ namespace GetTheBestGodot;
 
 public partial class OfficeSelectionController : Node2D
 {
-    private static readonly Rect2 OfficeBounds = new(new Vector2(160, 120), new Vector2(960, 540));
     private Label? _contextLabel;
 
     public override void _Ready()
@@ -44,5 +43,6 @@ public partial class OfficeSelectionController : Node2D
     {
         return $"x={Mathf.RoundToInt(position.X)}, y={Mathf.RoundToInt(position.Y)}";
     }
-}
 
+    private static Rect2 OfficeBounds => OfficeWorldConfig.OfficeBounds;
+}

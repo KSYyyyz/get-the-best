@@ -22,6 +22,8 @@ def test_get_the_best_v2_godot_project_shell_exists() -> None:
     assert 'config/name="Get The Best"' in project_text
     assert 'run/main_scene="res://scenes/main.tscn"' in project_text
     assert 'window/stretch/aspect="expand"' in project_text
+    assert "window/size/mode=2" in project_text
+    assert "window/size/resizable=true" in project_text
     assert 'project/assembly_name="GetTheBestGodot"' in project_text
 
 
@@ -42,6 +44,11 @@ def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
 
     assert "OfficeWorld" in scene_text
     assert "OfficeFloor" in scene_text
+    assert "OfficeGrid" in scene_text
+    assert "z_index = 1" in scene_text
+    assert "zoom = Vector2(0.65, 0.65)" in scene_text
+    assert "3200" in scene_text
+    assert "2000" in scene_text
     assert "OfficeCamera" in scene_text
     assert "OfficeSelectionController" in scene_text
     assert "HudRoot" in scene_text
@@ -59,8 +66,13 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
 
     assert "MainController.cs" in scripts
     assert "OfficeCameraController.cs" in scripts
+    assert "OfficeGridRenderer.cs" in scripts
     assert "OfficeSelectionController.cs" in scripts
+    assert "OfficeWorldConfig.cs" in scripts
     assert "V2CoreBridge.cs" in scripts
+    assert "new(new Vector2(-1600, -1000), new Vector2(3200, 2000))" in scripts["OfficeWorldConfig.cs"]
+    assert "LayoutHud" in scripts["MainController.cs"]
+    assert "InputEventMouseMotion" in scripts["OfficeCameraController.cs"]
     assert "规则核心桥接待接入" in scripts["V2CoreBridge.cs"]
     assert "G2OperationsPanel" not in "\n".join(scripts.values())
 

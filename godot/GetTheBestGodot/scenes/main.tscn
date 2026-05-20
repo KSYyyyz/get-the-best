@@ -1,60 +1,56 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://b4vcxuul0q6oo"]
 
 [ext_resource type="Script" uid="uid://7ua1q82hvrch" path="res://scripts/MainController.cs" id="1_main"]
 [ext_resource type="Script" uid="uid://bs2sxocrmf52g" path="res://scripts/OfficeCameraController.cs" id="2_camera"]
 [ext_resource type="Script" uid="uid://b8a73fywwlab7" path="res://scripts/OfficeSelectionController.cs" id="3_selection"]
 [ext_resource type="Script" uid="uid://dbm47tftogskb" path="res://scripts/V2CoreBridge.cs" id="4_bridge"]
+[ext_resource type="Script" uid="uid://co06yttcveq8h" path="res://scripts/OfficeGridRenderer.cs" id="5_grid"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=1154896660]
 script = ExtResource("1_main")
 
-[node name="V2CoreBridge" type="Node" parent="."]
+[node name="V2CoreBridge" type="Node" parent="." unique_id=853664877]
 script = ExtResource("4_bridge")
 
-[node name="OfficeWorld" type="Node2D" parent="."]
+[node name="OfficeWorld" type="Node2D" parent="." unique_id=1812664464]
 
-[node name="OfficeFloor" type="Polygon2D" parent="OfficeWorld"]
-position = Vector2(160, 120)
+[node name="OfficeFloor" type="Polygon2D" parent="OfficeWorld" unique_id=533739897]
+position = Vector2(-1600, -1000)
 color = Color(0.22, 0.25, 0.23, 1)
-polygon = PackedVector2Array(0, 0, 960, 0, 960, 540, 0, 540)
+polygon = PackedVector2Array(0, 0, 3200, 0, 3200, 2000, 0, 2000)
 
-[node name="OfficeFloorGridHint" type="Line2D" parent="OfficeWorld"]
-position = Vector2(160, 120)
-points = PackedVector2Array(0, 0, 960, 0, 960, 540, 0, 540, 0, 0)
-width = 3.0
-default_color = Color(0.58, 0.66, 0.61, 0.85)
+[node name="OfficeGrid" type="Node2D" parent="OfficeWorld" unique_id=944764141]
+z_index = 1
+script = ExtResource("5_grid")
 
-[node name="OfficeCamera" type="Camera2D" parent="."]
-position = Vector2(640, 360)
-enabled = true
+[node name="OfficeCamera" type="Camera2D" parent="." unique_id=1879581597]
+zoom = Vector2(0.65, 0.65)
 script = ExtResource("2_camera")
 
-[node name="OfficeSelectionController" type="Node2D" parent="."]
+[node name="OfficeSelectionController" type="Node2D" parent="." unique_id=178840877]
 script = ExtResource("3_selection")
 
-[node name="HudRoot" type="CanvasLayer" parent="."]
+[node name="HudRoot" type="CanvasLayer" parent="." unique_id=495860634]
 
-[node name="TopStatusBar" type="PanelContainer" parent="HudRoot"]
+[node name="TopStatusBar" type="PanelContainer" parent="HudRoot" unique_id=732732305]
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 760.0
 offset_bottom = 52.0
 mouse_filter = 2
 
-[node name="StatusLabel" type="Label" parent="HudRoot/TopStatusBar"]
+[node name="StatusLabel" type="Label" parent="HudRoot/TopStatusBar" unique_id=972117518]
 layout_mode = 2
-mouse_filter = 2
 text = "Get The Best V2-0：启动中"
 
-[node name="ContextPanel" type="PanelContainer" parent="HudRoot"]
+[node name="ContextPanel" type="PanelContainer" parent="HudRoot" unique_id=1958288757]
 offset_left = 16.0
 offset_top = 580.0
 offset_right = 520.0
 offset_bottom = 696.0
 mouse_filter = 2
 
-[node name="ContextLabel" type="Label" parent="HudRoot/ContextPanel"]
+[node name="ContextLabel" type="Label" parent="HudRoot/ContextPanel" unique_id=1914892153]
 layout_mode = 2
-mouse_filter = 2
 text = "未选中对象"
 autowrap_mode = 3

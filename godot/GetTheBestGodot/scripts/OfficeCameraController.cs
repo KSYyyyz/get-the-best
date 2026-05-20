@@ -4,10 +4,10 @@ namespace GetTheBestGodot;
 
 public partial class OfficeCameraController : Camera2D
 {
-    private const float MoveSpeed = 520.0f;
-    private const float MinZoom = 0.7f;
+    private const float MoveSpeed = 900.0f;
+    private const float MinZoom = 0.45f;
     private const float MaxZoom = 2.0f;
-    private static readonly Rect2 CameraBounds = new(new Vector2(120, 80), new Vector2(1040, 620));
+    private bool _isDragging;
 
     public override void _Process(double delta)
     {
@@ -32,16 +32,31 @@ public partial class OfficeCameraController : Camera2D
         if (direction != Vector2.Zero)
         {
             Position += direction.Normalized() * MoveSpeed * (float)delta / Zoom.X;
-            Position = new Vector2(
-                Mathf.Clamp(Position.X, CameraBounds.Position.X, CameraBounds.End.X),
-                Mathf.Clamp(Position.Y, CameraBounds.Position.Y, CameraBounds.End.Y)
-            );
+            ClampToOfficeBounds();
         }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is not InputEventMouseButton mouseEvent || !mouseEvent.Pressed)
+        if (@event is InputEventMouseMotion motionEvent && _isDragging)
+        {
+            Position -= motionEvent.Relative / Zoom.X;
+            ClampToOfficeBounds();
+            return;
+        }
+
+        if (@event is not InputEventMouseButton mouseEvent)
+        {
+            return;
+        }
+
+        if (mouseEvent.ButtonIndex is MouseButton.Middle or MouseButton.Right)
+        {
+            _isDragging = mouseEvent.Pressed;
+            return;
+        }
+
+        if (!mouseEvent.Pressed)
         {
             return;
         }
@@ -60,6 +75,15 @@ public partial class OfficeCameraController : Camera2D
     {
         var clampedZoom = Mathf.Clamp(zoomLevel, MinZoom, MaxZoom);
         Zoom = new Vector2(clampedZoom, clampedZoom);
+        ClampToOfficeBounds();
+    }
+
+    private void ClampToOfficeBounds()
+    {
+        var bounds = OfficeWorldConfig.OfficeBounds;
+        Position = new Vector2(
+            Mathf.Clamp(Position.X, bounds.Position.X, bounds.End.X),
+            Mathf.Clamp(Position.Y, bounds.Position.Y, bounds.End.Y)
+        );
     }
 }
-

@@ -17,7 +17,8 @@ MCPRuntime="*res://addons/godot_mcp/runtime/mcp_runtime.gd"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/size/mode=0
+window/size/mode=2
+window/size/resizable=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
