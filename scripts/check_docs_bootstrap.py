@@ -53,13 +53,15 @@ def main() -> int:
             failures.append(f"文件包含 NUL 字节: {path.relative_to(ROOT)}")
         texts.append(text)
 
+    markdown_files = sorted(ROOT.rglob("*.md"))
+    all_markdown = "\n".join(path.read_text(encoding="utf-8") for path in markdown_files)
     combined = "\n".join(texts)
     for term in REQUIRED_TERMS:
         if term not in combined:
             failures.append(f"缺少必需词: {term}")
 
     for marker in ENGLISH_TEMPLATE_MARKERS:
-        if marker in combined:
+        if marker in all_markdown:
             failures.append(f"发现英文模板残留: {marker}")
 
     if failures:
