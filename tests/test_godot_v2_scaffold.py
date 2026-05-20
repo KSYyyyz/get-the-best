@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -355,3 +356,68 @@ def test_get_the_best_v2_0_3_product_whiteboard_requires_market_room() -> None:
 
     assert "FacilityBuildType.ProductWhiteboard => RoomBuildType.MarketRoom" in build_mode
     assert "[FacilityBuildType.ProductWhiteboard] = RoomBuildType.MarketRoom" in facility_store
+
+
+def test_get_the_best_v2_0_4_facility_art_placeholders_are_registered() -> None:
+    asset_index_path = GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "asset-index.json"
+    assert asset_index_path.exists()
+
+    asset_index = json.loads(read_text(asset_index_path))
+    facility_assets = {
+        asset["asset_id"]: asset
+        for asset in asset_index["assets"]
+        if asset["current_usage"].startswith("V2-0.4 facility")
+    }
+
+    assert set(facility_assets) == {
+        "kenney_furniture_kit_desk_se",
+        "kenney_furniture_kit_computer_screen_se",
+        "kenney_furniture_kit_bookcase_closed_doors_se",
+    }
+    for asset in facility_assets.values():
+        assert asset["source_site"] == "Kenney"
+        assert asset["license"] == "CC0-1.0"
+        assert asset["commercial_use_allowed"] is True
+        assert asset["attribution_required"] is False
+        assert asset["replacement_target"] == "Replace with final Get The Best office art."
+        imported_path = GODOT_ROOT / asset["imported_path"].replace("res://", "")
+        assert imported_path.exists()
+
+
+def test_get_the_best_v2_0_4_facility_definitions_and_texture_rendering_exist() -> None:
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "FacilityDefinitionCatalog.cs" in scripts
+    catalog = scripts["FacilityDefinitionCatalog.cs"]
+    renderer = scripts["FacilityRenderer.cs"]
+
+    assert "FacilityDefinition" in catalog
+    assert "GetDefinition" in catalog
+    assert "TexturePath" in catalog
+    assert "IsWorkstation" in catalog
+    assert "Footprint: new Vector2I(1, 1)" in catalog
+    assert "res://assets/third_party_placeholder_assets/kenney_furniture_kit/desk_SE.png" in catalog
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_furniture_kit/computerScreen_SE.png"
+        in catalog
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_furniture_kit/bookcaseClosedDoors_SE.png"
+        in catalog
+    )
+    assert "FacilityBuildType.OfficeDesk" in catalog
+    assert "RoomBuildType.ResearchRoom" in catalog
+    assert "FacilityBuildType.ProductWhiteboard" in catalog
+    assert "RoomBuildType.MarketRoom" in catalog
+    assert "FacilityBuildType.ServerRack" in catalog
+    assert "RoomBuildType.ServerRoom" in catalog
+
+    assert "Texture2D" in renderer
+    assert "ResourceLoader.Load<Texture2D>" in renderer
+    assert "GetFacilityTexture" in renderer
+    assert "DrawTextureRect" in renderer
+    assert "GetFacilityFillColor" in renderer

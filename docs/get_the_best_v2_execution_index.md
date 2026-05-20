@@ -54,6 +54,11 @@
    - 明确 V2 前端与旧 Godot 原型的隔离方式。
    - 明确如何复用 C# Core、美术资源、数据 schema 和测试经验。
 
+阶段验收报告：
+
+- `docs/get_the_best_v2_0_1_acceptance_report.md`
+- `docs/get_the_best_v2_0_4_acceptance_report.md`
+
 ## 5. 第一原则
 
 V2 的第一原则：

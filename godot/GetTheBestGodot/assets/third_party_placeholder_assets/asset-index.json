@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "assets": [
+    {
+      "asset_id": "kenney_furniture_kit_desk_se",
+      "name": "Furniture Kit desk SE isometric render",
+      "source_url": "https://kenney.nl/assets/furniture-kit",
+      "source_site": "Kenney",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "commercial_use_allowed": true,
+      "attribution_required": false,
+      "current_usage": "V2-0.4 facility placeholder: office desk",
+      "replacement_target": "Replace with final Get The Best office art.",
+      "imported_path": "res://assets/third_party_placeholder_assets/kenney_furniture_kit/desk_SE.png",
+      "removal_plan": "Remove after final office desk sprite is imported and tests are updated."
+    },
+    {
+      "asset_id": "kenney_furniture_kit_computer_screen_se",
+      "name": "Furniture Kit computer screen SE isometric render",
+      "source_url": "https://kenney.nl/assets/furniture-kit",
+      "source_site": "Kenney",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "commercial_use_allowed": true,
+      "attribution_required": false,
+      "current_usage": "V2-0.4 facility placeholder: product whiteboard",
+      "replacement_target": "Replace with final Get The Best office art.",
+      "imported_path": "res://assets/third_party_placeholder_assets/kenney_furniture_kit/computerScreen_SE.png",
+      "removal_plan": "Remove after final product whiteboard sprite is imported and tests are updated."
+    },
+    {
+      "asset_id": "kenney_furniture_kit_bookcase_closed_doors_se",
+      "name": "Furniture Kit bookcase closed doors SE isometric render",
+      "source_url": "https://kenney.nl/assets/furniture-kit",
+      "source_site": "Kenney",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "commercial_use_allowed": true,
+      "attribution_required": false,
+      "current_usage": "V2-0.4 facility placeholder: server rack",
+      "replacement_target": "Replace with final Get The Best office art.",
+      "imported_path": "res://assets/third_party_placeholder_assets/kenney_furniture_kit/bookcaseClosedDoors_SE.png",
+      "removal_plan": "Remove after final server rack sprite is imported and tests are updated."
+    }
+  ]
+}
