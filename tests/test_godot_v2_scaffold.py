@@ -189,7 +189,10 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
 
     assert "BuildModeHudController.cs" in scripts
     assert "_buildMenuButton" in scripts["BuildModeHudController.cs"]
+    assert "_entryButtons" in scripts["BuildModeHudController.cs"]
     assert "_entrySeparator" in scripts["BuildModeHudController.cs"]
+    assert "ConfigureEntryButtons" in scripts["BuildModeHudController.cs"]
+    assert 'AddThemeConstantOverride("separation", 2)' in scripts["BuildModeHudController.cs"]
     assert "ConfigureSeparator" in scripts["BuildModeHudController.cs"]
     assert 'Text = "|"' in scripts["BuildModeHudController.cs"]
     assert "VBoxContainer? _roomTypeButtons" in scripts["BuildModeHudController.cs"]
@@ -204,7 +207,8 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "ActiveButtonColor" in scripts["BuildModeHudController.cs"]
     assert "HoverButtonColor" in scripts["BuildModeHudController.cs"]
     assert "GetButtonPrefix" in scripts["BuildModeHudController.cs"]
-    assert "minWidth: 62.0f" in scripts["BuildModeHudController.cs"]
+    assert "minWidth: 46.0f" in scripts["BuildModeHudController.cs"]
+    assert "new Vector2(8.0f, 30.0f)" in scripts["BuildModeHudController.cs"]
     assert (
         "CustomMinimumSize = new Vector2(minWidth, 30.0f)" in scripts["BuildModeHudController.cs"]
     )

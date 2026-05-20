@@ -14,6 +14,7 @@ public partial class BuildModeHudController : PanelContainer
     private BuildModeController? _buildModeController;
     private Button? _buildMenuButton;
     private Button? _deleteRoomButton;
+    private HBoxContainer? _entryButtons;
     private Label? _entrySeparator;
     private VBoxContainer? _roomTypeButtons;
     private Button? _researchRoomButton;
@@ -34,15 +35,17 @@ public partial class BuildModeHudController : PanelContainer
 
         _buildMenuButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/BuildMenuButton");
         _deleteRoomButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/DeleteRoomButton");
+        _entryButtons = GetNodeOrNull<HBoxContainer>("BuildModeRows/BuildEntryButtons");
         _entrySeparator = GetNodeOrNull<Label>("BuildModeRows/BuildEntryButtons/EntrySeparator");
         _roomTypeButtons = GetNodeOrNull<VBoxContainer>("BuildModeRows/RoomTypeButtons");
         _researchRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ResearchRoomButton");
         _marketRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/MarketRoomButton");
         _serverRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ServerRoomButton");
 
-        ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode, minWidth: 62.0f);
+        ConfigureEntryButtons();
+        ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode, minWidth: 46.0f);
         ConfigureSeparator();
-        ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu, minWidth: 62.0f);
+        ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu, minWidth: 46.0f);
         ConfigureButton(
             _researchRoomButton,
             BuildModeController.GetRoomTypeLabel(RoomBuildType.ResearchRoom),
@@ -139,6 +142,11 @@ public partial class BuildModeHudController : PanelContainer
         button.MouseExited += () => ApplyHoverState(button, isHovered: false);
     }
 
+    private void ConfigureEntryButtons()
+    {
+        _entryButtons?.AddThemeConstantOverride("separation", 2);
+    }
+
     private void ConfigureSeparator()
     {
         if (_entrySeparator == null)
@@ -147,7 +155,7 @@ public partial class BuildModeHudController : PanelContainer
         }
 
         _entrySeparator.Text = "|";
-        _entrySeparator.CustomMinimumSize = new Vector2(14.0f, 30.0f);
+        _entrySeparator.CustomMinimumSize = new Vector2(8.0f, 30.0f);
         _entrySeparator.HorizontalAlignment = HorizontalAlignment.Center;
         _entrySeparator.VerticalAlignment = VerticalAlignment.Center;
         _entrySeparator.AddThemeColorOverride("font_color", SeparatorColor);
@@ -209,7 +217,7 @@ public partial class BuildModeHudController : PanelContainer
             return "> ";
         }
 
-        return isHovered ? "- " : "  ";
+        return isHovered ? "- " : string.Empty;
     }
 
     private static void SetButtonColor(Button? button, Color color)
