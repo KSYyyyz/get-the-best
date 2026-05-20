@@ -1,0 +1,15 @@
+# Godot 本地缓存
+.godot/
+godot/**/.godot/
+godot/**/.mono/
+godot/**/bin/
+godot/**/obj/
+
+# .NET 构建输出
+bin/
+obj/
+
+# Python 本地缓存
+__pycache__/
+.pytest_cache/
+

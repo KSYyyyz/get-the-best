@@ -1,0 +1,22 @@
+; Engine configuration file.
+; 项目文档使用中文；Godot 配置键保持引擎默认格式。
+
+config_version=5
+
+[application]
+
+config/name="Get The Best"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.6", "C#", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/mode=0
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[dotnet]
+
+project/assembly_name="GetTheBestGodot"
