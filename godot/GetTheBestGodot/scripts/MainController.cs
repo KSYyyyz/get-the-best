@@ -72,8 +72,8 @@ public partial class MainController : Node3D
 
         if (_buildConfirmPanel != null)
         {
-            _buildConfirmPanel.Position = new Vector2(viewportSize.X / 2.0f - 190.0f, 12.0f);
-            _buildConfirmPanel.Size = new Vector2(380.0f, 42.0f);
+            _buildConfirmPanel.Position = new Vector2(viewportSize.X / 2.0f - 160.0f, 12.0f);
+            _buildConfirmPanel.Size = new Vector2(320.0f, 42.0f);
         }
 
         if (_floatingTooltip != null)

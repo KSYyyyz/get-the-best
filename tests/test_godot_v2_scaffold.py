@@ -515,12 +515,31 @@ def test_get_the_best_v2_room_build_requires_pending_confirmation_and_door() -> 
     assert "CancelPendingRoomSelection" in build_mode
     assert "HasPendingRoomSelection" in build_mode
     assert "CanConfirmPendingRoom" in build_mode
+    assert "MinimumRoomWidth = 2" in build_mode
+    assert "MinimumRoomHeight = 3" in build_mode
+    assert "MeetsMinimumRoomSize" in build_mode
+    assert "GetRoomBuildFailureMessage" in build_mode
+    assert "IsRoomSelectionTooSmall" in build_mode
 
     assert "TryStartPendingRoomSelection(_dragStartCell, _dragCurrentCell)" in selection
     assert "FinishDoorPlacement" in selection
     assert "ShouldBeginAreaSelection()" in selection
     assert "BeginSelection(mouseEvent.Position)" in selection
+    assert "IsPointerMode() == true" in selection
+    assert "SelectObjectAtPointer(mouseEvent.Position)" in selection
     assert "TryCreateRoom(_dragStartCell" not in selection
+    assert "RefreshPendingRoomPreview()" in selection
+    assert "ShowRoomDoorPreview" in read_text(
+        GODOT_ROOT / "scripts" / "PlacementPreview3DController.cs"
+    )
+    assert "_doorPreviewMesh" in read_text(
+        GODOT_ROOT / "scripts" / "PlacementPreview3DController.cs"
+    )
+    assert "ShowBuildStatus" in confirm_hud
+    assert "ClearBuildStatus" in confirm_hud
+    assert "ConfirmRows/CancelBuildButton" in confirm_hud
+    assert "CustomMinimumSize = new Vector2(28.0f, 28.0f)" in confirm_hud
+    assert "new Vector2(320.0f, 42.0f)" in scripts["MainController.cs"]
 
     assert "CancelBuildButton" in confirm_hud
     assert "ConfirmBuildButton" in confirm_hud

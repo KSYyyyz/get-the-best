@@ -31,7 +31,7 @@ public partial class BuildConfirmationHudController : PanelContainer
 
         AddThemeStyleboxOverride("panel", CreatePanelStyle());
         ConfigureButton(_cancelBuildButton, "X", CancelPendingRoomSelection);
-        ConfigureButton(_confirmBuildButton, "√", ConfirmPendingRoom);
+        ConfigureButton(_confirmBuildButton, "\u221a", ConfirmPendingRoom);
 
         if (_buildModeController != null)
         {
@@ -52,23 +52,72 @@ public partial class BuildConfirmationHudController : PanelContainer
     private void Refresh()
     {
         var hasPendingSelection = _buildModeController?.HasPendingRoomSelection() == true;
-        Visible = hasPendingSelection;
-        if (!hasPendingSelection)
+        var statusMessage = _buildModeController?.GetBuildStatusMessage() ?? string.Empty;
+        var hasStatusMessage = !string.IsNullOrEmpty(statusMessage);
+        Visible = hasPendingSelection || hasStatusMessage;
+        if (!Visible)
         {
             return;
         }
 
+        if (hasStatusMessage && !hasPendingSelection)
+        {
+            ShowBuildStatus(statusMessage);
+            return;
+        }
+
+        ClearBuildStatus();
         var canConfirm = _buildModeController?.CanConfirmPendingRoom() == true;
         if (_confirmStatusLabel != null)
         {
-            _confirmStatusLabel.Text = canConfirm ? "区域已选门，可确认建造" : "区域待确认：请选择门";
+            _confirmStatusLabel.Text = canConfirm
+                ? "\u533a\u57df\u5df2\u9009\u95e8\uff0c\u53ef\u786e\u8ba4\u5efa\u9020"
+                : "\u533a\u57df\u5f85\u786e\u8ba4\uff1a\u8bf7\u9009\u62e9\u95e8";
             _confirmStatusLabel.AddThemeColorOverride("font_color", canConfirm ? ReadyColor : WaitingColor);
         }
 
         if (_confirmBuildButton != null)
         {
             _confirmBuildButton.Disabled = !canConfirm;
+            _confirmBuildButton.Visible = true;
             _confirmBuildButton.AddThemeColorOverride("font_color", canConfirm ? ReadyColor : WaitingColor);
+        }
+
+        if (_cancelBuildButton != null)
+        {
+            _cancelBuildButton.Visible = true;
+        }
+    }
+
+    private void ShowBuildStatus(string message)
+    {
+        if (_confirmStatusLabel != null)
+        {
+            _confirmStatusLabel.Text = message;
+            _confirmStatusLabel.AddThemeColorOverride("font_color", WaitingColor);
+        }
+
+        if (_confirmBuildButton != null)
+        {
+            _confirmBuildButton.Visible = false;
+        }
+
+        if (_cancelBuildButton != null)
+        {
+            _cancelBuildButton.Visible = false;
+        }
+    }
+
+    private void ClearBuildStatus()
+    {
+        if (_confirmBuildButton != null)
+        {
+            _confirmBuildButton.Visible = true;
+        }
+
+        if (_cancelBuildButton != null)
+        {
+            _cancelBuildButton.Visible = true;
         }
     }
 
@@ -101,7 +150,7 @@ public partial class BuildConfirmationHudController : PanelContainer
 
         button.Text = text;
         button.Flat = true;
-        button.CustomMinimumSize = new Vector2(34.0f, 30.0f);
+        button.CustomMinimumSize = new Vector2(28.0f, 28.0f);
         button.Pressed += action;
     }
 
@@ -110,10 +159,10 @@ public partial class BuildConfirmationHudController : PanelContainer
         return new StyleBoxFlat
         {
             BgColor = PanelColor,
-            ContentMarginLeft = 10.0f,
-            ContentMarginRight = 10.0f,
-            ContentMarginTop = 6.0f,
-            ContentMarginBottom = 6.0f,
+            ContentMarginLeft = 8.0f,
+            ContentMarginRight = 8.0f,
+            ContentMarginTop = 5.0f,
+            ContentMarginBottom = 5.0f,
         };
     }
 }

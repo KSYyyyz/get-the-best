@@ -36,12 +36,15 @@ public sealed record PendingRoomSelection(
 
 public partial class BuildModeController : Node
 {
+    private const int MinimumRoomWidth = 2;
+    private const int MinimumRoomHeight = 3;
     private RoomFootprintStore? _roomFootprintStore;
     private FacilityPlacementStore? _facilityPlacementStore;
     private RoomBuildType _activeRoomType = RoomBuildType.ResearchRoom;
     private FacilityBuildType _activeFacilityType = FacilityBuildType.OfficeDesk;
     private BuildToolMode _activeToolMode = BuildToolMode.Pointer;
     private PendingRoomSelection? _pendingRoomSelection;
+    private string _buildStatusMessage = string.Empty;
 
     public event Action? ToolModeChanged;
 
@@ -60,7 +63,8 @@ public partial class BuildModeController : Node
             return false;
         }
 
-        return _roomFootprintStore?.CanReserve(startCell, endCell) ?? true;
+        return MeetsMinimumRoomSize(startCell, endCell)
+            && (_roomFootprintStore?.CanReserve(startCell, endCell) ?? true);
     }
 
     public string GetSelectionSummary(Vector2I startCell, Vector2I endCell)
@@ -87,11 +91,18 @@ public partial class BuildModeController : Node
 
     public bool TryStartPendingRoomSelection(Vector2I startCell, Vector2I endCell)
     {
-        if (_activeToolMode != BuildToolMode.BuildRoom || !IsSelectionLegal(startCell, endCell))
+        if (_activeToolMode != BuildToolMode.BuildRoom)
         {
             return false;
         }
 
+        if (!IsSelectionLegal(startCell, endCell))
+        {
+            ShowBuildStatus(GetRoomBuildFailureMessage(startCell, endCell));
+            return false;
+        }
+
+        ClearBuildStatus();
         _pendingRoomSelection = new PendingRoomSelection(
             _activeRoomType,
             startCell,
@@ -114,6 +125,7 @@ public partial class BuildModeController : Node
         {
             DoorPlacement = new RoomDoorPlacement(cell, side),
         };
+        ClearBuildStatus();
         ToolModeChanged?.Invoke();
         return true;
     }
@@ -179,6 +191,7 @@ public partial class BuildModeController : Node
         }
 
         _pendingRoomSelection = null;
+        ClearBuildStatus();
         SetActiveToolMode(BuildToolMode.BuildRoom);
         ToolModeChanged?.Invoke();
         return true;
@@ -192,6 +205,7 @@ public partial class BuildModeController : Node
         }
 
         _pendingRoomSelection = null;
+        ClearBuildStatus();
         SetActiveToolMode(BuildToolMode.BuildRoom);
         ToolModeChanged?.Invoke();
     }
@@ -214,6 +228,28 @@ public partial class BuildModeController : Node
     public bool CanConfirmPendingRoom()
     {
         return _pendingRoomSelection?.DoorPlacement != null;
+    }
+
+    public string GetBuildStatusMessage()
+    {
+        return _buildStatusMessage;
+    }
+
+    public void ShowBuildStatus(string message)
+    {
+        _buildStatusMessage = message;
+        ToolModeChanged?.Invoke();
+    }
+
+    public void ClearBuildStatus()
+    {
+        if (string.IsNullOrEmpty(_buildStatusMessage))
+        {
+            return;
+        }
+
+        _buildStatusMessage = string.Empty;
+        ToolModeChanged?.Invoke();
     }
 
     public bool CanPlaceFacility(Vector2I cell)
@@ -315,6 +351,7 @@ public partial class BuildModeController : Node
     public void SetActiveRoomType(RoomBuildType roomType)
     {
         _pendingRoomSelection = null;
+        ClearBuildStatus();
         _activeRoomType = roomType;
         SetActiveToolMode(BuildToolMode.BuildRoom);
     }
@@ -327,6 +364,7 @@ public partial class BuildModeController : Node
     public void SetActiveFacilityType(FacilityBuildType facilityType)
     {
         _pendingRoomSelection = null;
+        ClearBuildStatus();
         _activeFacilityType = facilityType;
         SetActiveToolMode(BuildToolMode.PlaceFacility);
     }
@@ -344,6 +382,7 @@ public partial class BuildModeController : Node
     public void StartDeleteRoomMode()
     {
         _pendingRoomSelection = null;
+        ClearBuildStatus();
         SetActiveToolMode(BuildToolMode.DeleteRoom);
     }
 
@@ -361,6 +400,7 @@ public partial class BuildModeController : Node
     public void CancelActiveTool()
     {
         _pendingRoomSelection = null;
+        ClearBuildStatus();
         SetActiveToolMode(BuildToolMode.Pointer);
     }
 
@@ -438,6 +478,33 @@ public partial class BuildModeController : Node
         var minY = Mathf.Min(startCell.Y, endCell.Y);
         var maxY = Mathf.Max(startCell.Y, endCell.Y);
         return $"{maxX - minX + 1}x{maxY - minY + 1}";
+    }
+
+    public bool IsRoomSelectionTooSmall(Vector2I startCell, Vector2I endCell)
+    {
+        return !MeetsMinimumRoomSize(startCell, endCell);
+    }
+
+    public string GetRoomBuildFailureMessage(Vector2I startCell, Vector2I endCell)
+    {
+        if (IsRoomSelectionTooSmall(startCell, endCell))
+        {
+            return "\u533a\u57df\u81f3\u5c11\u9700\u8981 2x3 \u624d\u80fd\u5efa\u9020";
+        }
+
+        return "\u8fd9\u7247\u533a\u57df\u4e0d\u80fd\u5efa\u9020";
+    }
+
+    private static bool MeetsMinimumRoomSize(Vector2I startCell, Vector2I endCell)
+    {
+        var minX = Mathf.Min(startCell.X, endCell.X);
+        var maxX = Mathf.Max(startCell.X, endCell.X);
+        var minY = Mathf.Min(startCell.Y, endCell.Y);
+        var maxY = Mathf.Max(startCell.Y, endCell.Y);
+        var width = maxX - minX + 1;
+        var height = maxY - minY + 1;
+        return (width >= MinimumRoomWidth && height >= MinimumRoomHeight)
+            || (width >= MinimumRoomHeight && height >= MinimumRoomWidth);
     }
 
     private void SetActiveToolMode(BuildToolMode toolMode)

@@ -136,6 +136,7 @@ public partial class OfficeSelection3DController : Node
         if (_buildModeController?.TryStartPendingRoomSelection(_dragStartCell, _dragCurrentCell) == true)
         {
             ClearSelectedObjects();
+            RefreshPendingRoomPreview();
             ShowPointerTooltip("请选择门的位置", screenPosition);
             return;
         }
@@ -156,6 +157,7 @@ public partial class OfficeSelection3DController : Node
 
         if (_buildModeController?.TrySetPendingDoorFromWorldPosition(cell, worldPosition) == true)
         {
+            RefreshPendingRoomPreview();
             ShowPointerTooltip("门已设置，点击确认完成建造", screenPosition);
             return;
         }
@@ -359,6 +361,18 @@ public partial class OfficeSelection3DController : Node
     {
         if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
+            if (_buildModeController?.IsPlaceRoomDoorMode() == true)
+            {
+                RefreshPendingRoomPreview();
+                ShowPointerTooltip(
+                    _buildModeController.HasPendingDoor()
+                        ? "\u70b9\u51fb\u786e\u8ba4\u5b8c\u6210\u5efa\u9020"
+                        : "\u9009\u62e9\u95e8\u7684\u4f4d\u7f6e",
+                    screenPosition
+                );
+                return;
+            }
+
             if (!_isDraggingSelection)
             {
                 _placementPreviewController?.ClearPreview();
@@ -384,6 +398,7 @@ public partial class OfficeSelection3DController : Node
 
         if (_buildModeController?.IsPlaceRoomDoorMode() == true)
         {
+            RefreshPendingRoomPreview();
             ShowPointerTooltip(
                 _buildModeController.HasPendingDoor() ? "点击确认完成建造" : "选择门的位置",
                 screenPosition
@@ -423,6 +438,25 @@ public partial class OfficeSelection3DController : Node
         var isBuildLegal = _buildModeController?.IsSelectionLegal(_dragStartCell, _dragCurrentCell) ?? true;
         _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isBuildLegal);
         ShowPointerTooltip(size, screenPosition);
+    }
+
+    private void RefreshPendingRoomPreview()
+    {
+        var pendingSelection = _buildModeController?.GetPendingRoomSelection();
+        if (pendingSelection == null)
+        {
+            return;
+        }
+
+        _placementPreviewController?.ShowSelectionRect(
+            pendingSelection.StartCell,
+            pendingSelection.EndCell,
+            isLegal: true
+        );
+        if (pendingSelection.DoorPlacement != null)
+        {
+            _placementPreviewController?.ShowRoomDoorPreview(pendingSelection.DoorPlacement);
+        }
     }
 
     private void CancelInteraction()
