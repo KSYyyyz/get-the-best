@@ -25,6 +25,17 @@ def test_get_the_best_v2_godot_project_shell_exists() -> None:
     assert 'project/assembly_name="GetTheBestGodot"' in project_text
 
 
+def test_get_the_best_v2_godot_mcp_is_project_local() -> None:
+    project_text = read_text(GODOT_ROOT / "project.godot")
+    gitignore_text = read_text(PROJECT_ROOT / ".gitignore")
+
+    assert 'MCPRuntime="*res://addons/godot_mcp/runtime/mcp_runtime.gd"' in project_text
+    assert 'enabled=["res://addons/godot_mcp/plugin.cfg"]' in project_text
+    assert (GODOT_ROOT / "addons" / "godot_mcp" / "plugin.cfg").exists()
+    assert (GODOT_ROOT / "addons" / "godot_mcp" / "runtime" / "mcp_runtime.gd").exists()
+    assert "godot/**/addons/godot_mcp/cache/" in gitignore_text
+
+
 def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
     scene_file = GODOT_ROOT / "scenes" / "main.tscn"
     scene_text = read_text(scene_file)

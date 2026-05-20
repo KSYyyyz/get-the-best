@@ -4,6 +4,8 @@ godot/**/.godot/
 godot/**/.mono/
 godot/**/bin/
 godot/**/obj/
+godot/**/addons/godot_mcp/cache/
+godot_editor_start*.log
 
 # .NET 构建输出
 bin/
@@ -12,4 +14,3 @@ obj/
 # Python 本地缓存
 __pycache__/
 .pytest_cache/
-
