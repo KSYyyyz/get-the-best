@@ -60,19 +60,28 @@ public partial class Facility3DRenderer : Node3D
 
     private void AddFacilitySprite(FacilityPlacement facility)
     {
-        var position = OfficeWorld3DConfig.CellToWorldPosition(facility.Cell) + Vector3.Up * 0.45f;
+        var position = OfficeWorld3DConfig.CellToWorldPosition(facility.Cell);
         var texture = GetFacilityTexture(facility.FacilityType);
+        AddFacilityVolume(facility, position);
         if (texture == null)
         {
-            AddFallbackBox(facility, position);
             return;
         }
 
+        AddFacilitySpriteBillboard(facility, texture, position);
+    }
+
+    private void AddFacilitySpriteBillboard(
+        FacilityPlacement facility,
+        Texture2D texture,
+        Vector3 position
+    )
+    {
         var sprite = new Sprite3D
         {
             Texture = texture,
             PixelSize = 0.018f,
-            Position = position,
+            Position = position + Vector3.Up * GetFacilitySpriteHeight(facility.FacilityType),
             RotationDegrees = new Vector3(-60.0f, 0.0f, 0.0f),
         };
         AddChild(sprite);
@@ -84,13 +93,35 @@ public partial class Facility3DRenderer : Node3D
         }
     }
 
-    private void AddFallbackBox(FacilityPlacement facility, Vector3 position)
+    private void AddFacilityVolume(FacilityPlacement facility, Vector3 position)
+    {
+        var size = GetFacilityVolumeSize(facility.FacilityType);
+        var mesh = new MeshInstance3D
+        {
+            Mesh = new BoxMesh { Size = size },
+            MaterialOverride = CreateMaterial(GetFacilityFillColor(facility.FacilityType)),
+            Position = position + Vector3.Up * (size.Y / 2.0f + 0.10f),
+        };
+        AddChild(mesh);
+        _renderedFacilities.Add(mesh);
+
+        if (facility.FacilityType == FacilityBuildType.ProductWhiteboard)
+        {
+            AddVerticalPanel(position, new Vector3(1.45f, 1.10f, 0.10f), WhiteboardFill);
+        }
+        else if (facility.FacilityType == FacilityBuildType.ServerRack)
+        {
+            AddVerticalPanel(position, new Vector3(1.30f, 1.35f, 0.55f), ServerRackFill);
+        }
+    }
+
+    private void AddVerticalPanel(Vector3 position, Vector3 size, Color color)
     {
         var mesh = new MeshInstance3D
         {
-            Mesh = new BoxMesh { Size = new Vector3(1.2f, 0.45f, 1.2f) },
-            MaterialOverride = CreateMaterial(GetFacilityFillColor(facility.FacilityType)),
-            Position = position,
+            Mesh = new BoxMesh { Size = size },
+            MaterialOverride = CreateMaterial(color),
+            Position = position + new Vector3(0.0f, size.Y / 2.0f + 0.18f, -0.34f),
         };
         AddChild(mesh);
         _renderedFacilities.Add(mesh);
@@ -111,6 +142,26 @@ public partial class Facility3DRenderer : Node3D
     private Texture2D? GetFacilityTexture(FacilityBuildType facilityType)
     {
         return _facilityTextures.TryGetValue(facilityType, out var texture) ? texture : null;
+    }
+
+    private static Vector3 GetFacilityVolumeSize(FacilityBuildType facilityType)
+    {
+        return facilityType switch
+        {
+            FacilityBuildType.ProductWhiteboard => new Vector3(1.45f, 0.18f, 0.55f),
+            FacilityBuildType.ServerRack => new Vector3(1.30f, 0.22f, 1.10f),
+            _ => new Vector3(1.45f, 0.42f, 1.15f),
+        };
+    }
+
+    private static float GetFacilitySpriteHeight(FacilityBuildType facilityType)
+    {
+        return facilityType switch
+        {
+            FacilityBuildType.ProductWhiteboard => 1.15f,
+            FacilityBuildType.ServerRack => 1.25f,
+            _ => 0.62f,
+        };
     }
 
     private static Color GetFacilityFillColor(FacilityBuildType facilityType)

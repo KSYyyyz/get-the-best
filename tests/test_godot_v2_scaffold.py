@@ -431,3 +431,33 @@ def test_get_the_best_v2_0_4_facility_definitions_and_texture_rendering_exist() 
     assert "GetFacilityTexture" in renderer
     assert "Sprite3D" in renderer
     assert "GetFacilityFillColor" in renderer
+
+
+def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "OfficeBoundary3D" in scene_text
+    assert "OfficeBoundary3DRenderer.cs" in scripts
+    assert "AddWall" in scripts["OfficeBoundary3DRenderer.cs"]
+    assert "WallHeight = 1.4f" in scripts["OfficeBoundary3DRenderer.cs"]
+    assert "WallThickness = 0.45f" in scripts["OfficeBoundary3DRenderer.cs"]
+    assert "OfficeWorld3DConfig.OfficeBounds" in scripts["OfficeBoundary3DRenderer.cs"]
+
+    room_renderer = scripts["RoomOverlay3DRenderer.cs"]
+    assert "RoomCarpetHeight" in room_renderer
+    assert "RoomBoundaryHeight" in room_renderer
+    assert "AddRoomBoundary" in room_renderer
+    assert "AddRoomSignPlate" in room_renderer
+    assert "HighlightedRoomStroke" in room_renderer
+
+    facility_renderer = scripts["Facility3DRenderer.cs"]
+    assert "AddFacilityVolume" in facility_renderer
+    assert "AddFacilitySpriteBillboard" in facility_renderer
+    assert "GetFacilityVolumeSize" in facility_renderer
+    assert "GetFacilitySpriteHeight" in facility_renderer
+    assert "new BoxMesh" in facility_renderer

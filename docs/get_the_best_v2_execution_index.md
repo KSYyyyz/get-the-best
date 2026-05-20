@@ -59,6 +59,7 @@
 - `docs/get_the_best_v2_0_1_acceptance_report.md`
 - `docs/get_the_best_v2_0_4_acceptance_report.md`
 - `docs/get_the_best_v2_0_5_acceptance_report.md`
+- `docs/get_the_best_v2_0_6_acceptance_report.md`
 
 ## 5. 第一原则
 
