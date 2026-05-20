@@ -6,17 +6,28 @@ public partial class BuildModeHudController : PanelContainer
 {
     private BuildModeController? _buildModeController;
     private Label? _buildModeLabel;
+    private Button? _buildMenuButton;
+    private HBoxContainer? _roomTypeButtons;
     private Button? _researchRoomButton;
     private Button? _marketRoomButton;
     private Button? _serverRoomButton;
+    private bool _isBuildMenuOpen;
 
     public override void _Ready()
     {
         _buildModeController = GetNodeOrNull<BuildModeController>("../../InteractionRoot/BuildModeController");
         _buildModeLabel = GetNodeOrNull<Label>("BuildModeRows/BuildModeLabel");
+        _buildMenuButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/BuildMenuButton");
+        _roomTypeButtons = GetNodeOrNull<HBoxContainer>("BuildModeRows/RoomTypeButtons");
         _researchRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ResearchRoomButton");
         _marketRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/MarketRoomButton");
         _serverRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ServerRoomButton");
+
+        if (_buildMenuButton != null)
+        {
+            _buildMenuButton.Text = "建造";
+            _buildMenuButton.Pressed += ToggleBuildMenu;
+        }
 
         if (_researchRoomButton != null)
         {
@@ -36,13 +47,31 @@ public partial class BuildModeHudController : PanelContainer
             _serverRoomButton.Pressed += () => SetRoomType(RoomBuildType.ServerRoom);
         }
 
+        RefreshRoomTypeVisibility();
+        RefreshBuildModeLabel();
+    }
+
+    private void ToggleBuildMenu()
+    {
+        _isBuildMenuOpen = !_isBuildMenuOpen;
+        RefreshRoomTypeVisibility();
         RefreshBuildModeLabel();
     }
 
     private void SetRoomType(RoomBuildType roomType)
     {
         _buildModeController?.SetActiveRoomType(roomType);
+        _isBuildMenuOpen = true;
+        RefreshRoomTypeVisibility();
         RefreshBuildModeLabel();
+    }
+
+    private void RefreshRoomTypeVisibility()
+    {
+        if (_roomTypeButtons != null)
+        {
+            _roomTypeButtons.Visible = _isBuildMenuOpen;
+        }
     }
 
     private void RefreshBuildModeLabel()
@@ -53,6 +82,6 @@ public partial class BuildModeHudController : PanelContainer
         }
 
         var label = _buildModeController?.GetActiveRoomTypeLabel() ?? "研发室";
-        _buildModeLabel.Text = $"当前建造：{label}";
+        _buildModeLabel.Text = _isBuildMenuOpen ? $"建造：{label}" : "选择功能入口";
     }
 }

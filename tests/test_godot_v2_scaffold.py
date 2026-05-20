@@ -166,12 +166,19 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
 
     assert "BuildModePanel" in scene_text
     assert "BuildModeLabel" in scene_text
+    assert "BuildEntryButtons" in scene_text
+    assert "BuildMenuButton" in scene_text
     assert "ResearchRoomButton" in scene_text
     assert "MarketRoomButton" in scene_text
     assert "ServerRoomButton" in scene_text
     assert "BuildModeHudController" in scene_text
 
     assert "BuildModeHudController.cs" in scripts
+    assert "_buildMenuButton" in scripts["BuildModeHudController.cs"]
+    assert "_roomTypeButtons" in scripts["BuildModeHudController.cs"]
+    assert "ToggleBuildMenu" in scripts["BuildModeHudController.cs"]
+    assert "RefreshRoomTypeVisibility" in scripts["BuildModeHudController.cs"]
+    assert "_roomTypeButtons.Visible = _isBuildMenuOpen" in scripts["BuildModeHudController.cs"]
     assert "enum RoomBuildType" in scripts["BuildModeController.cs"]
     assert "ResearchRoom" in scripts["BuildModeController.cs"]
     assert "MarketRoom" in scripts["BuildModeController.cs"]
