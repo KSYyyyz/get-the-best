@@ -5,6 +5,8 @@
 [ext_resource type="Script" uid="uid://b8a73fywwlab7" path="res://scripts/OfficeSelectionController.cs" id="3_selection"]
 [ext_resource type="Script" uid="uid://dbm47tftogskb" path="res://scripts/V2CoreBridge.cs" id="4_bridge"]
 [ext_resource type="Script" uid="uid://co06yttcveq8h" path="res://scripts/OfficeGridRenderer.cs" id="5_grid"]
+[ext_resource type="Script" uid="uid://c3tf1aq1gsjbr" path="res://scripts/BuildModeController.cs" id="6_o6xl0"]
+[ext_resource type="Script" uid="uid://bdbsxu26s6162" path="res://scripts/PlacementPreviewController.cs" id="7_tipki"]
 
 [node name="Main" type="Node2D" unique_id=1154896660]
 script = ExtResource("1_main")
@@ -26,9 +28,6 @@ script = ExtResource("5_grid")
 [node name="OfficeCamera" type="Camera2D" parent="." unique_id=1879581597]
 zoom = Vector2(0.65, 0.65)
 script = ExtResource("2_camera")
-
-[node name="OfficeSelectionController" type="Node2D" parent="." unique_id=178840877]
-script = ExtResource("3_selection")
 
 [node name="HudRoot" type="CanvasLayer" parent="." unique_id=495860634]
 
@@ -54,3 +53,15 @@ mouse_filter = 2
 layout_mode = 2
 text = "未选中对象"
 autowrap_mode = 3
+
+[node name="InteractionRoot" type="Node2D" parent="." unique_id=327777287]
+
+[node name="BuildModeController" type="Node" parent="InteractionRoot" unique_id=570298049]
+script = ExtResource("6_o6xl0")
+
+[node name="PlacementPreviewController" type="Node2D" parent="InteractionRoot" unique_id=1291357778]
+z_index = 2
+script = ExtResource("7_tipki")
+
+[node name="OfficeSelectionController" type="Node2D" parent="InteractionRoot" unique_id=178840877]
+script = ExtResource("3_selection")

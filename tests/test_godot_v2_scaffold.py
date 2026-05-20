@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GODOT_ROOT = PROJECT_ROOT / "godot" / "GetTheBestGodot"
 
@@ -70,7 +69,9 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
     assert "OfficeSelectionController.cs" in scripts
     assert "OfficeWorldConfig.cs" in scripts
     assert "V2CoreBridge.cs" in scripts
-    assert "new(new Vector2(-1600, -1000), new Vector2(3200, 2000))" in scripts["OfficeWorldConfig.cs"]
+    assert (
+        "new(new Vector2(-1600, -1000), new Vector2(3200, 2000))" in scripts["OfficeWorldConfig.cs"]
+    )
     assert "LayoutHud" in scripts["MainController.cs"]
     assert "InputEventMouseMotion" in scripts["OfficeCameraController.cs"]
     assert "MinZoom = 0.25f" in scripts["OfficeCameraController.cs"]
@@ -100,3 +101,30 @@ def test_get_the_best_v2_0_1_acceptance_is_recorded() -> None:
     assert "3200x2000" in acceptance_text
     assert "0.25 - 3.25" in acceptance_text
     assert "V2-0.2 不在本轮范围" in acceptance_text
+
+
+def test_get_the_best_v2_0_2_grid_interaction_scaffold_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "InteractionRoot" in scene_text
+    assert "OfficeSelectionController" in scene_text
+    assert "PlacementPreviewController" in scene_text
+    assert "BuildModeController" in scene_text
+    assert 'parent="InteractionRoot"' in scene_text
+
+    assert "PlacementPreviewController.cs" in scripts
+    assert "BuildModeController.cs" in scripts
+    assert "TryWorldToCell" in scripts["OfficeWorldConfig.cs"]
+    assert "CellsToWorldRect" in scripts["OfficeWorldConfig.cs"]
+    assert "ShowHoverCell" in scripts["PlacementPreviewController.cs"]
+    assert "ShowSelectionRect" in scripts["PlacementPreviewController.cs"]
+    assert "ClearPreview" in scripts["PlacementPreviewController.cs"]
+    assert "MouseButton.Right" in scripts["OfficeSelectionController.cs"]
+    assert "Key.Escape" in scripts["OfficeSelectionController.cs"]
+    assert "_isDraggingSelection" in scripts["OfficeSelectionController.cs"]
+    assert "GetCanvasTransform().AffineInverse()" in scripts["OfficeSelectionController.cs"]
