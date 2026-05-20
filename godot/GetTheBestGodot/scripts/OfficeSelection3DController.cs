@@ -19,15 +19,15 @@ public partial class OfficeSelection3DController : Node
 
     public override void _Ready()
     {
-        _camera = GetNodeOrNull<Camera3D>("../OfficeWorld/OfficeCamera");
-        _floatingTooltip = GetNodeOrNull<PanelContainer>("../HudRoot/FloatingTooltip");
-        _tooltipLabel = GetNodeOrNull<Label>("../HudRoot/FloatingTooltip/TooltipLabel");
+        _camera = GetNodeOrNull<Camera3D>("../../OfficeWorld/OfficeCamera");
+        _floatingTooltip = GetNodeOrNull<PanelContainer>("../../HudRoot/FloatingTooltip");
+        _tooltipLabel = GetNodeOrNull<Label>("../../HudRoot/FloatingTooltip/TooltipLabel");
         _placementPreviewController = GetNodeOrNull<PlacementPreview3DController>(
-            "PlacementPreview3DController"
+            "../PlacementPreview3DController"
         );
-        _buildModeController = GetNodeOrNull<BuildModeController>("BuildModeController");
-        _roomOverlayRenderer = GetNodeOrNull<RoomOverlay3DRenderer>("RoomOverlay3DRenderer");
-        _facilityRenderer = GetNodeOrNull<Facility3DRenderer>("Facility3DRenderer");
+        _buildModeController = GetNodeOrNull<BuildModeController>("../BuildModeController");
+        _roomOverlayRenderer = GetNodeOrNull<RoomOverlay3DRenderer>("../RoomOverlay3DRenderer");
+        _facilityRenderer = GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer");
         HidePointerTooltip();
     }
 

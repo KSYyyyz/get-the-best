@@ -461,3 +461,16 @@ def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
     assert "GetFacilityVolumeSize" in facility_renderer
     assert "GetFacilitySpriteHeight" in facility_renderer
     assert "new BoxMesh" in facility_renderer
+
+
+def test_get_the_best_v2_interaction_controller_uses_scene_relative_paths() -> None:
+    controller = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert 'GetNodeOrNull<Camera3D>("../../OfficeWorld/OfficeCamera")' in controller
+    assert 'GetNodeOrNull<PanelContainer>("../../HudRoot/FloatingTooltip")' in controller
+    assert 'GetNodeOrNull<Label>("../../HudRoot/FloatingTooltip/TooltipLabel")' in controller
+    assert "GetNodeOrNull<PlacementPreview3DController>(" in controller
+    assert '"../PlacementPreview3DController"' in controller
+    assert 'GetNodeOrNull<BuildModeController>("../BuildModeController")' in controller
+    assert 'GetNodeOrNull<RoomOverlay3DRenderer>("../RoomOverlay3DRenderer")' in controller
+    assert 'GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer")' in controller
