@@ -11,6 +11,7 @@ public partial class OfficeSelectionController : Node2D
     private PlacementPreviewController? _placementPreviewController;
     private BuildModeController? _buildModeController;
     private RoomOverlayRenderer? _roomOverlayRenderer;
+    private FacilityRenderer? _facilityRenderer;
     private bool _isDraggingSelection;
     private Vector2I _dragStartCell;
     private Vector2I _dragCurrentCell;
@@ -24,6 +25,7 @@ public partial class OfficeSelectionController : Node2D
         );
         _buildModeController = GetNodeOrNull<BuildModeController>("../BuildModeController");
         _roomOverlayRenderer = GetNodeOrNull<RoomOverlayRenderer>("../RoomOverlayRenderer");
+        _facilityRenderer = GetNodeOrNull<FacilityRenderer>("../FacilityRenderer");
         HidePointerTooltip();
     }
 
@@ -67,7 +69,13 @@ public partial class OfficeSelectionController : Node2D
         {
             if (_buildModeController?.IsPointerMode() == true)
             {
-                SelectRoomAtPointer(mouseEvent.Position);
+                SelectObjectAtPointer(mouseEvent.Position);
+                return;
+            }
+
+            if (_buildModeController?.IsPlaceFacilityMode() == true)
+            {
+                FinishFacilityPlacement(mouseEvent.Position);
                 return;
             }
 
@@ -114,16 +122,40 @@ public partial class OfficeSelectionController : Node2D
         }
 
         _isDraggingSelection = false;
-        if (_buildModeController?.TryCreateRoom(_dragStartCell, _dragCurrentCell, out var room) == true && room != null)
+        if (
+            _buildModeController?.TryCreateRoom(_dragStartCell, _dragCurrentCell, out var room)
+                == true
+            && room != null
+        )
         {
             _placementPreviewController?.ClearPreview();
-            ClearSelectedRoom();
+            ClearSelectedObjects();
             _roomOverlayRenderer?.RefreshRooms();
             ShowOccupiedRoom(room, screenPosition);
             return;
         }
 
         ShowSelectionPreview(screenPosition);
+    }
+
+    private void FinishFacilityPlacement(Vector2 screenPosition)
+    {
+        if (!TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            HidePointerTooltip();
+            return;
+        }
+
+        if (_buildModeController?.TryPlaceFacility(cell, out var facility) == true && facility != null)
+        {
+            _placementPreviewController?.ClearPreview();
+            ClearSelectedObjects();
+            _facilityRenderer?.RefreshFacilities();
+            ShowFacilityTooltip(facility, screenPosition);
+            return;
+        }
+
+        ShowPointerTooltip("不能放置在这里", screenPosition);
     }
 
     private void FinishDeleteSelection(Vector2 screenPosition)
@@ -139,38 +171,82 @@ public partial class OfficeSelectionController : Node2D
         }
 
         _isDraggingSelection = false;
-        if (_buildModeController?.TryDeleteRoomsInSelection(_dragStartCell, _dragCurrentCell, out var deletedCount) == true)
+        var deletedFacilities =
+            _buildModeController?.DeleteFacilitiesInSelection(_dragStartCell, _dragCurrentCell) ?? 0;
+        if (
+            _buildModeController?.TryDeleteRoomsInSelection(
+                _dragStartCell,
+                _dragCurrentCell,
+                out var deletedCount
+            ) == true
+        )
         {
             _placementPreviewController?.ClearPreview();
-            ClearSelectedRoom();
+            ClearSelectedObjects();
             _roomOverlayRenderer?.RefreshRooms();
-            ShowPointerTooltip($"已删除 {deletedCount} 格", screenPosition);
+            _facilityRenderer?.RefreshFacilities();
+            ShowPointerTooltip($"已删除 {deletedCount} 格，出售 {deletedFacilities} 个设施", screenPosition);
+            return;
+        }
+
+        if (deletedFacilities > 0)
+        {
+            _placementPreviewController?.ClearPreview();
+            ClearSelectedObjects();
+            _facilityRenderer?.RefreshFacilities();
+            ShowPointerTooltip($"已出售 {deletedFacilities} 个设施", screenPosition);
             return;
         }
 
         _placementPreviewController?.ClearPreview();
-        ClearSelectedRoom();
+        ClearSelectedObjects();
         ShowPointerTooltip("没有可删除地块", screenPosition);
     }
 
-    private void SelectRoomAtPointer(Vector2 screenPosition)
+    private void SelectObjectAtPointer(Vector2 screenPosition)
     {
         if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
-            ClearSelectedRoom();
+            ClearSelectedObjects();
             HidePointerTooltip();
             return;
         }
 
+        if (SelectFacilityAtPointer(cell, screenPosition))
+        {
+            return;
+        }
+
+        SelectRoomAtPointer(cell, screenPosition);
+    }
+
+    private bool SelectFacilityAtPointer(Vector2I cell, Vector2 screenPosition)
+    {
+        var facility = _buildModeController?.FindFacilityAtCell(cell);
+        if (facility == null)
+        {
+            return false;
+        }
+
+        ClearSelectedObjects();
+        _facilityRenderer?.HighlightFacility(facility);
+        ShowFacilityTooltip(facility, screenPosition);
+        return true;
+    }
+
+    private void SelectRoomAtPointer(Vector2I cell, Vector2 screenPosition)
+    {
         var room = _buildModeController?.FindRoomAtCell(cell);
         if (room == null)
         {
-            ClearSelectedRoom();
+            ClearSelectedObjects();
             HidePointerTooltip();
             return;
         }
 
-        SelectRoom(room);
+        ClearSelectedObjects();
+        _roomOverlayRenderer?.HighlightRoom(room);
+        _roomOverlayRenderer?.RefreshRooms();
         ShowOccupiedRoom(room, screenPosition);
     }
 
@@ -193,7 +269,22 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
+        if (_buildModeController?.IsPlaceFacilityMode() == true)
+        {
+            var canPlace = _buildModeController.CanPlaceFacility(cell);
+            _placementPreviewController?.ShowFacilityCell(cell, canPlace);
+            ShowPointerTooltip(_buildModeController.GetActiveFacilityTypeLabel(), screenPosition);
+            return;
+        }
+
         _placementPreviewController?.ClearPreview();
+        var hoveredFacility = _buildModeController?.FindFacilityAtCell(cell);
+        if (hoveredFacility != null)
+        {
+            ShowFacilityTooltip(hoveredFacility, screenPosition);
+            return;
+        }
+
         var hoveredRoom = _buildModeController?.FindRoomAtCell(cell);
         if (hoveredRoom != null)
         {
@@ -223,7 +314,7 @@ public partial class OfficeSelectionController : Node2D
     private void CancelInteraction()
     {
         CancelDragSelection();
-        ClearSelectedRoom();
+        ClearSelectedObjects();
         _buildModeController?.CancelActiveTool();
     }
 
@@ -234,10 +325,10 @@ public partial class OfficeSelectionController : Node2D
         HidePointerTooltip();
     }
 
-    private void SelectRoom(RoomFootprint room)
+    private void ClearSelectedObjects()
     {
-        _roomOverlayRenderer?.HighlightRoom(room);
-        _roomOverlayRenderer?.RefreshRooms();
+        ClearSelectedRoom();
+        _facilityRenderer?.HighlightFacility(null);
     }
 
     private void ClearSelectedRoom()
@@ -249,6 +340,15 @@ public partial class OfficeSelectionController : Node2D
     {
         var prefix = _buildModeController?.IsDeleteRoomMode() == true ? "删除：" : string.Empty;
         ShowPointerTooltip($"{prefix}{BuildModeController.GetRoomTypeLabel(room.RoomType)}", screenPosition);
+    }
+
+    private void ShowFacilityTooltip(FacilityPlacement facility, Vector2 screenPosition)
+    {
+        var prefix = _buildModeController?.IsDeleteRoomMode() == true ? "出售：" : string.Empty;
+        ShowPointerTooltip(
+            $"{prefix}{BuildModeController.GetFacilityTypeLabel(facility.FacilityType)}",
+            screenPosition
+        );
     }
 
     private bool TryScreenPositionToCell(Vector2 screenPosition, out Vector2I cell)

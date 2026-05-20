@@ -12,7 +12,9 @@ public partial class PlacementPreviewController : Node2D
     private static readonly Color IllegalStroke = new(1.0f, 0.32f, 0.32f, 0.95f);
 
     private Rect2? _hoverRect;
+    private Rect2? _facilityRect;
     private Rect2? _selectionRect;
+    private bool _isFacilityLegal = true;
     private bool _isSelectionLegal = true;
 
     public void ShowHoverCell(Vector2I cell)
@@ -28,9 +30,17 @@ public partial class PlacementPreviewController : Node2D
         QueueRedraw();
     }
 
+    public void ShowFacilityCell(Vector2I cell, bool isLegal)
+    {
+        _facilityRect = OfficeWorldConfig.CellToWorldRect(cell);
+        _isFacilityLegal = isLegal;
+        QueueRedraw();
+    }
+
     public void ClearPreview()
     {
         _hoverRect = null;
+        _facilityRect = null;
         _selectionRect = null;
         QueueRedraw();
     }
@@ -45,6 +55,17 @@ public partial class PlacementPreviewController : Node2D
 
         if (_selectionRect is not { } selectionRect)
         {
+            if (_facilityRect is { } facilityRect)
+            {
+                DrawRect(facilityRect, _isFacilityLegal ? LegalFill : IllegalFill, filled: true);
+                DrawRect(
+                    facilityRect,
+                    _isFacilityLegal ? LegalStroke : IllegalStroke,
+                    filled: false,
+                    width: 4.0f
+                );
+            }
+
             return;
         }
 

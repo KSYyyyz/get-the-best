@@ -10,17 +10,27 @@ public enum RoomBuildType
     ServerRoom,
 }
 
+public enum FacilityBuildType
+{
+    OfficeDesk,
+    ProductWhiteboard,
+    ServerRack,
+}
+
 public enum BuildToolMode
 {
     Pointer,
     BuildRoom,
     DeleteRoom,
+    PlaceFacility,
 }
 
 public partial class BuildModeController : Node
 {
     private RoomFootprintStore? _roomFootprintStore;
+    private FacilityPlacementStore? _facilityPlacementStore;
     private RoomBuildType _activeRoomType = RoomBuildType.ResearchRoom;
+    private FacilityBuildType _activeFacilityType = FacilityBuildType.OfficeDesk;
     private BuildToolMode _activeToolMode = BuildToolMode.Pointer;
 
     public event Action? ToolModeChanged;
@@ -28,6 +38,9 @@ public partial class BuildModeController : Node
     public override void _Ready()
     {
         _roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");
+        _facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>(
+            "../FacilityPlacementStore"
+        );
     }
 
     public bool IsSelectionLegal(Vector2I startCell, Vector2I endCell)
@@ -62,6 +75,38 @@ public partial class BuildModeController : Node
         return _roomFootprintStore.TryReserve(_activeRoomType, startCell, endCell, out room);
     }
 
+    public bool CanPlaceFacility(Vector2I cell)
+    {
+        return _facilityPlacementStore?.CanPlace(_activeFacilityType, cell) ?? false;
+    }
+
+    public bool TryPlaceFacility(Vector2I cell, out FacilityPlacement? facility)
+    {
+        if (_activeToolMode != BuildToolMode.PlaceFacility)
+        {
+            facility = null;
+            return false;
+        }
+
+        if (_facilityPlacementStore == null)
+        {
+            facility = null;
+            return false;
+        }
+
+        return _facilityPlacementStore.TryPlace(_activeFacilityType, cell, out facility);
+    }
+
+    public FacilityPlacement? FindFacilityAtCell(Vector2I cell)
+    {
+        return _facilityPlacementStore?.FindAtCell(cell);
+    }
+
+    public int DeleteFacilitiesInSelection(Vector2I startCell, Vector2I endCell)
+    {
+        return _facilityPlacementStore?.RemoveInSelection(startCell, endCell) ?? 0;
+    }
+
     public bool TryDeleteRoomAtCell(Vector2I cell, out RoomFootprint? room)
     {
         if (_roomFootprintStore == null)
@@ -76,8 +121,7 @@ public partial class BuildModeController : Node
 
     public int SellFixturesInSelection(Vector2I startCell, Vector2I endCell)
     {
-        // V2-0.2 还没有设施实体；后续桌子、椅子等接入后，删除地块会先默认出售设施。
-        return 0;
+        return DeleteFacilitiesInSelection(startCell, endCell);
     }
 
     public bool CanDeleteSelection(Vector2I startCell, Vector2I endCell)
@@ -115,6 +159,17 @@ public partial class BuildModeController : Node
     public RoomBuildType GetActiveRoomType()
     {
         return _activeRoomType;
+    }
+
+    public void SetActiveFacilityType(FacilityBuildType facilityType)
+    {
+        _activeFacilityType = facilityType;
+        SetActiveToolMode(BuildToolMode.PlaceFacility);
+    }
+
+    public FacilityBuildType GetActiveFacilityType()
+    {
+        return _activeFacilityType;
     }
 
     public BuildToolMode GetActiveToolMode()
@@ -158,9 +213,19 @@ public partial class BuildModeController : Node
         return _activeToolMode == BuildToolMode.DeleteRoom;
     }
 
+    public bool IsPlaceFacilityMode()
+    {
+        return _activeToolMode == BuildToolMode.PlaceFacility;
+    }
+
     public string GetActiveRoomTypeLabel()
     {
         return GetRoomTypeLabel(_activeRoomType);
+    }
+
+    public string GetActiveFacilityTypeLabel()
+    {
+        return GetFacilityTypeLabel(_activeFacilityType);
     }
 
     public static string GetRoomTypeLabel(RoomBuildType roomType)
@@ -171,6 +236,26 @@ public partial class BuildModeController : Node
             RoomBuildType.MarketRoom => "市场室",
             RoomBuildType.ServerRoom => "服务器室",
             _ => "未知房间",
+        };
+    }
+
+    public static string GetFacilityTypeLabel(FacilityBuildType facilityType)
+    {
+        return facilityType switch
+        {
+            FacilityBuildType.OfficeDesk => "办公桌",
+            FacilityBuildType.ProductWhiteboard => "产品白板",
+            FacilityBuildType.ServerRack => "服务器机柜",
+            _ => "未知设施",
+        };
+    }
+
+    public static RoomBuildType GetRequiredRoomType(FacilityBuildType facilityType)
+    {
+        return facilityType switch
+        {
+            FacilityBuildType.ServerRack => RoomBuildType.ServerRoom,
+            _ => RoomBuildType.ResearchRoom,
         };
     }
 

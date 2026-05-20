@@ -9,19 +9,27 @@ public partial class BuildModeHudController : PanelContainer
     private static readonly Color ActiveButtonColor = new(0.54f, 1.0f, 0.68f, 1.0f);
     private static readonly Color SeparatorColor = new(0.72f, 0.76f, 0.74f, 0.82f);
     private const string BuildMenuText = "建造";
+    private const string FacilityMenuText = "设施";
     private const string DeleteRoomText = "删除";
 
     private BuildModeController? _buildModeController;
     private Button? _buildMenuButton;
+    private Button? _facilityMenuButton;
     private Button? _deleteRoomButton;
     private HBoxContainer? _entryButtons;
     private Label? _entrySeparator;
+    private Label? _facilityEntrySeparator;
     private VBoxContainer? _roomTypeButtons;
+    private VBoxContainer? _facilityTypeButtons;
     private Button? _researchRoomButton;
     private Button? _marketRoomButton;
     private Button? _serverRoomButton;
+    private Button? _deskFacilityButton;
+    private Button? _whiteboardFacilityButton;
+    private Button? _serverRackFacilityButton;
     private Button? _hoveredButton;
     private bool _isBuildMenuOpen;
+    private bool _isFacilityMenuOpen;
 
     public override void _Ready()
     {
@@ -34,18 +42,36 @@ public partial class BuildModeHudController : PanelContainer
         }
 
         _buildMenuButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/BuildMenuButton");
+        _facilityMenuButton = GetNodeOrNull<Button>(
+            "BuildModeRows/BuildEntryButtons/FacilityMenuButton"
+        );
         _deleteRoomButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/DeleteRoomButton");
         _entryButtons = GetNodeOrNull<HBoxContainer>("BuildModeRows/BuildEntryButtons");
         _entrySeparator = GetNodeOrNull<Label>("BuildModeRows/BuildEntryButtons/EntrySeparator");
+        _facilityEntrySeparator = GetNodeOrNull<Label>(
+            "BuildModeRows/BuildEntryButtons/FacilityEntrySeparator"
+        );
         _roomTypeButtons = GetNodeOrNull<VBoxContainer>("BuildModeRows/RoomTypeButtons");
+        _facilityTypeButtons = GetNodeOrNull<VBoxContainer>("BuildModeRows/FacilityTypeButtons");
         _researchRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ResearchRoomButton");
         _marketRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/MarketRoomButton");
         _serverRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ServerRoomButton");
+        _deskFacilityButton = GetNodeOrNull<Button>(
+            "BuildModeRows/FacilityTypeButtons/DeskFacilityButton"
+        );
+        _whiteboardFacilityButton = GetNodeOrNull<Button>(
+            "BuildModeRows/FacilityTypeButtons/WhiteboardFacilityButton"
+        );
+        _serverRackFacilityButton = GetNodeOrNull<Button>(
+            "BuildModeRows/FacilityTypeButtons/ServerRackFacilityButton"
+        );
 
         ConfigureEntryButtons();
         ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode, minWidth: 46.0f);
-        ConfigureSeparator();
+        ConfigureSeparator(_entrySeparator);
         ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu, minWidth: 46.0f);
+        ConfigureSeparator(_facilityEntrySeparator);
+        ConfigureButton(_facilityMenuButton, FacilityMenuText, ToggleFacilityMenu, minWidth: 46.0f);
         ConfigureButton(
             _researchRoomButton,
             BuildModeController.GetRoomTypeLabel(RoomBuildType.ResearchRoom),
@@ -61,8 +87,23 @@ public partial class BuildModeHudController : PanelContainer
             BuildModeController.GetRoomTypeLabel(RoomBuildType.ServerRoom),
             () => SetRoomType(RoomBuildType.ServerRoom)
         );
+        ConfigureButton(
+            _deskFacilityButton,
+            BuildModeController.GetFacilityTypeLabel(FacilityBuildType.OfficeDesk),
+            () => SetFacilityType(FacilityBuildType.OfficeDesk)
+        );
+        ConfigureButton(
+            _whiteboardFacilityButton,
+            BuildModeController.GetFacilityTypeLabel(FacilityBuildType.ProductWhiteboard),
+            () => SetFacilityType(FacilityBuildType.ProductWhiteboard)
+        );
+        ConfigureButton(
+            _serverRackFacilityButton,
+            BuildModeController.GetFacilityTypeLabel(FacilityBuildType.ServerRack),
+            () => SetFacilityType(FacilityBuildType.ServerRack)
+        );
 
-        RefreshRoomTypeVisibility();
+        RefreshToolMenuVisibility();
         ApplyToolButtonState();
     }
 
@@ -79,7 +120,8 @@ public partial class BuildModeHudController : PanelContainer
         if (_buildModeController?.IsPointerMode() == true)
         {
             _isBuildMenuOpen = false;
-            RefreshRoomTypeVisibility();
+            _isFacilityMenuOpen = false;
+            RefreshToolMenuVisibility();
         }
 
         ApplyToolButtonState();
@@ -94,7 +136,22 @@ public partial class BuildModeHudController : PanelContainer
         }
 
         _isBuildMenuOpen = nextOpenState;
-        RefreshRoomTypeVisibility();
+        _isFacilityMenuOpen = false;
+        RefreshToolMenuVisibility();
+        ApplyToolButtonState();
+    }
+
+    private void ToggleFacilityMenu()
+    {
+        var nextOpenState = !_isFacilityMenuOpen;
+        if (_buildModeController?.IsDeleteRoomMode() == true)
+        {
+            _buildModeController.CancelActiveTool();
+        }
+
+        _isBuildMenuOpen = false;
+        _isFacilityMenuOpen = nextOpenState;
+        RefreshToolMenuVisibility();
         ApplyToolButtonState();
     }
 
@@ -102,7 +159,17 @@ public partial class BuildModeHudController : PanelContainer
     {
         _buildModeController?.SetActiveRoomType(roomType);
         _isBuildMenuOpen = true;
-        RefreshRoomTypeVisibility();
+        _isFacilityMenuOpen = false;
+        RefreshToolMenuVisibility();
+        ApplyToolButtonState();
+    }
+
+    private void SetFacilityType(FacilityBuildType facilityType)
+    {
+        _buildModeController?.SetActiveFacilityType(facilityType);
+        _isBuildMenuOpen = false;
+        _isFacilityMenuOpen = true;
+        RefreshToolMenuVisibility();
         ApplyToolButtonState();
     }
 
@@ -110,8 +177,19 @@ public partial class BuildModeHudController : PanelContainer
     {
         _buildModeController?.ToggleDeleteRoomMode();
         _isBuildMenuOpen = false;
-        RefreshRoomTypeVisibility();
+        _isFacilityMenuOpen = false;
+        RefreshToolMenuVisibility();
         ApplyToolButtonState();
+    }
+
+    private void RefreshToolMenuVisibility()
+    {
+        RefreshRoomTypeVisibility();
+
+        if (_facilityTypeButtons != null)
+        {
+            _facilityTypeButtons.Visible = _isFacilityMenuOpen;
+        }
     }
 
     private void RefreshRoomTypeVisibility()
@@ -147,18 +225,18 @@ public partial class BuildModeHudController : PanelContainer
         _entryButtons?.AddThemeConstantOverride("separation", 2);
     }
 
-    private void ConfigureSeparator()
+    private void ConfigureSeparator(Label? separator)
     {
-        if (_entrySeparator == null)
+        if (separator == null)
         {
             return;
         }
 
-        _entrySeparator.Text = "|";
-        _entrySeparator.CustomMinimumSize = new Vector2(8.0f, 30.0f);
-        _entrySeparator.HorizontalAlignment = HorizontalAlignment.Center;
-        _entrySeparator.VerticalAlignment = VerticalAlignment.Center;
-        _entrySeparator.AddThemeColorOverride("font_color", SeparatorColor);
+        separator.Text = "|";
+        separator.CustomMinimumSize = new Vector2(8.0f, 30.0f);
+        separator.HorizontalAlignment = HorizontalAlignment.Center;
+        separator.VerticalAlignment = VerticalAlignment.Center;
+        separator.AddThemeColorOverride("font_color", SeparatorColor);
     }
 
     private void ApplyHoverState(Button button, bool isHovered)
@@ -170,6 +248,7 @@ public partial class BuildModeHudController : PanelContainer
     private void ApplyToolButtonState()
     {
         SetButtonState(_buildMenuButton, BuildMenuText, _isBuildMenuOpen);
+        SetButtonState(_facilityMenuButton, FacilityMenuText, _isFacilityMenuOpen);
         SetButtonState(
             _deleteRoomButton,
             DeleteRoomText,
@@ -190,12 +269,33 @@ public partial class BuildModeHudController : PanelContainer
             BuildModeController.GetRoomTypeLabel(RoomBuildType.ServerRoom),
             IsActiveRoomButton(RoomBuildType.ServerRoom)
         );
+        SetButtonState(
+            _deskFacilityButton,
+            BuildModeController.GetFacilityTypeLabel(FacilityBuildType.OfficeDesk),
+            IsActiveFacilityButton(FacilityBuildType.OfficeDesk)
+        );
+        SetButtonState(
+            _whiteboardFacilityButton,
+            BuildModeController.GetFacilityTypeLabel(FacilityBuildType.ProductWhiteboard),
+            IsActiveFacilityButton(FacilityBuildType.ProductWhiteboard)
+        );
+        SetButtonState(
+            _serverRackFacilityButton,
+            BuildModeController.GetFacilityTypeLabel(FacilityBuildType.ServerRack),
+            IsActiveFacilityButton(FacilityBuildType.ServerRack)
+        );
     }
 
     private bool IsActiveRoomButton(RoomBuildType roomType)
     {
         return _buildModeController?.IsBuildRoomMode() == true
             && _buildModeController.GetActiveRoomType() == roomType;
+    }
+
+    private bool IsActiveFacilityButton(FacilityBuildType facilityType)
+    {
+        return _buildModeController?.IsPlaceFacilityMode() == true
+            && _buildModeController.GetActiveFacilityType() == facilityType;
     }
 
     private void SetButtonState(Button? button, string label, bool isActive)

@@ -292,3 +292,58 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
     assert 'AddThemeColorOverride("font_shadow_color"' in scripts["MainController.cs"]
     assert "StyleBoxEmpty" in scripts["MainController.cs"]
     assert ".Flat = true" in scripts["MainController.cs"]
+
+
+def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "FacilityPlacementStore" in scene_text
+    assert "FacilityRenderer" in scene_text
+    assert "FacilityTypeButtons" in scene_text
+    assert "FacilityMenuButton" in scene_text
+    assert "DeskFacilityButton" in scene_text
+    assert "WhiteboardFacilityButton" in scene_text
+    assert "ServerRackFacilityButton" in scene_text
+
+    assert "FacilityPlacementStore.cs" in scripts
+    assert "FacilityRenderer.cs" in scripts
+    assert "enum FacilityBuildType" in scripts["BuildModeController.cs"]
+    assert "PlaceFacility" in scripts["BuildModeController.cs"]
+    assert "IsPlaceFacilityMode" in scripts["BuildModeController.cs"]
+    assert "CanPlaceFacility" in scripts["BuildModeController.cs"]
+    assert "TryPlaceFacility" in scripts["BuildModeController.cs"]
+    assert "FindFacilityAtCell" in scripts["BuildModeController.cs"]
+    assert "DeleteFacilitiesInSelection" in scripts["BuildModeController.cs"]
+    assert "GetRequiredRoomType" in scripts["BuildModeController.cs"]
+
+    assert "TryPlace" in scripts["FacilityPlacementStore.cs"]
+    assert "CanPlace" in scripts["FacilityPlacementStore.cs"]
+    assert "RemoveInSelection" in scripts["FacilityPlacementStore.cs"]
+    assert "FindAtCell" in scripts["FacilityPlacementStore.cs"]
+    assert "RoomFootprintStore" in scripts["FacilityPlacementStore.cs"]
+    assert "OfficeDesk" in scripts["FacilityPlacementStore.cs"]
+    assert "ProductWhiteboard" in scripts["FacilityPlacementStore.cs"]
+    assert "ServerRack" in scripts["FacilityPlacementStore.cs"]
+
+    assert "HighlightFacility" in scripts["FacilityRenderer.cs"]
+    assert "GetFacilityFillColor" in scripts["FacilityRenderer.cs"]
+    assert "RefreshFacilities" in scripts["FacilityRenderer.cs"]
+    assert "ShowFacilityCell" in scripts["PlacementPreviewController.cs"]
+    assert "FinishFacilityPlacement" in scripts["OfficeSelectionController.cs"]
+    assert "SelectFacilityAtPointer" in scripts["OfficeSelectionController.cs"]
+    assert "ShowFacilityTooltip" in scripts["OfficeSelectionController.cs"]
+    assert "_facilityRenderer?.RefreshFacilities();" in scripts["OfficeSelectionController.cs"]
+    assert "_facilityRenderer?.HighlightFacility(null);" in scripts["OfficeSelectionController.cs"]
+
+    assert "FacilityMenuText" in scripts["BuildModeHudController.cs"]
+    assert "_facilityMenuButton" in scripts["BuildModeHudController.cs"]
+    assert "VBoxContainer? _facilityTypeButtons" in scripts["BuildModeHudController.cs"]
+    assert "ToggleFacilityMenu" in scripts["BuildModeHudController.cs"]
+    assert "SetFacilityType" in scripts["BuildModeHudController.cs"]
+    assert "RefreshToolMenuVisibility" in scripts["BuildModeHudController.cs"]
+    assert "BuildModeController.GetFacilityTypeLabel" in scripts["BuildModeHudController.cs"]
