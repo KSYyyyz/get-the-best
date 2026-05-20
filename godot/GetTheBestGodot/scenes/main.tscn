@@ -7,6 +7,8 @@
 [ext_resource type="Script" uid="uid://co06yttcveq8h" path="res://scripts/OfficeGridRenderer.cs" id="5_grid"]
 [ext_resource type="Script" uid="uid://c3tf1aq1gsjbr" path="res://scripts/BuildModeController.cs" id="6_o6xl0"]
 [ext_resource type="Script" uid="uid://bdbsxu26s6162" path="res://scripts/PlacementPreviewController.cs" id="7_tipki"]
+[ext_resource type="Script" uid="uid://cj4wk6r5docf6" path="res://scripts/RoomFootprintStore.cs" id="8_tipki"]
+[ext_resource type="Script" uid="uid://b4h4cuyv3kcvq" path="res://scripts/RoomOverlayRenderer.cs" id="9_85g3d"]
 
 [node name="Main" type="Node2D" unique_id=1154896660]
 script = ExtResource("1_main")
@@ -65,3 +67,10 @@ script = ExtResource("7_tipki")
 
 [node name="OfficeSelectionController" type="Node2D" parent="InteractionRoot" unique_id=178840877]
 script = ExtResource("3_selection")
+
+[node name="RoomFootprintStore" type="Node" parent="InteractionRoot" unique_id=771130518]
+script = ExtResource("8_tipki")
+
+[node name="RoomOverlayRenderer" type="Node2D" parent="InteractionRoot" unique_id=1198884630]
+z_index = 1
+script = ExtResource("9_85g3d")

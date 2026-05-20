@@ -7,6 +7,7 @@ public partial class OfficeSelectionController : Node2D
     private Label? _contextLabel;
     private PlacementPreviewController? _placementPreviewController;
     private BuildModeController? _buildModeController;
+    private RoomOverlayRenderer? _roomOverlayRenderer;
     private bool _isDraggingSelection;
     private Vector2I _dragStartCell;
     private Vector2I _dragCurrentCell;
@@ -16,6 +17,7 @@ public partial class OfficeSelectionController : Node2D
         _contextLabel = GetNodeOrNull<Label>("../../HudRoot/ContextPanel/ContextLabel");
         _placementPreviewController = GetNodeOrNull<PlacementPreviewController>("../PlacementPreviewController");
         _buildModeController = GetNodeOrNull<BuildModeController>("../BuildModeController");
+        _roomOverlayRenderer = GetNodeOrNull<RoomOverlayRenderer>("../RoomOverlayRenderer");
         SetContextText("未选中对象");
     }
 
@@ -85,6 +87,14 @@ public partial class OfficeSelectionController : Node2D
         }
 
         _isDraggingSelection = false;
+        if (_buildModeController?.TryCreateRoom(_dragStartCell, _dragCurrentCell, out var room) == true && room != null)
+        {
+            _placementPreviewController?.ClearPreview();
+            _roomOverlayRenderer?.RefreshRooms();
+            ShowOccupiedRoom(room);
+            return;
+        }
+
         ShowSelectionPreview();
     }
 
@@ -107,6 +117,14 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
+        var hoveredRoom = _buildModeController?.FindRoomAtCell(cell);
+        if (hoveredRoom != null)
+        {
+            _placementPreviewController?.ShowHoverCell(cell);
+            ShowOccupiedRoom(hoveredRoom);
+            return;
+        }
+
         _placementPreviewController?.ShowHoverCell(cell);
         SetContextText($"空地：格子 {FormatCell(cell)}，可建造");
     }
@@ -124,6 +142,14 @@ public partial class OfficeSelectionController : Node2D
         _isDraggingSelection = false;
         _placementPreviewController?.ClearPreview();
         SetContextText("未选中对象");
+    }
+
+    private void ShowOccupiedRoom(RoomFootprint room)
+    {
+        SetContextText(
+            $"临时房间 #{room.Id}：{room.CellCount} 格\n"
+                + $"范围 x={room.MinCell.X}-{room.MaxCell.X}，y={room.MinCell.Y}-{room.MaxCell.Y}"
+        );
     }
 
     private bool TryScreenPositionToCell(Vector2 screenPosition, out Vector2I cell)

@@ -128,3 +128,29 @@ def test_get_the_best_v2_0_2_grid_interaction_scaffold_exists() -> None:
     assert "Key.Escape" in scripts["OfficeSelectionController.cs"]
     assert "_isDraggingSelection" in scripts["OfficeSelectionController.cs"]
     assert "GetCanvasTransform().AffineInverse()" in scripts["OfficeSelectionController.cs"]
+
+
+def test_get_the_best_v2_0_2_room_footprint_baseline_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "RoomFootprintStore" in scene_text
+    assert "RoomOverlayRenderer" in scene_text
+    assert 'parent="InteractionRoot"' in scene_text
+
+    assert "RoomFootprintStore.cs" in scripts
+    assert "RoomOverlayRenderer.cs" in scripts
+    assert "CanReserve" in scripts["RoomFootprintStore.cs"]
+    assert "TryReserve" in scripts["RoomFootprintStore.cs"]
+    assert "Overlaps" in scripts["RoomFootprintStore.cs"]
+    assert "FindAtCell" in scripts["RoomFootprintStore.cs"]
+    assert "GetRooms" in scripts["RoomFootprintStore.cs"]
+    assert "RoomFootprintStore" in scripts["BuildModeController.cs"]
+    assert "TryCreateRoom" in scripts["BuildModeController.cs"]
+    assert "RoomOverlayRenderer" in scripts["OfficeSelectionController.cs"]
+    assert "ShowOccupiedRoom" in scripts["OfficeSelectionController.cs"]
+    assert "RefreshRooms" in scripts["RoomOverlayRenderer.cs"]
