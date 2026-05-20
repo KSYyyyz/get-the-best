@@ -8,7 +8,6 @@ public partial class BuildModeHudController : PanelContainer
     private Label? _buildModeLabel;
     private Button? _buildMenuButton;
     private Button? _deleteRoomButton;
-    private Button? _cancelActionButton;
     private HBoxContainer? _roomTypeButtons;
     private Button? _researchRoomButton;
     private Button? _marketRoomButton;
@@ -17,32 +16,21 @@ public partial class BuildModeHudController : PanelContainer
 
     public override void _Ready()
     {
-        _buildModeController = GetNodeOrNull<BuildModeController>("../../InteractionRoot/BuildModeController");
+        _buildModeController = GetNodeOrNull<BuildModeController>(
+            "../../InteractionRoot/BuildModeController"
+        );
         _buildModeLabel = GetNodeOrNull<Label>("BuildModeRows/BuildModeLabel");
         _buildMenuButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/BuildMenuButton");
-        _deleteRoomButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/DeleteRoomButton");
-        _cancelActionButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/CancelActionButton");
         _roomTypeButtons = GetNodeOrNull<HBoxContainer>("BuildModeRows/RoomTypeButtons");
         _researchRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ResearchRoomButton");
         _marketRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/MarketRoomButton");
         _serverRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ServerRoomButton");
+        _deleteRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/DeleteRoomButton");
 
         if (_buildMenuButton != null)
         {
             _buildMenuButton.Text = "建造";
             _buildMenuButton.Pressed += ToggleBuildMenu;
-        }
-
-        if (_deleteRoomButton != null)
-        {
-            _deleteRoomButton.Text = "删除房间";
-            _deleteRoomButton.Pressed += StartDeleteRoomMode;
-        }
-
-        if (_cancelActionButton != null)
-        {
-            _cancelActionButton.Text = "取消";
-            _cancelActionButton.Pressed += CancelAction;
         }
 
         if (_researchRoomButton != null)
@@ -61,6 +49,12 @@ public partial class BuildModeHudController : PanelContainer
         {
             _serverRoomButton.Text = BuildModeController.GetRoomTypeLabel(RoomBuildType.ServerRoom);
             _serverRoomButton.Pressed += () => SetRoomType(RoomBuildType.ServerRoom);
+        }
+
+        if (_deleteRoomButton != null)
+        {
+            _deleteRoomButton.Text = "删除";
+            _deleteRoomButton.Pressed += StartDeleteRoomMode;
         }
 
         RefreshRoomTypeVisibility();
@@ -85,15 +79,7 @@ public partial class BuildModeHudController : PanelContainer
     private void StartDeleteRoomMode()
     {
         _buildModeController?.StartDeleteRoomMode();
-        _isBuildMenuOpen = false;
-        RefreshRoomTypeVisibility();
-        RefreshBuildModeLabel();
-    }
-
-    private void CancelAction()
-    {
-        _buildModeController?.CancelActiveTool();
-        _isBuildMenuOpen = false;
+        _isBuildMenuOpen = true;
         RefreshRoomTypeVisibility();
         RefreshBuildModeLabel();
     }
@@ -116,7 +102,7 @@ public partial class BuildModeHudController : PanelContainer
         var label = _buildModeController?.GetActiveRoomTypeLabel() ?? "研发室";
         if (_buildModeController?.IsDeleteRoomMode() == true)
         {
-            _buildModeLabel.Text = "删除房间：点击已有房间";
+            _buildModeLabel.Text = "删除房间：点击或框选已建房间";
             return;
         }
 

@@ -77,6 +77,29 @@ public partial class RoomFootprintStore : Node
         room = null;
         return false;
     }
+
+    public bool RemoveOverlapping(Vector2I startCell, Vector2I endCell, out int deletedCount)
+    {
+        deletedCount = 0;
+        var selection = RoomFootprint.FromCells(0, RoomBuildType.ResearchRoom, startCell, endCell);
+        if (selection.CellCount <= 0)
+        {
+            return false;
+        }
+
+        for (var index = _rooms.Count - 1; index >= 0; index--)
+        {
+            if (!_rooms[index].Overlaps(selection))
+            {
+                continue;
+            }
+
+            _rooms.RemoveAt(index);
+            deletedCount++;
+        }
+
+        return deletedCount > 0;
+    }
 }
 
 public sealed class RoomFootprint

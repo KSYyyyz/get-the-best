@@ -40,7 +40,7 @@ public partial class BuildModeController : Node
     {
         var cellCount = OfficeWorldConfig.CountCells(startCell, endCell);
         var status = IsSelectionLegal(startCell, endCell) ? "当前可建造" : "与已有房间重叠";
-        return $"预览{GetActiveRoomTypeLabel()}：{cellCount} 格，{status}";
+        return $"{GetActiveRoomTypeLabel()} {FormatSelectionSize(startCell, endCell)} / {cellCount}格，{status}";
     }
 
     public bool TryCreateRoom(Vector2I startCell, Vector2I endCell, out RoomFootprint? room)
@@ -69,6 +69,37 @@ public partial class BuildModeController : Node
         }
 
         return _roomFootprintStore.RemoveAtCell(cell, out room);
+    }
+
+    public bool HasBlockingFixtures(Vector2I startCell, Vector2I endCell)
+    {
+        // V2-0.2 还没有设施实体；后续桌子、椅子、白板等落地后在这里接入阻挡判断。
+        return false;
+    }
+
+    public bool CanDeleteSelection(Vector2I startCell, Vector2I endCell)
+    {
+        if (OfficeWorldConfig.CountCells(startCell, endCell) <= 0)
+        {
+            return false;
+        }
+
+        return !HasBlockingFixtures(startCell, endCell);
+    }
+
+    public bool TryDeleteRoomsInSelection(
+        Vector2I startCell,
+        Vector2I endCell,
+        out int deletedCount
+    )
+    {
+        deletedCount = 0;
+        if (_roomFootprintStore == null || !CanDeleteSelection(startCell, endCell))
+        {
+            return false;
+        }
+
+        return _roomFootprintStore.RemoveOverlapping(startCell, endCell, out deletedCount);
     }
 
     public RoomFootprint? FindRoomAtCell(Vector2I cell)
@@ -116,5 +147,14 @@ public partial class BuildModeController : Node
             RoomBuildType.ServerRoom => "服务器室",
             _ => "未知房间",
         };
+    }
+
+    public static string FormatSelectionSize(Vector2I startCell, Vector2I endCell)
+    {
+        var minX = Mathf.Min(startCell.X, endCell.X);
+        var maxX = Mathf.Max(startCell.X, endCell.X);
+        var minY = Mathf.Min(startCell.Y, endCell.Y);
+        var maxY = Mathf.Max(startCell.Y, endCell.Y);
+        return $"{maxX - minX + 1}x{maxY - minY + 1}";
     }
 }

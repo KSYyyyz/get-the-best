@@ -4,7 +4,10 @@ namespace GetTheBestGodot;
 
 public partial class OfficeSelectionController : Node2D
 {
-    private Label? _contextLabel;
+    private const float TooltipOffset = 18.0f;
+
+    private PanelContainer? _floatingTooltip;
+    private Label? _tooltipLabel;
     private PlacementPreviewController? _placementPreviewController;
     private BuildModeController? _buildModeController;
     private RoomOverlayRenderer? _roomOverlayRenderer;
@@ -14,11 +17,14 @@ public partial class OfficeSelectionController : Node2D
 
     public override void _Ready()
     {
-        _contextLabel = GetNodeOrNull<Label>("../../HudRoot/ContextPanel/ContextLabel");
-        _placementPreviewController = GetNodeOrNull<PlacementPreviewController>("../PlacementPreviewController");
+        _floatingTooltip = GetNodeOrNull<PanelContainer>("../../HudRoot/FloatingTooltip");
+        _tooltipLabel = GetNodeOrNull<Label>("../../HudRoot/FloatingTooltip/TooltipLabel");
+        _placementPreviewController = GetNodeOrNull<PlacementPreviewController>(
+            "../PlacementPreviewController"
+        );
         _buildModeController = GetNodeOrNull<BuildModeController>("../BuildModeController");
         _roomOverlayRenderer = GetNodeOrNull<RoomOverlayRenderer>("../RoomOverlayRenderer");
-        SetContextText("未选中对象");
+        HidePointerTooltip();
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -51,18 +57,15 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
-        if (_buildModeController?.IsDeleteRoomMode() == true)
-        {
-            if (mouseEvent.Pressed)
-            {
-                TryDeleteRoomAtScreenPosition(mouseEvent.Position);
-            }
-            return;
-        }
-
         if (mouseEvent.Pressed)
         {
             BeginSelection(mouseEvent.Position);
+            return;
+        }
+
+        if (_buildModeController?.IsDeleteRoomMode() == true)
+        {
+            FinishDeleteSelection(mouseEvent.Position);
             return;
         }
 
@@ -80,7 +83,7 @@ public partial class OfficeSelectionController : Node2D
         _dragStartCell = cell;
         _dragCurrentCell = cell;
         _isDraggingSelection = true;
-        ShowSelectionPreview();
+        ShowSelectionPreview(screenPosition);
     }
 
     private void FinishSelection(Vector2 screenPosition)
@@ -100,11 +103,49 @@ public partial class OfficeSelectionController : Node2D
         {
             _placementPreviewController?.ClearPreview();
             _roomOverlayRenderer?.RefreshRooms();
-            ShowOccupiedRoom(room);
+            ShowOccupiedRoom(room, screenPosition);
             return;
         }
 
-        ShowSelectionPreview();
+        ShowSelectionPreview(screenPosition);
+    }
+
+    private void FinishDeleteSelection(Vector2 screenPosition)
+    {
+        if (!_isDraggingSelection)
+        {
+            return;
+        }
+
+        if (TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            _dragCurrentCell = cell;
+        }
+
+        _isDraggingSelection = false;
+        if (_buildModeController?.CanDeleteSelection(_dragStartCell, _dragCurrentCell) != true)
+        {
+            _placementPreviewController?.ShowSelectionRect(
+                _dragStartCell,
+                _dragCurrentCell,
+                isLegal: false
+            );
+            ShowPointerTooltip("区域内有设施，不能删除", screenPosition);
+            return;
+        }
+
+        if (_buildModeController?.TryDeleteRoomsInSelection(_dragStartCell, _dragCurrentCell, out var deletedCount) == true)
+        {
+            _placementPreviewController?.ClearPreview();
+            _roomOverlayRenderer?.HighlightRoom(null);
+            _roomOverlayRenderer?.RefreshRooms();
+            ShowPointerTooltip($"已删除 {deletedCount} 个房间", screenPosition);
+            return;
+        }
+
+        _placementPreviewController?.ClearPreview();
+        _roomOverlayRenderer?.HighlightRoom(null);
+        ShowPointerTooltip("这里没有可删除房间", screenPosition);
     }
 
     private void UpdateHoverOrDragPreview(Vector2 screenPosition)
@@ -115,7 +156,7 @@ public partial class OfficeSelectionController : Node2D
             {
                 _placementPreviewController?.ClearPreview();
                 _roomOverlayRenderer?.HighlightRoom(null);
-                SetContextText("未选中对象");
+                HidePointerTooltip();
             }
             return;
         }
@@ -123,7 +164,7 @@ public partial class OfficeSelectionController : Node2D
         if (_isDraggingSelection)
         {
             _dragCurrentCell = cell;
-            ShowSelectionPreview();
+            ShowSelectionPreview(screenPosition);
             return;
         }
 
@@ -132,25 +173,35 @@ public partial class OfficeSelectionController : Node2D
         {
             _roomOverlayRenderer?.HighlightRoom(hoveredRoom);
             _placementPreviewController?.ShowHoverCell(cell);
-            ShowOccupiedRoom(hoveredRoom);
+            ShowOccupiedRoom(hoveredRoom, screenPosition);
             return;
         }
 
         _roomOverlayRenderer?.HighlightRoom(null);
         _placementPreviewController?.ShowHoverCell(cell);
-        SetContextText(
-            _buildModeController?.IsDeleteRoomMode() == true
-                ? $"删除房间：格子 {FormatCell(cell)} 没有房间"
-                : $"空地：格子 {FormatCell(cell)}，可建造"
+        ShowPointerTooltip(
+            _buildModeController?.IsDeleteRoomMode() == true ? "没有房间" : "空地",
+            screenPosition
         );
     }
 
-    private void ShowSelectionPreview()
+    private void ShowSelectionPreview(Vector2 screenPosition)
     {
-        var isLegal = _buildModeController?.IsSelectionLegal(_dragStartCell, _dragCurrentCell) ?? true;
-        _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isLegal);
-        var summary = _buildModeController?.GetSelectionSummary(_dragStartCell, _dragCurrentCell) ?? "预览区域：当前可建造";
-        SetContextText($"{summary}\n起点 {FormatCell(_dragStartCell)}，终点 {FormatCell(_dragCurrentCell)}");
+        if (_buildModeController?.IsDeleteRoomMode() == true)
+        {
+            var isLegal = _buildModeController.CanDeleteSelection(_dragStartCell, _dragCurrentCell);
+            _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isLegal);
+            var cellCount = OfficeWorldConfig.CountCells(_dragStartCell, _dragCurrentCell);
+            var size = BuildModeController.FormatSelectionSize(_dragStartCell, _dragCurrentCell);
+            ShowPointerTooltip($"删除区域 {size} / {cellCount}格", screenPosition);
+            return;
+        }
+
+        var isBuildLegal = _buildModeController?.IsSelectionLegal(_dragStartCell, _dragCurrentCell) ?? true;
+        _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isBuildLegal);
+        var summary = _buildModeController?.GetSelectionSummary(_dragStartCell, _dragCurrentCell)
+            ?? "预览区域：当前可建造";
+        ShowPointerTooltip(summary, screenPosition);
     }
 
     private void CancelInteraction()
@@ -158,38 +209,13 @@ public partial class OfficeSelectionController : Node2D
         _isDraggingSelection = false;
         _placementPreviewController?.ClearPreview();
         _roomOverlayRenderer?.HighlightRoom(null);
-        SetContextText("未选中对象");
+        HidePointerTooltip();
     }
 
-    private void TryDeleteRoomAtScreenPosition(Vector2 screenPosition)
+    private void ShowOccupiedRoom(RoomFootprint room, Vector2 screenPosition)
     {
-        if (!TryScreenPositionToCell(screenPosition, out var cell))
-        {
-            SetContextText("删除房间：请选择已有房间");
-            return;
-        }
-
-        if (_buildModeController?.TryDeleteRoomAtCell(cell, out var room) == true && room != null)
-        {
-            _placementPreviewController?.ClearPreview();
-            _roomOverlayRenderer?.HighlightRoom(null);
-            _roomOverlayRenderer?.RefreshRooms();
-            SetContextText($"已删除 {BuildModeController.GetRoomTypeLabel(room.RoomType)} #{room.Id}");
-            return;
-        }
-
-        _roomOverlayRenderer?.HighlightRoom(null);
-        SetContextText("删除房间：这里没有房间");
-    }
-
-    private void ShowOccupiedRoom(RoomFootprint room)
-    {
-        var actionHint = _buildModeController?.IsDeleteRoomMode() == true ? "\n点击删除该房间" : string.Empty;
-        SetContextText(
-            $"{BuildModeController.GetRoomTypeLabel(room.RoomType)} #{room.Id}：{room.CellCount} 格\n"
-                + $"范围 x={room.MinCell.X}-{room.MaxCell.X}，y={room.MinCell.Y}-{room.MaxCell.Y}"
-                + actionHint
-        );
+        var prefix = _buildModeController?.IsDeleteRoomMode() == true ? "删除：" : string.Empty;
+        ShowPointerTooltip($"{prefix}{BuildModeController.GetRoomTypeLabel(room.RoomType)}", screenPosition);
     }
 
     private bool TryScreenPositionToCell(Vector2 screenPosition, out Vector2I cell)
@@ -198,16 +224,43 @@ public partial class OfficeSelectionController : Node2D
         return OfficeWorldConfig.TryWorldToCell(worldPosition, out cell);
     }
 
-    private void SetContextText(string text)
+    private void ShowPointerTooltip(string text, Vector2 screenPosition)
     {
-        if (_contextLabel != null)
+        if (_floatingTooltip == null || _tooltipLabel == null)
         {
-            _contextLabel.Text = text;
+            return;
         }
+
+        _tooltipLabel.Text = text;
+        _floatingTooltip.Visible = true;
+        PositionPointerTooltip(screenPosition);
     }
 
-    private static string FormatCell(Vector2I cell)
+    private void PositionPointerTooltip(Vector2 screenPosition)
     {
-        return $"x={cell.X}, y={cell.Y}";
+        if (_floatingTooltip == null)
+        {
+            return;
+        }
+
+        var viewportSize = GetViewportRect().Size;
+        var tooltipSize = _floatingTooltip.Size;
+        if (tooltipSize.X <= 0.0f || tooltipSize.Y <= 0.0f)
+        {
+            tooltipSize = new Vector2(168.0f, 34.0f);
+        }
+
+        _floatingTooltip.Position = new Vector2(
+            Mathf.Clamp(screenPosition.X + TooltipOffset, 8.0f, viewportSize.X - tooltipSize.X - 8.0f),
+            Mathf.Clamp(screenPosition.Y + TooltipOffset, 8.0f, viewportSize.Y - tooltipSize.Y - 8.0f)
+        );
+    }
+
+    private void HidePointerTooltip()
+    {
+        if (_floatingTooltip != null)
+        {
+            _floatingTooltip.Visible = false;
+        }
     }
 }

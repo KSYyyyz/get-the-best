@@ -51,7 +51,10 @@ def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
     assert "OfficeCamera" in scene_text
     assert "OfficeSelectionController" in scene_text
     assert "HudRoot" in scene_text
-    assert "ContextPanel" in scene_text
+    assert "FloatingTooltip" in scene_text
+    assert "TooltipLabel" in scene_text
+    assert "ContextPanel" not in scene_text
+    assert "ContextLabel" not in scene_text
     assert "G2OperationsPanel" not in scene_text
     assert "StartupSimGodot" not in scene_text
 
@@ -205,17 +208,25 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
     }
 
     assert "DeleteRoomButton" in scene_text
-    assert "CancelActionButton" in scene_text
+    assert "CancelActionButton" not in scene_text
+    assert 'parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons"' in scene_text
 
     assert "enum BuildToolMode" in scripts["BuildModeController.cs"]
     assert "DeleteRoom" in scripts["BuildModeController.cs"]
     assert "StartDeleteRoomMode" in scripts["BuildModeController.cs"]
     assert "CancelActiveTool" in scripts["BuildModeController.cs"]
     assert "TryDeleteRoomAtCell" in scripts["BuildModeController.cs"]
+    assert "CanDeleteSelection" in scripts["BuildModeController.cs"]
+    assert "TryDeleteRoomsInSelection" in scripts["BuildModeController.cs"]
+    assert "HasBlockingFixtures" in scripts["BuildModeController.cs"]
     assert "RemoveAtCell" in scripts["RoomFootprintStore.cs"]
+    assert "RemoveOverlapping" in scripts["RoomFootprintStore.cs"]
     assert "HighlightRoom" in scripts["RoomOverlayRenderer.cs"]
     assert "HighlightedRoomStroke" in scripts["RoomOverlayRenderer.cs"]
-    assert "TryDeleteRoomAtScreenPosition" in scripts["OfficeSelectionController.cs"]
+    assert "FinishDeleteSelection" in scripts["OfficeSelectionController.cs"]
+    assert "ShowPointerTooltip" in scripts["OfficeSelectionController.cs"]
+    assert "PositionPointerTooltip" in scripts["OfficeSelectionController.cs"]
     assert "IsDeleteRoomMode" in scripts["OfficeSelectionController.cs"]
     assert "_deleteRoomButton" in scripts["BuildModeHudController.cs"]
-    assert "_cancelActionButton" in scripts["BuildModeHudController.cs"]
+    assert "_cancelActionButton" not in scripts["BuildModeHudController.cs"]
+    assert 'AddThemeColorOverride("font_shadow_color"' in scripts["MainController.cs"]
