@@ -4,7 +4,7 @@ namespace GetTheBestGodot;
 
 public partial class OfficeSelectionController : Node2D
 {
-    private const float TooltipOffset = 18.0f;
+    private const float TooltipOffset = 6.0f;
 
     private PanelContainer? _floatingTooltip;
     private Label? _tooltipLabel;
@@ -123,29 +123,18 @@ public partial class OfficeSelectionController : Node2D
         }
 
         _isDraggingSelection = false;
-        if (_buildModeController?.CanDeleteSelection(_dragStartCell, _dragCurrentCell) != true)
-        {
-            _placementPreviewController?.ShowSelectionRect(
-                _dragStartCell,
-                _dragCurrentCell,
-                isLegal: false
-            );
-            ShowPointerTooltip("区域内有设施，不能删除", screenPosition);
-            return;
-        }
-
         if (_buildModeController?.TryDeleteRoomsInSelection(_dragStartCell, _dragCurrentCell, out var deletedCount) == true)
         {
             _placementPreviewController?.ClearPreview();
             _roomOverlayRenderer?.HighlightRoom(null);
             _roomOverlayRenderer?.RefreshRooms();
-            ShowPointerTooltip($"已删除 {deletedCount} 个房间", screenPosition);
+            ShowPointerTooltip($"已删除 {deletedCount} 格", screenPosition);
             return;
         }
 
         _placementPreviewController?.ClearPreview();
         _roomOverlayRenderer?.HighlightRoom(null);
-        ShowPointerTooltip("这里没有可删除房间", screenPosition);
+        ShowPointerTooltip("没有可删除地块", screenPosition);
     }
 
     private void UpdateHoverOrDragPreview(Vector2 screenPosition)
@@ -179,29 +168,23 @@ public partial class OfficeSelectionController : Node2D
 
         _roomOverlayRenderer?.HighlightRoom(null);
         _placementPreviewController?.ShowHoverCell(cell);
-        ShowPointerTooltip(
-            _buildModeController?.IsDeleteRoomMode() == true ? "没有房间" : "空地",
-            screenPosition
-        );
+        HidePointerTooltip();
     }
 
     private void ShowSelectionPreview(Vector2 screenPosition)
     {
+        var size = BuildModeController.FormatSelectionSize(_dragStartCell, _dragCurrentCell);
         if (_buildModeController?.IsDeleteRoomMode() == true)
         {
             var isLegal = _buildModeController.CanDeleteSelection(_dragStartCell, _dragCurrentCell);
             _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isLegal);
-            var cellCount = OfficeWorldConfig.CountCells(_dragStartCell, _dragCurrentCell);
-            var size = BuildModeController.FormatSelectionSize(_dragStartCell, _dragCurrentCell);
-            ShowPointerTooltip($"删除区域 {size} / {cellCount}格", screenPosition);
+            ShowPointerTooltip($"删除 {size}", screenPosition);
             return;
         }
 
         var isBuildLegal = _buildModeController?.IsSelectionLegal(_dragStartCell, _dragCurrentCell) ?? true;
         _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isBuildLegal);
-        var summary = _buildModeController?.GetSelectionSummary(_dragStartCell, _dragCurrentCell)
-            ?? "预览区域：当前可建造";
-        ShowPointerTooltip(summary, screenPosition);
+        ShowPointerTooltip(size, screenPosition);
     }
 
     private void CancelInteraction()
@@ -231,6 +214,8 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
+        _tooltipLabel.HorizontalAlignment = HorizontalAlignment.Left;
+        _tooltipLabel.VerticalAlignment = VerticalAlignment.Top;
         _tooltipLabel.Text = text;
         _floatingTooltip.Visible = true;
         PositionPointerTooltip(screenPosition);
@@ -238,18 +223,21 @@ public partial class OfficeSelectionController : Node2D
 
     private void PositionPointerTooltip(Vector2 screenPosition)
     {
-        if (_floatingTooltip == null)
+        if (_floatingTooltip == null || _tooltipLabel == null)
         {
             return;
         }
 
         var viewportSize = GetViewportRect().Size;
-        var tooltipSize = _floatingTooltip.Size;
+        var tooltipSize = _tooltipLabel.GetMinimumSize();
         if (tooltipSize.X <= 0.0f || tooltipSize.Y <= 0.0f)
         {
-            tooltipSize = new Vector2(168.0f, 34.0f);
+            tooltipSize = new Vector2(64.0f, 24.0f);
         }
 
+        _floatingTooltip.Size = tooltipSize;
+        _tooltipLabel.Position = Vector2.Zero;
+        _tooltipLabel.Size = tooltipSize;
         _floatingTooltip.Position = new Vector2(
             Mathf.Clamp(screenPosition.X + TooltipOffset, 8.0f, viewportSize.X - tooltipSize.X - 8.0f),
             Mathf.Clamp(screenPosition.Y + TooltipOffset, 8.0f, viewportSize.Y - tooltipSize.Y - 8.0f)

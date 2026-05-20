@@ -23,9 +23,16 @@ public partial class MainController : Node2D
             _statusLabel.Text = bridge?.GetInitialStatusText() ?? "Get The Best V2-0：办公室骨架已启动";
         }
 
-        if (GetNodeOrNull<Control>("HudRoot") is { } hudRoot)
+        if (GetNodeOrNull<CanvasLayer>("HudRoot") is { } hudRoot)
         {
-            RemoveTextShadow(hudRoot);
+            foreach (var child in hudRoot.GetChildren())
+            {
+                if (child is Control childControl)
+                {
+                    RemoveTextShadow(childControl);
+                    RemoveHudChrome(childControl);
+                }
+            }
         }
 
         LayoutHud();
@@ -58,12 +65,12 @@ public partial class MainController : Node2D
                 Mathf.Max(16.0f, viewportSize.X - width - 16.0f),
                 12.0f
             );
-            _buildModePanel.Size = new Vector2(width, 112.0f);
+            _buildModePanel.Size = new Vector2(width, 72.0f);
         }
 
         if (_floatingTooltip != null)
         {
-            _floatingTooltip.Size = new Vector2(168.0f, 34.0f);
+            _floatingTooltip.Size = Vector2.Zero;
         }
     }
 
@@ -79,6 +86,31 @@ public partial class MainController : Node2D
             if (child is Control childControl)
             {
                 RemoveTextShadow(childControl);
+            }
+        }
+    }
+
+    private static void RemoveHudChrome(Control control)
+    {
+        if (control is PanelContainer panel)
+        {
+            panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        }
+
+        if (control is Button button)
+        {
+            button.Flat = true;
+            button.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
+            button.AddThemeStyleboxOverride("hover", new StyleBoxEmpty());
+            button.AddThemeStyleboxOverride("pressed", new StyleBoxEmpty());
+            button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+        }
+
+        foreach (var child in control.GetChildren())
+        {
+            if (child is Control childControl)
+            {
+                RemoveHudChrome(childControl);
             }
         }
     }

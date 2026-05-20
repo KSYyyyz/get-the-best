@@ -64,13 +64,17 @@ public partial class RoomFootprintStore : Node
     {
         for (var index = _rooms.Count - 1; index >= 0; index--)
         {
-            if (!_rooms[index].Contains(cell))
+            room = _rooms[index];
+            if (!room.RemoveCell(cell))
             {
                 continue;
             }
 
-            room = _rooms[index];
-            _rooms.RemoveAt(index);
+            if (room.IsEmpty)
+            {
+                _rooms.RemoveAt(index);
+            }
+
             return true;
         }
 
@@ -78,9 +82,9 @@ public partial class RoomFootprintStore : Node
         return false;
     }
 
-    public bool RemoveOverlapping(Vector2I startCell, Vector2I endCell, out int deletedCount)
+    public bool RemoveCells(Vector2I startCell, Vector2I endCell, out int deletedCellCount)
     {
-        deletedCount = 0;
+        deletedCellCount = 0;
         var selection = RoomFootprint.FromCells(0, RoomBuildType.ResearchRoom, startCell, endCell);
         if (selection.CellCount <= 0)
         {
@@ -89,36 +93,37 @@ public partial class RoomFootprintStore : Node
 
         for (var index = _rooms.Count - 1; index >= 0; index--)
         {
-            if (!_rooms[index].Overlaps(selection))
+            deletedCellCount += _rooms[index].RemoveCells(selection);
+            if (_rooms[index].IsEmpty)
             {
-                continue;
+                _rooms.RemoveAt(index);
             }
-
-            _rooms.RemoveAt(index);
-            deletedCount++;
         }
 
-        return deletedCount > 0;
+        return deletedCellCount > 0;
     }
 }
 
 public sealed class RoomFootprint
 {
-    private RoomFootprint(int id, RoomBuildType roomType, Vector2I minCell, Vector2I maxCell)
+    private readonly HashSet<Vector2I> _cells;
+
+    private RoomFootprint(int id, RoomBuildType roomType, HashSet<Vector2I> cells)
     {
         Id = id;
         RoomType = roomType;
-        MinCell = minCell;
-        MaxCell = maxCell;
+        _cells = cells;
     }
 
     public int Id { get; }
     public RoomBuildType RoomType { get; }
-    public Vector2I MinCell { get; }
-    public Vector2I MaxCell { get; }
+    public IReadOnlyCollection<Vector2I> Cells => _cells;
+    public Vector2I MinCell => GetBounds().MinCell;
+    public Vector2I MaxCell => GetBounds().MaxCell;
     public int Width => MaxCell.X - MinCell.X + 1;
     public int Height => MaxCell.Y - MinCell.Y + 1;
-    public int CellCount => Width * Height;
+    public int CellCount => _cells.Count;
+    public bool IsEmpty => _cells.Count == 0;
 
     public static RoomFootprint FromCells(
         int id,
@@ -135,27 +140,77 @@ public sealed class RoomFootprint
             Mathf.Max(startCell.X, endCell.X),
             Mathf.Max(startCell.Y, endCell.Y)
         );
-        return new RoomFootprint(id, roomType, minCell, maxCell);
+        var cells = new HashSet<Vector2I>();
+        for (var y = minCell.Y; y <= maxCell.Y; y++)
+        {
+            for (var x = minCell.X; x <= maxCell.X; x++)
+            {
+                cells.Add(new Vector2I(x, y));
+            }
+        }
+
+        return new RoomFootprint(id, roomType, cells);
     }
 
     public bool Contains(Vector2I cell)
     {
-        return cell.X >= MinCell.X
-            && cell.X <= MaxCell.X
-            && cell.Y >= MinCell.Y
-            && cell.Y <= MaxCell.Y;
+        return _cells.Contains(cell);
     }
 
     public bool Overlaps(RoomFootprint other)
     {
-        return MinCell.X <= other.MaxCell.X
-            && MaxCell.X >= other.MinCell.X
-            && MinCell.Y <= other.MaxCell.Y
-            && MaxCell.Y >= other.MinCell.Y;
+        foreach (var cell in other.Cells)
+        {
+            if (_cells.Contains(cell))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool RemoveCell(Vector2I cell)
+    {
+        return _cells.Remove(cell);
+    }
+
+    public int RemoveCells(RoomFootprint selection)
+    {
+        var removed = 0;
+        foreach (var cell in selection.Cells)
+        {
+            if (_cells.Remove(cell))
+            {
+                removed++;
+            }
+        }
+
+        return removed;
     }
 
     public Rect2 ToWorldRect()
     {
         return OfficeWorldConfig.CellsToWorldRect(MinCell, MaxCell);
     }
+
+    private RoomBounds GetBounds()
+    {
+        var minX = int.MaxValue;
+        var minY = int.MaxValue;
+        var maxX = int.MinValue;
+        var maxY = int.MinValue;
+
+        foreach (var cell in _cells)
+        {
+            minX = Mathf.Min(minX, cell.X);
+            minY = Mathf.Min(minY, cell.Y);
+            maxX = Mathf.Max(maxX, cell.X);
+            maxY = Mathf.Max(maxY, cell.Y);
+        }
+
+        return new RoomBounds(new Vector2I(minX, minY), new Vector2I(maxX, maxY));
+    }
+
+    private readonly record struct RoomBounds(Vector2I MinCell, Vector2I MaxCell);
 }

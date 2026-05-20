@@ -35,13 +35,16 @@ public partial class RoomOverlayRenderer : Node2D
 
         foreach (var room in _roomFootprintStore.GetRooms())
         {
-            var rect = room.ToWorldRect();
-            DrawRect(rect, GetRoomFillColor(room.RoomType), filled: true);
-            DrawRect(rect, RoomStroke, filled: false, width: 4.0f);
-
-            if (_highlightedRoom?.Id == room.Id)
+            foreach (var cell in room.Cells)
             {
-                DrawRect(rect.Grow(4.0f), HighlightedRoomStroke, filled: false, width: 8.0f);
+                var rect = OfficeWorldConfig.CellToWorldRect(cell);
+                DrawRect(rect, GetRoomFillColor(room.RoomType), filled: true);
+                DrawRect(rect, RoomStroke, filled: false, width: 2.0f);
+
+                if (_highlightedRoom?.Id == room.Id)
+                {
+                    DrawRect(rect.Grow(2.0f), HighlightedRoomStroke, filled: false, width: 4.0f);
+                }
             }
         }
     }

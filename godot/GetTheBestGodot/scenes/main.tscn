@@ -55,16 +55,16 @@ script = ExtResource("5_choun")
 [node name="BuildModeRows" type="VBoxContainer" parent="HudRoot/BuildModePanel" unique_id=536325811]
 layout_mode = 2
 
-[node name="BuildModeLabel" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=580237773]
-layout_mode = 2
-text = "????:???"
-
 [node name="BuildEntryButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1693183547]
 layout_mode = 2
 
 [node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=563829205]
 layout_mode = 2
 text = "??"
+
+[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=827017963]
+layout_mode = 2
+text = "????"
 
 [node name="RoomTypeButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1291022369]
 layout_mode = 2
@@ -78,10 +78,6 @@ layout_mode = 2
 text = "???"
 
 [node name="ServerRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=646221106]
-layout_mode = 2
-text = "????"
-
-[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=827017963]
 layout_mode = 2
 text = "????"
 

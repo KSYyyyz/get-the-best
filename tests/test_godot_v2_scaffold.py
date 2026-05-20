@@ -53,6 +53,7 @@ def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
     assert "HudRoot" in scene_text
     assert "FloatingTooltip" in scene_text
     assert "TooltipLabel" in scene_text
+    assert "BuildModeLabel" not in scene_text
     assert "ContextPanel" not in scene_text
     assert "ContextLabel" not in scene_text
     assert "G2OperationsPanel" not in scene_text
@@ -76,6 +77,8 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
         "new(new Vector2(-1600, -1000), new Vector2(3200, 2000))" in scripts["OfficeWorldConfig.cs"]
     )
     assert "LayoutHud" in scripts["MainController.cs"]
+    assert 'GetNodeOrNull<CanvasLayer>("HudRoot")' in scripts["MainController.cs"]
+    assert "RemoveHudChrome(childControl)" in scripts["MainController.cs"]
     assert "InputEventMouseMotion" in scripts["OfficeCameraController.cs"]
     assert "MinZoom = 0.25f" in scripts["OfficeCameraController.cs"]
     assert "MaxZoom = 3.25f" in scripts["OfficeCameraController.cs"]
@@ -168,7 +171,6 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     }
 
     assert "BuildModePanel" in scene_text
-    assert "BuildModeLabel" in scene_text
     assert "BuildEntryButtons" in scene_text
     assert "BuildMenuButton" in scene_text
     assert "ResearchRoomButton" in scene_text
@@ -182,6 +184,8 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "ToggleBuildMenu" in scripts["BuildModeHudController.cs"]
     assert "RefreshRoomTypeVisibility" in scripts["BuildModeHudController.cs"]
     assert "_roomTypeButtons.Visible = _isBuildMenuOpen" in scripts["BuildModeHudController.cs"]
+    assert "_buildModeLabel" not in scripts["BuildModeHudController.cs"]
+    assert "RefreshBuildModeLabel" not in scripts["BuildModeHudController.cs"]
     assert "enum RoomBuildType" in scripts["BuildModeController.cs"]
     assert "ResearchRoom" in scripts["BuildModeController.cs"]
     assert "MarketRoom" in scripts["BuildModeController.cs"]
@@ -209,7 +213,7 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
 
     assert "DeleteRoomButton" in scene_text
     assert "CancelActionButton" not in scene_text
-    assert 'parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons"' in scene_text
+    assert 'parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons"' in scene_text
 
     assert "enum BuildToolMode" in scripts["BuildModeController.cs"]
     assert "DeleteRoom" in scripts["BuildModeController.cs"]
@@ -218,15 +222,23 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
     assert "TryDeleteRoomAtCell" in scripts["BuildModeController.cs"]
     assert "CanDeleteSelection" in scripts["BuildModeController.cs"]
     assert "TryDeleteRoomsInSelection" in scripts["BuildModeController.cs"]
-    assert "HasBlockingFixtures" in scripts["BuildModeController.cs"]
+    assert "SellFixturesInSelection" in scripts["BuildModeController.cs"]
+    assert "HasBlockingFixtures" not in scripts["BuildModeController.cs"]
     assert "RemoveAtCell" in scripts["RoomFootprintStore.cs"]
-    assert "RemoveOverlapping" in scripts["RoomFootprintStore.cs"]
+    assert "RemoveCells" in scripts["RoomFootprintStore.cs"]
+    assert "IReadOnlyCollection<Vector2I> Cells" in scripts["RoomFootprintStore.cs"]
     assert "HighlightRoom" in scripts["RoomOverlayRenderer.cs"]
     assert "HighlightedRoomStroke" in scripts["RoomOverlayRenderer.cs"]
     assert "FinishDeleteSelection" in scripts["OfficeSelectionController.cs"]
     assert "ShowPointerTooltip" in scripts["OfficeSelectionController.cs"]
     assert "PositionPointerTooltip" in scripts["OfficeSelectionController.cs"]
+    assert "TooltipOffset = 6.0f" in scripts["OfficeSelectionController.cs"]
+    assert "ShowPointerTooltip(size, screenPosition)" in scripts["OfficeSelectionController.cs"]
+    assert "HorizontalAlignment.Left" in scripts["OfficeSelectionController.cs"]
+    assert "GetMinimumSize()" in scripts["OfficeSelectionController.cs"]
     assert "IsDeleteRoomMode" in scripts["OfficeSelectionController.cs"]
     assert "_deleteRoomButton" in scripts["BuildModeHudController.cs"]
     assert "_cancelActionButton" not in scripts["BuildModeHudController.cs"]
     assert 'AddThemeColorOverride("font_shadow_color"' in scripts["MainController.cs"]
+    assert "StyleBoxEmpty" in scripts["MainController.cs"]
+    assert ".Flat = true" in scripts["MainController.cs"]

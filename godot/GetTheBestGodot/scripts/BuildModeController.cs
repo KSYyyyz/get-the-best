@@ -38,9 +38,7 @@ public partial class BuildModeController : Node
 
     public string GetSelectionSummary(Vector2I startCell, Vector2I endCell)
     {
-        var cellCount = OfficeWorldConfig.CountCells(startCell, endCell);
-        var status = IsSelectionLegal(startCell, endCell) ? "当前可建造" : "与已有房间重叠";
-        return $"{GetActiveRoomTypeLabel()} {FormatSelectionSize(startCell, endCell)} / {cellCount}格，{status}";
+        return FormatSelectionSize(startCell, endCell);
     }
 
     public bool TryCreateRoom(Vector2I startCell, Vector2I endCell, out RoomFootprint? room)
@@ -68,23 +66,19 @@ public partial class BuildModeController : Node
             return false;
         }
 
+        SellFixturesInSelection(cell, cell);
         return _roomFootprintStore.RemoveAtCell(cell, out room);
     }
 
-    public bool HasBlockingFixtures(Vector2I startCell, Vector2I endCell)
+    public int SellFixturesInSelection(Vector2I startCell, Vector2I endCell)
     {
-        // V2-0.2 还没有设施实体；后续桌子、椅子、白板等落地后在这里接入阻挡判断。
-        return false;
+        // V2-0.2 还没有设施实体；后续桌子、椅子等接入后，删除地块会先默认出售设施。
+        return 0;
     }
 
     public bool CanDeleteSelection(Vector2I startCell, Vector2I endCell)
     {
-        if (OfficeWorldConfig.CountCells(startCell, endCell) <= 0)
-        {
-            return false;
-        }
-
-        return !HasBlockingFixtures(startCell, endCell);
+        return OfficeWorldConfig.CountCells(startCell, endCell) > 0;
     }
 
     public bool TryDeleteRoomsInSelection(
@@ -99,7 +93,8 @@ public partial class BuildModeController : Node
             return false;
         }
 
-        return _roomFootprintStore.RemoveOverlapping(startCell, endCell, out deletedCount);
+        SellFixturesInSelection(startCell, endCell);
+        return _roomFootprintStore.RemoveCells(startCell, endCell, out deletedCount);
     }
 
     public RoomFootprint? FindRoomAtCell(Vector2I cell)
