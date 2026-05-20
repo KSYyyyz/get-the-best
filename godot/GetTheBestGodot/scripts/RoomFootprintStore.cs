@@ -32,7 +32,23 @@ public partial class RoomFootprintStore : Node
         return true;
     }
 
-    public bool TryReserve(RoomBuildType roomType, Vector2I startCell, Vector2I endCell, out RoomFootprint? room)
+    public bool TryReserve(
+        RoomBuildType roomType,
+        Vector2I startCell,
+        Vector2I endCell,
+        out RoomFootprint? room
+    )
+    {
+        return TryReserve(roomType, startCell, endCell, doorPlacement: null, out room);
+    }
+
+    public bool TryReserve(
+        RoomBuildType roomType,
+        Vector2I startCell,
+        Vector2I endCell,
+        RoomDoorPlacement? doorPlacement,
+        out RoomFootprint? room
+    )
     {
         if (!CanReserve(startCell, endCell))
         {
@@ -40,7 +56,7 @@ public partial class RoomFootprintStore : Node
             return false;
         }
 
-        room = RoomFootprint.FromCells(_nextRoomId, roomType, startCell, endCell);
+        room = RoomFootprint.FromCells(_nextRoomId, roomType, startCell, endCell, doorPlacement);
         _nextRoomId++;
         _rooms.Add(room);
         return true;
@@ -82,6 +98,83 @@ public partial class RoomFootprintStore : Node
         return false;
     }
 
+    public bool RemoveDoorOwnerAtAdjacentCell(Vector2I cell, out RoomFootprint? room)
+    {
+        for (var index = _rooms.Count - 1; index >= 0; index--)
+        {
+            room = _rooms[index];
+            if (room.DoorPlacement == null || GetDoorOutsideCell(room.DoorPlacement) != cell)
+            {
+                continue;
+            }
+
+            room.RemoveCell(room.DoorPlacement.Cell);
+            if (room.IsEmpty)
+            {
+                _rooms.RemoveAt(index);
+            }
+
+            return true;
+        }
+
+        room = null;
+        return false;
+    }
+
+    public bool RemoveDoorOwnerNearCell(Vector2I cell, out RoomFootprint? room)
+    {
+        for (var index = _rooms.Count - 1; index >= 0; index--)
+        {
+            room = _rooms[index];
+            if (room.DoorPlacement == null)
+            {
+                continue;
+            }
+
+            var outsideCell = GetDoorOutsideCell(room.DoorPlacement);
+            var isNearDoor =
+                Mathf.Abs(outsideCell.X - cell.X) <= 2 && Mathf.Abs(outsideCell.Y - cell.Y) <= 2;
+            if (!isNearDoor)
+            {
+                continue;
+            }
+
+            room.RemoveCell(room.DoorPlacement.Cell);
+            if (room.IsEmpty)
+            {
+                _rooms.RemoveAt(index);
+            }
+
+            return true;
+        }
+
+        room = null;
+        return false;
+    }
+
+    public bool RemoveDoorOwnerAtWorldPosition(Vector3 worldPosition, out RoomFootprint? room)
+    {
+        for (var index = _rooms.Count - 1; index >= 0; index--)
+        {
+            room = _rooms[index];
+            if (room.DoorPlacement == null || !IsWorldPositionOnDoor(worldPosition, room.DoorPlacement))
+            {
+                continue;
+            }
+
+            room.RemoveCell(room.DoorPlacement.Cell);
+            if (room.IsEmpty)
+            {
+                _rooms.RemoveAt(index);
+            }
+
+            return true;
+        }
+
+        room = null;
+        return false;
+    }
+
     public bool RemoveCells(Vector2I startCell, Vector2I endCell, out int deletedCellCount)
     {
         deletedCellCount = 0;
@@ -102,21 +195,79 @@ public partial class RoomFootprintStore : Node
 
         return deletedCellCount > 0;
     }
+
+    private static Vector2I GetDoorOutsideCell(RoomDoorPlacement doorPlacement)
+    {
+        return doorPlacement.Side switch
+        {
+            RoomDoorSide.North => doorPlacement.Cell + Vector2I.Up,
+            RoomDoorSide.South => doorPlacement.Cell + Vector2I.Down,
+            RoomDoorSide.West => doorPlacement.Cell + Vector2I.Left,
+            RoomDoorSide.East => doorPlacement.Cell + Vector2I.Right,
+            _ => doorPlacement.Cell,
+        };
+    }
+
+    private static bool IsWorldPositionOnDoor(Vector3 worldPosition, RoomDoorPlacement doorPlacement)
+    {
+        var delta = worldPosition - GetDoorWorldPosition(doorPlacement);
+        var wideHalfExtent = OfficeWorld3DConfig.GridSize * 0.80f;
+        var narrowHalfExtent = OfficeWorld3DConfig.GridSize * 0.80f;
+        return doorPlacement.Side switch
+        {
+            RoomDoorSide.North or RoomDoorSide.South =>
+                Mathf.Abs(delta.X) <= wideHalfExtent && Mathf.Abs(delta.Z) <= narrowHalfExtent,
+            RoomDoorSide.West or RoomDoorSide.East =>
+                Mathf.Abs(delta.X) <= narrowHalfExtent && Mathf.Abs(delta.Z) <= wideHalfExtent,
+            _ => false,
+        };
+    }
+
+    private static Vector3 GetDoorWorldPosition(RoomDoorPlacement doorPlacement)
+    {
+        var center = OfficeWorld3DConfig.CellToWorldPosition(doorPlacement.Cell);
+        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
+        return doorPlacement.Side switch
+        {
+            RoomDoorSide.North => center + new Vector3(0.0f, 0.0f, -halfCell),
+            RoomDoorSide.South => center + new Vector3(0.0f, 0.0f, halfCell),
+            RoomDoorSide.West => center + new Vector3(-halfCell, 0.0f, 0.0f),
+            RoomDoorSide.East => center + new Vector3(halfCell, 0.0f, 0.0f),
+            _ => center,
+        };
+    }
 }
+
+public enum RoomDoorSide
+{
+    North,
+    South,
+    West,
+    East,
+}
+
+public sealed record RoomDoorPlacement(Vector2I Cell, RoomDoorSide Side);
 
 public sealed class RoomFootprint
 {
     private readonly HashSet<Vector2I> _cells;
 
-    private RoomFootprint(int id, RoomBuildType roomType, HashSet<Vector2I> cells)
+    private RoomFootprint(
+        int id,
+        RoomBuildType roomType,
+        HashSet<Vector2I> cells,
+        RoomDoorPlacement? doorPlacement
+    )
     {
         Id = id;
         RoomType = roomType;
         _cells = cells;
+        DoorPlacement = doorPlacement;
     }
 
     public int Id { get; }
     public RoomBuildType RoomType { get; }
+    public RoomDoorPlacement? DoorPlacement { get; private set; }
     public IReadOnlyCollection<Vector2I> Cells => _cells;
     public Vector2I MinCell => GetBounds().MinCell;
     public Vector2I MaxCell => GetBounds().MaxCell;
@@ -129,7 +280,8 @@ public sealed class RoomFootprint
         int id,
         RoomBuildType roomType,
         Vector2I startCell,
-        Vector2I endCell
+        Vector2I endCell,
+        RoomDoorPlacement? doorPlacement = null
     )
     {
         var minCell = new Vector2I(
@@ -149,7 +301,7 @@ public sealed class RoomFootprint
             }
         }
 
-        return new RoomFootprint(id, roomType, cells);
+        return new RoomFootprint(id, roomType, cells, doorPlacement);
     }
 
     public bool Contains(Vector2I cell)
@@ -172,7 +324,13 @@ public sealed class RoomFootprint
 
     public bool RemoveCell(Vector2I cell)
     {
-        return _cells.Remove(cell);
+        var removed = _cells.Remove(cell);
+        if (removed)
+        {
+            ClearDoorIfRemoved();
+        }
+
+        return removed;
     }
 
     public int RemoveCells(RoomFootprint selection)
@@ -184,6 +342,11 @@ public sealed class RoomFootprint
             {
                 removed++;
             }
+        }
+
+        if (removed > 0)
+        {
+            ClearDoorIfRemoved();
         }
 
         return removed;
@@ -210,6 +373,14 @@ public sealed class RoomFootprint
         }
 
         return new RoomBounds(new Vector2I(minX, minY), new Vector2I(maxX, maxY));
+    }
+
+    private void ClearDoorIfRemoved()
+    {
+        if (DoorPlacement != null && !_cells.Contains(DoorPlacement.Cell))
+        {
+            DoorPlacement = null;
+        }
     }
 
     private readonly record struct RoomBounds(Vector2I MinCell, Vector2I MaxCell);

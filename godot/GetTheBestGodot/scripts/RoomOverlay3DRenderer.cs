@@ -12,7 +12,7 @@ public partial class RoomOverlay3DRenderer : Node3D
     private static readonly Color MarketRoomFill = new(0.56f, 0.42f, 0.82f, 0.42f);
     private static readonly Color ServerRoomFill = new(0.30f, 0.64f, 0.56f, 0.42f);
     private static readonly Color HighlightedRoomStroke = new(1.0f, 0.94f, 0.34f, 0.78f);
-    private static readonly Color RoomSignPlateFill = new(0.86f, 0.84f, 0.70f, 0.88f);
+    private static readonly Color RoomDoorFill = new(0.86f, 0.84f, 0.70f, 0.92f);
     private readonly List<Node> _renderedRooms = [];
     private RoomFootprintStore? _roomFootprintStore;
     private RoomFootprint? _highlightedRoom;
@@ -55,7 +55,7 @@ public partial class RoomOverlay3DRenderer : Node3D
             AddRoomCellBoundary(room, cell);
         }
 
-        AddRoomSignPlate(room);
+        AddRoomDoor(room);
     }
 
     private void AddRoomCellCarpet(RoomFootprint room, Vector2I cell)
@@ -87,7 +87,7 @@ public partial class RoomOverlay3DRenderer : Node3D
         var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
         var y = RoomBoundaryHeight / 2.0f + 0.08f;
 
-        if (!HasNeighbor(room, cell + Vector2I.Up))
+        if (!HasNeighbor(room, cell + Vector2I.Up) && !IsDoorEdge(room, cell, RoomDoorSide.North))
         {
             AddBoundaryStrip(
                 center + new Vector3(0.0f, y, -halfCell),
@@ -96,7 +96,7 @@ public partial class RoomOverlay3DRenderer : Node3D
             );
         }
 
-        if (!HasNeighbor(room, cell + Vector2I.Down))
+        if (!HasNeighbor(room, cell + Vector2I.Down) && !IsDoorEdge(room, cell, RoomDoorSide.South))
         {
             AddBoundaryStrip(
                 center + new Vector3(0.0f, y, halfCell),
@@ -105,7 +105,7 @@ public partial class RoomOverlay3DRenderer : Node3D
             );
         }
 
-        if (!HasNeighbor(room, cell + Vector2I.Left))
+        if (!HasNeighbor(room, cell + Vector2I.Left) && !IsDoorEdge(room, cell, RoomDoorSide.West))
         {
             AddBoundaryStrip(
                 center + new Vector3(-halfCell, y, 0.0f),
@@ -114,7 +114,7 @@ public partial class RoomOverlay3DRenderer : Node3D
             );
         }
 
-        if (!HasNeighbor(room, cell + Vector2I.Right))
+        if (!HasNeighbor(room, cell + Vector2I.Right) && !IsDoorEdge(room, cell, RoomDoorSide.East))
         {
             AddBoundaryStrip(
                 center + new Vector3(halfCell, y, 0.0f),
@@ -141,19 +141,53 @@ public partial class RoomOverlay3DRenderer : Node3D
         return room.Contains(cell);
     }
 
-    private void AddRoomSignPlate(RoomFootprint room)
+    private static bool IsDoorEdge(RoomFootprint room, Vector2I cell, RoomDoorSide side)
     {
-        var signPosition =
-            OfficeWorld3DConfig.CellToWorldPosition(room.MinCell)
-            + new Vector3(0.0f, RoomBoundaryHeight + 0.18f, -0.72f);
+        return room.DoorPlacement is { } doorPlacement
+            && doorPlacement.Cell == cell
+            && doorPlacement.Side == side;
+    }
+
+    private void AddRoomDoor(RoomFootprint room)
+    {
+        if (room.DoorPlacement == null)
+        {
+            return;
+        }
+
+        var doorPlacement = room.DoorPlacement;
         var mesh = new MeshInstance3D
         {
-            Mesh = new BoxMesh { Size = new Vector3(1.2f, 0.12f, 0.18f) },
-            MaterialOverride = CreateMaterial(RoomSignPlateFill),
-            Position = signPosition,
+            Mesh = new BoxMesh { Size = GetDoorSize(doorPlacement.Side) },
+            MaterialOverride = CreateMaterial(RoomDoorFill),
+            Position = GetDoorPosition(doorPlacement),
         };
         AddChild(mesh);
         _renderedRooms.Add(mesh);
+    }
+
+    private static Vector3 GetDoorPosition(RoomDoorPlacement doorPlacement)
+    {
+        var center = OfficeWorld3DConfig.CellToWorldPosition(doorPlacement.Cell);
+        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
+        var y = RoomBoundaryHeight + 0.16f;
+        return doorPlacement.Side switch
+        {
+            RoomDoorSide.North => center + new Vector3(0.0f, y, -halfCell),
+            RoomDoorSide.South => center + new Vector3(0.0f, y, halfCell),
+            RoomDoorSide.West => center + new Vector3(-halfCell, y, 0.0f),
+            RoomDoorSide.East => center + new Vector3(halfCell, y, 0.0f),
+            _ => center + Vector3.Up * y,
+        };
+    }
+
+    private static Vector3 GetDoorSize(RoomDoorSide side)
+    {
+        return side switch
+        {
+            RoomDoorSide.North or RoomDoorSide.South => new Vector3(1.10f, 0.12f, 0.22f),
+            _ => new Vector3(0.22f, 0.12f, 1.10f),
+        };
     }
 
     private static Color GetRoomFillColor(RoomBuildType roomType)

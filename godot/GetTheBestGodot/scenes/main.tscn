@@ -6,9 +6,10 @@
 [ext_resource type="Script" uid="uid://dbm47tftogskb" path="res://scripts/V2CoreBridge.cs" id="4_bridge"]
 [ext_resource type="Script" uid="uid://2na32d4jtqtn" path="res://scripts/OfficeCamera3DController.cs" id="4_trceg"]
 [ext_resource type="Script" uid="uid://dpe4uh4dibdn3" path="res://scripts/BuildModeHudController.cs" id="5_choun"]
-[ext_resource type="Script" path="res://scripts/OfficeBoundary3DRenderer.cs" id="6_a8y0u"]
+[ext_resource type="Script" uid="uid://d2gnd36eblkmm" path="res://scripts/OfficeBoundary3DRenderer.cs" id="6_a8y0u"]
 [ext_resource type="Script" uid="uid://c3tf1aq1gsjbr" path="res://scripts/BuildModeController.cs" id="6_o6xl0"]
 [ext_resource type="Script" uid="uid://c0ffqy7icjtir" path="res://scripts/PlacementPreview3DController.cs" id="7_a8y0u"]
+[ext_resource type="Script" path="res://scripts/BuildConfirmationHudController.cs" id="8_jbj1t"]
 [ext_resource type="Script" uid="uid://b4we7xo0xi02h" path="res://scripts/OfficeSelection3DController.cs" id="8_jkv2x"]
 [ext_resource type="Script" uid="uid://cj4wk6r5docf6" path="res://scripts/RoomFootprintStore.cs" id="8_tipki"]
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
@@ -133,6 +134,25 @@ mouse_filter = 2
 layout_mode = 2
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="BuildConfirmPanel" type="PanelContainer" parent="HudRoot" unique_id=1786719653]
+visible = false
+script = ExtResource("8_jbj1t")
+
+[node name="ConfirmRows" type="HBoxContainer" parent="HudRoot/BuildConfirmPanel" unique_id=1487118585]
+layout_mode = 2
+
+[node name="CancelBuildButton" type="Button" parent="HudRoot/BuildConfirmPanel/ConfirmRows" unique_id=2017922096]
+layout_mode = 2
+text = "X"
+
+[node name="ConfirmStatusLabel" type="Label" parent="HudRoot/BuildConfirmPanel/ConfirmRows" unique_id=1640024236]
+layout_mode = 2
+text = "?????:????"
+
+[node name="ConfirmBuildButton" type="Button" parent="HudRoot/BuildConfirmPanel/ConfirmRows" unique_id=1582401931]
+layout_mode = 2
+text = "?"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

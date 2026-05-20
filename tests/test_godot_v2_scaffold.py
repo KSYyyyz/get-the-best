@@ -452,7 +452,7 @@ def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
     assert "RoomCarpetHeight" in room_renderer
     assert "RoomBoundaryHeight" in room_renderer
     assert "AddRoomCellBoundary" in room_renderer
-    assert "AddRoomSignPlate" in room_renderer
+    assert "AddRoomDoor" in room_renderer
     assert "HighlightedRoomStroke" in room_renderer
 
     facility_renderer = scripts["Facility3DRenderer.cs"]
@@ -487,3 +487,82 @@ def test_get_the_best_v2_room_overlay_renders_actual_cells_after_single_cell_del
     assert "HasNeighbor(room, cell + Vector2I.Up)" in renderer
     assert "HasNeighbor(room, cell + Vector2I.Down)" in renderer
     assert "SelectionSize(room.MinCell, room.MaxCell" not in renderer
+
+
+def test_get_the_best_v2_room_build_requires_pending_confirmation_and_door() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "BuildConfirmPanel" in scene_text
+    assert "ConfirmStatusLabel" in scene_text
+    assert "CancelBuildButton" in scene_text
+    assert "ConfirmBuildButton" in scene_text
+    assert "BuildConfirmationHudController.cs" in scripts
+
+    build_mode = scripts["BuildModeController.cs"]
+    selection = scripts["OfficeSelection3DController.cs"]
+    confirm_hud = scripts["BuildConfirmationHudController.cs"]
+
+    assert "PlaceRoomDoor" in build_mode
+    assert "PendingRoomSelection" in build_mode
+    assert "TryStartPendingRoomSelection" in build_mode
+    assert "TrySetPendingDoor" in build_mode
+    assert "ConfirmPendingRoom" in build_mode
+    assert "CancelPendingRoomSelection" in build_mode
+    assert "HasPendingRoomSelection" in build_mode
+    assert "CanConfirmPendingRoom" in build_mode
+
+    assert "TryStartPendingRoomSelection(_dragStartCell, _dragCurrentCell)" in selection
+    assert "FinishDoorPlacement" in selection
+    assert "ShouldBeginAreaSelection()" in selection
+    assert "BeginSelection(mouseEvent.Position)" in selection
+    assert "TryCreateRoom(_dragStartCell" not in selection
+
+    assert "CancelBuildButton" in confirm_hud
+    assert "ConfirmBuildButton" in confirm_hud
+    assert "ConfirmPendingRoom" in confirm_hud
+    assert "CancelPendingRoomSelection" in confirm_hud
+    assert "CanConfirmPendingRoom" in confirm_hud
+
+
+def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete() -> None:
+    room_store = read_text(GODOT_ROOT / "scripts" / "RoomFootprintStore.cs")
+    room_renderer = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert "RoomDoorSide" in room_store
+    assert "RoomDoorPlacement" in room_store
+    assert "DoorPlacement" in room_store
+    assert "ClearDoorIfRemoved" in room_store
+    assert "RemoveDoorOwnerAtAdjacentCell" in room_store
+    assert "RemoveDoorOwnerNearCell" in room_store
+    assert "GetDoorOutsideCell" in room_store
+    assert "RemoveDoorOwnerAtWorldPosition" in room_store
+    assert "IsWorldPositionOnDoor" in room_store
+
+    assert "AddRoomDoor(room)" in room_renderer
+    assert "IsDoorEdge(room, cell, RoomDoorSide.North)" in room_renderer
+    assert "IsDoorEdge(room, cell, RoomDoorSide.South)" in room_renderer
+    assert "IsDoorEdge(room, cell, RoomDoorSide.West)" in room_renderer
+    assert "IsDoorEdge(room, cell, RoomDoorSide.East)" in room_renderer
+    assert "GetDoorPosition" in room_renderer
+    assert "GetDoorSize" in room_renderer
+    assert "RoomSignPlateFill" not in room_renderer
+    assert "AddRoomSignPlate" not in room_renderer
+    assert "DeleteSingleCellAtPointer(screenPosition)" in selection
+    assert "TryDeleteRoomAtCell(cell" in selection
+    assert "TryDeleteRoomAtCell(_dragCurrentCell" in selection
+    assert "TryDeleteRoomDoorAtWorldPosition(worldPosition" in selection
+    assert "RemoveDoorOwnerAtAdjacentCell(cell" in read_text(
+        GODOT_ROOT / "scripts" / "BuildModeController.cs"
+    )
+    assert "RemoveDoorOwnerNearCell(cell" in read_text(
+        GODOT_ROOT / "scripts" / "BuildModeController.cs"
+    )
+    assert "TryDeleteRoomDoorAtWorldPosition" in read_text(
+        GODOT_ROOT / "scripts" / "BuildModeController.cs"
+    )

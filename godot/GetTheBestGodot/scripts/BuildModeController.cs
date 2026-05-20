@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace GetTheBestGodot;
@@ -21,9 +22,17 @@ public enum BuildToolMode
 {
     Pointer,
     BuildRoom,
+    PlaceRoomDoor,
     DeleteRoom,
     PlaceFacility,
 }
+
+public sealed record PendingRoomSelection(
+    RoomBuildType RoomType,
+    Vector2I StartCell,
+    Vector2I EndCell,
+    RoomDoorPlacement? DoorPlacement
+);
 
 public partial class BuildModeController : Node
 {
@@ -32,6 +41,7 @@ public partial class BuildModeController : Node
     private RoomBuildType _activeRoomType = RoomBuildType.ResearchRoom;
     private FacilityBuildType _activeFacilityType = FacilityBuildType.OfficeDesk;
     private BuildToolMode _activeToolMode = BuildToolMode.Pointer;
+    private PendingRoomSelection? _pendingRoomSelection;
 
     public event Action? ToolModeChanged;
 
@@ -75,6 +85,137 @@ public partial class BuildModeController : Node
         return _roomFootprintStore.TryReserve(_activeRoomType, startCell, endCell, out room);
     }
 
+    public bool TryStartPendingRoomSelection(Vector2I startCell, Vector2I endCell)
+    {
+        if (_activeToolMode != BuildToolMode.BuildRoom || !IsSelectionLegal(startCell, endCell))
+        {
+            return false;
+        }
+
+        _pendingRoomSelection = new PendingRoomSelection(
+            _activeRoomType,
+            startCell,
+            endCell,
+            DoorPlacement: null
+        );
+        SetActiveToolMode(BuildToolMode.PlaceRoomDoor);
+        ToolModeChanged?.Invoke();
+        return true;
+    }
+
+    public bool TrySetPendingDoor(Vector2I cell, RoomDoorSide side)
+    {
+        if (_pendingRoomSelection == null || !IsDoorOnPendingBoundary(cell, side))
+        {
+            return false;
+        }
+
+        _pendingRoomSelection = _pendingRoomSelection with
+        {
+            DoorPlacement = new RoomDoorPlacement(cell, side),
+        };
+        ToolModeChanged?.Invoke();
+        return true;
+    }
+
+    public bool TrySetPendingDoorFromWorldPosition(Vector2I cell, Vector3 worldPosition)
+    {
+        if (_pendingRoomSelection == null)
+        {
+            return false;
+        }
+
+        var candidateSides = new List<(RoomDoorSide Side, float Distance)>();
+        var roomBounds = GetPendingRoomBounds();
+        var cellCenter = OfficeWorld3DConfig.CellToWorldPosition(cell);
+        var local = worldPosition - cellCenter;
+        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
+
+        if (cell.Y == roomBounds.MinCell.Y)
+        {
+            candidateSides.Add((RoomDoorSide.North, Mathf.Abs(local.Z + halfCell)));
+        }
+        if (cell.Y == roomBounds.MaxCell.Y)
+        {
+            candidateSides.Add((RoomDoorSide.South, Mathf.Abs(local.Z - halfCell)));
+        }
+        if (cell.X == roomBounds.MinCell.X)
+        {
+            candidateSides.Add((RoomDoorSide.West, Mathf.Abs(local.X + halfCell)));
+        }
+        if (cell.X == roomBounds.MaxCell.X)
+        {
+            candidateSides.Add((RoomDoorSide.East, Mathf.Abs(local.X - halfCell)));
+        }
+
+        if (candidateSides.Count == 0)
+        {
+            return false;
+        }
+
+        candidateSides.Sort((left, right) => left.Distance.CompareTo(right.Distance));
+        return TrySetPendingDoor(cell, candidateSides[0].Side);
+    }
+
+    public bool ConfirmPendingRoom(out RoomFootprint? room)
+    {
+        room = null;
+        if (_pendingRoomSelection?.DoorPlacement == null || _roomFootprintStore == null)
+        {
+            return false;
+        }
+
+        var selection = _pendingRoomSelection;
+        var created = _roomFootprintStore.TryReserve(
+            selection.RoomType,
+            selection.StartCell,
+            selection.EndCell,
+            selection.DoorPlacement,
+            out room
+        );
+        if (!created)
+        {
+            return false;
+        }
+
+        _pendingRoomSelection = null;
+        SetActiveToolMode(BuildToolMode.BuildRoom);
+        ToolModeChanged?.Invoke();
+        return true;
+    }
+
+    public void CancelPendingRoomSelection()
+    {
+        if (_pendingRoomSelection == null)
+        {
+            return;
+        }
+
+        _pendingRoomSelection = null;
+        SetActiveToolMode(BuildToolMode.BuildRoom);
+        ToolModeChanged?.Invoke();
+    }
+
+    public PendingRoomSelection? GetPendingRoomSelection()
+    {
+        return _pendingRoomSelection;
+    }
+
+    public bool HasPendingRoomSelection()
+    {
+        return _pendingRoomSelection != null;
+    }
+
+    public bool HasPendingDoor()
+    {
+        return _pendingRoomSelection?.DoorPlacement != null;
+    }
+
+    public bool CanConfirmPendingRoom()
+    {
+        return _pendingRoomSelection?.DoorPlacement != null;
+    }
+
     public bool CanPlaceFacility(Vector2I cell)
     {
         return _facilityPlacementStore?.CanPlace(_activeFacilityType, cell) ?? false;
@@ -116,7 +257,28 @@ public partial class BuildModeController : Node
         }
 
         SellFixturesInSelection(cell, cell);
-        return _roomFootprintStore.RemoveAtCell(cell, out room);
+        if (_roomFootprintStore.RemoveAtCell(cell, out room))
+        {
+            return true;
+        }
+
+        if (_roomFootprintStore.RemoveDoorOwnerAtAdjacentCell(cell, out room))
+        {
+            return true;
+        }
+
+        return _roomFootprintStore.RemoveDoorOwnerNearCell(cell, out room);
+    }
+
+    public bool TryDeleteRoomDoorAtWorldPosition(Vector3 worldPosition, out RoomFootprint? room)
+    {
+        if (_roomFootprintStore == null)
+        {
+            room = null;
+            return false;
+        }
+
+        return _roomFootprintStore.RemoveDoorOwnerAtWorldPosition(worldPosition, out room);
     }
 
     public int SellFixturesInSelection(Vector2I startCell, Vector2I endCell)
@@ -152,6 +314,7 @@ public partial class BuildModeController : Node
 
     public void SetActiveRoomType(RoomBuildType roomType)
     {
+        _pendingRoomSelection = null;
         _activeRoomType = roomType;
         SetActiveToolMode(BuildToolMode.BuildRoom);
     }
@@ -163,6 +326,7 @@ public partial class BuildModeController : Node
 
     public void SetActiveFacilityType(FacilityBuildType facilityType)
     {
+        _pendingRoomSelection = null;
         _activeFacilityType = facilityType;
         SetActiveToolMode(BuildToolMode.PlaceFacility);
     }
@@ -179,6 +343,7 @@ public partial class BuildModeController : Node
 
     public void StartDeleteRoomMode()
     {
+        _pendingRoomSelection = null;
         SetActiveToolMode(BuildToolMode.DeleteRoom);
     }
 
@@ -195,6 +360,7 @@ public partial class BuildModeController : Node
 
     public void CancelActiveTool()
     {
+        _pendingRoomSelection = null;
         SetActiveToolMode(BuildToolMode.Pointer);
     }
 
@@ -211,6 +377,11 @@ public partial class BuildModeController : Node
     public bool IsDeleteRoomMode()
     {
         return _activeToolMode == BuildToolMode.DeleteRoom;
+    }
+
+    public bool IsPlaceRoomDoorMode()
+    {
+        return _activeToolMode == BuildToolMode.PlaceRoomDoor;
     }
 
     public bool IsPlaceFacilityMode()
@@ -279,4 +450,49 @@ public partial class BuildModeController : Node
         _activeToolMode = toolMode;
         ToolModeChanged?.Invoke();
     }
+
+    private bool IsDoorOnPendingBoundary(Vector2I cell, RoomDoorSide side)
+    {
+        if (_pendingRoomSelection == null)
+        {
+            return false;
+        }
+
+        var bounds = GetPendingRoomBounds();
+        if (
+            cell.X < bounds.MinCell.X
+            || cell.X > bounds.MaxCell.X
+            || cell.Y < bounds.MinCell.Y
+            || cell.Y > bounds.MaxCell.Y
+        )
+        {
+            return false;
+        }
+
+        return side switch
+        {
+            RoomDoorSide.North => cell.Y == bounds.MinCell.Y,
+            RoomDoorSide.South => cell.Y == bounds.MaxCell.Y,
+            RoomDoorSide.West => cell.X == bounds.MinCell.X,
+            RoomDoorSide.East => cell.X == bounds.MaxCell.X,
+            _ => false,
+        };
+    }
+
+    private PendingRoomBounds GetPendingRoomBounds()
+    {
+        if (_pendingRoomSelection == null)
+        {
+            return new PendingRoomBounds(Vector2I.Zero, Vector2I.Zero);
+        }
+
+        var startCell = _pendingRoomSelection.StartCell;
+        var endCell = _pendingRoomSelection.EndCell;
+        return new PendingRoomBounds(
+            new Vector2I(Mathf.Min(startCell.X, endCell.X), Mathf.Min(startCell.Y, endCell.Y)),
+            new Vector2I(Mathf.Max(startCell.X, endCell.X), Mathf.Max(startCell.Y, endCell.Y))
+        );
+    }
+
+    private readonly record struct PendingRoomBounds(Vector2I MinCell, Vector2I MaxCell);
 }

@@ -7,6 +7,7 @@ public partial class MainController : Node3D
     private Label? _statusLabel;
     private Control? _topStatusBar;
     private Control? _buildModePanel;
+    private Control? _buildConfirmPanel;
     private Control? _floatingTooltip;
     private Vector2 _lastViewportSize;
 
@@ -14,6 +15,7 @@ public partial class MainController : Node3D
     {
         _topStatusBar = GetNodeOrNull<Control>("HudRoot/TopStatusBar");
         _buildModePanel = GetNodeOrNull<Control>("HudRoot/BuildModePanel");
+        _buildConfirmPanel = GetNodeOrNull<Control>("HudRoot/BuildConfirmPanel");
         _floatingTooltip = GetNodeOrNull<Control>("HudRoot/FloatingTooltip");
         _statusLabel = GetNodeOrNull<Label>("HudRoot/TopStatusBar/StatusLabel");
         var bridge = GetNodeOrNull<V2CoreBridge>("V2CoreBridge");
@@ -68,6 +70,12 @@ public partial class MainController : Node3D
             _buildModePanel.Size = new Vector2(width, 180.0f);
         }
 
+        if (_buildConfirmPanel != null)
+        {
+            _buildConfirmPanel.Position = new Vector2(viewportSize.X / 2.0f - 190.0f, 12.0f);
+            _buildConfirmPanel.Size = new Vector2(380.0f, 42.0f);
+        }
+
         if (_floatingTooltip != null)
         {
             _floatingTooltip.Size = Vector2.Zero;
@@ -92,6 +100,11 @@ public partial class MainController : Node3D
 
     private static void RemoveHudChrome(Control control)
     {
+        if (control.Name == "BuildConfirmPanel")
+        {
+            return;
+        }
+
         if (control is PanelContainer panel)
         {
             panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
