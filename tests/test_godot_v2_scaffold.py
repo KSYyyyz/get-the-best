@@ -88,3 +88,15 @@ def test_get_the_best_v2_docs_preserve_core_direction() -> None:
     assert "办公室空间是主棋盘" in execution_index
     assert "C# Core 是唯一规则核心" in execution_index
     assert "G2OperationsPanel" in architecture_doc
+
+
+def test_get_the_best_v2_0_1_acceptance_is_recorded() -> None:
+    acceptance_doc = PROJECT_ROOT / "docs" / "get_the_best_v2_0_1_acceptance_report.md"
+    assert acceptance_doc.exists()
+
+    acceptance_text = read_text(acceptance_doc)
+    assert "V2-0.1 办公室沙盒与镜头基线验收报告" in acceptance_text
+    assert "已完成" in acceptance_text
+    assert "3200x2000" in acceptance_text
+    assert "0.25 - 3.25" in acceptance_text
+    assert "V2-0.2 不在本轮范围" in acceptance_text
