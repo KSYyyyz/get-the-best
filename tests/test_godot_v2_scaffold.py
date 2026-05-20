@@ -42,15 +42,17 @@ def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
     scene_file = GODOT_ROOT / "scenes" / "main.tscn"
     scene_text = read_text(scene_file)
 
+    assert '[node name="Main" type="Node3D"' in scene_text
     assert "OfficeWorld" in scene_text
     assert "OfficeFloor" in scene_text
-    assert "OfficeGrid" in scene_text
-    assert "z_index = 1" in scene_text
-    assert "zoom = Vector2(0.65, 0.65)" in scene_text
+    assert "OfficeGrid3D" in scene_text
+    assert 'type="Camera3D"' in scene_text
+    assert "projection = 1" in scene_text
+    assert "size = 36.0" in scene_text
     assert "3200" in scene_text
     assert "2000" in scene_text
     assert "OfficeCamera" in scene_text
-    assert "OfficeSelectionController" in scene_text
+    assert "OfficeSelection3DController" in scene_text
     assert "HudRoot" in scene_text
     assert "FloatingTooltip" in scene_text
     assert "TooltipLabel" in scene_text
@@ -69,22 +71,28 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
     }
 
     assert "MainController.cs" in scripts
-    assert "OfficeCameraController.cs" in scripts
-    assert "OfficeGridRenderer.cs" in scripts
-    assert "OfficeSelectionController.cs" in scripts
+    assert "OfficeCamera3DController.cs" in scripts
+    assert "OfficeGrid3DRenderer.cs" in scripts
+    assert "OfficeSelection3DController.cs" in scripts
+    assert "OfficeWorld3DConfig.cs" in scripts
     assert "OfficeWorldConfig.cs" in scripts
     assert "V2CoreBridge.cs" in scripts
     assert (
         "new(new Vector2(-1600, -1000), new Vector2(3200, 2000))" in scripts["OfficeWorldConfig.cs"]
     )
+    assert "public partial class MainController : Node3D" in scripts["MainController.cs"]
     assert "LayoutHud" in scripts["MainController.cs"]
     assert 'GetNodeOrNull<CanvasLayer>("HudRoot")' in scripts["MainController.cs"]
     assert "RemoveHudChrome(childControl)" in scripts["MainController.cs"]
-    assert "InputEventMouseMotion" in scripts["OfficeCameraController.cs"]
-    assert "MinZoom = 0.25f" in scripts["OfficeCameraController.cs"]
-    assert "MaxZoom = 3.25f" in scripts["OfficeCameraController.cs"]
-    assert "ZoomStepFactor = 1.18f" in scripts["OfficeCameraController.cs"]
-    assert "GetGlobalMousePosition()" in scripts["OfficeCameraController.cs"]
+    assert "Camera3D" in scripts["OfficeCamera3DController.cs"]
+    assert "ProjectionType.Orthogonal" in scripts["OfficeCamera3DController.cs"]
+    assert "MinCameraSize = 12.0f" in scripts["OfficeCamera3DController.cs"]
+    assert "MaxCameraSize = 64.0f" in scripts["OfficeCamera3DController.cs"]
+    assert "ProjectRayOrigin" in scripts["OfficeSelection3DController.cs"]
+    assert "ProjectRayNormal" in scripts["OfficeSelection3DController.cs"]
+    assert "TryScreenPositionToCell" in scripts["OfficeSelection3DController.cs"]
+    assert "TryWorldToCell" in scripts["OfficeWorld3DConfig.cs"]
+    assert "CellToWorldPosition" in scripts["OfficeWorld3DConfig.cs"]
     assert "规则核心桥接待接入" in scripts["V2CoreBridge.cs"]
     assert "G2OperationsPanel" not in "\n".join(scripts.values())
 
@@ -119,22 +127,22 @@ def test_get_the_best_v2_0_2_grid_interaction_scaffold_exists() -> None:
     }
 
     assert "InteractionRoot" in scene_text
-    assert "OfficeSelectionController" in scene_text
-    assert "PlacementPreviewController" in scene_text
+    assert "OfficeSelection3DController" in scene_text
+    assert "PlacementPreview3DController" in scene_text
     assert "BuildModeController" in scene_text
     assert 'parent="InteractionRoot"' in scene_text
 
-    assert "PlacementPreviewController.cs" in scripts
+    assert "PlacementPreview3DController.cs" in scripts
     assert "BuildModeController.cs" in scripts
     assert "TryWorldToCell" in scripts["OfficeWorldConfig.cs"]
     assert "CellsToWorldRect" in scripts["OfficeWorldConfig.cs"]
-    assert "ShowHoverCell" in scripts["PlacementPreviewController.cs"]
-    assert "ShowSelectionRect" in scripts["PlacementPreviewController.cs"]
-    assert "ClearPreview" in scripts["PlacementPreviewController.cs"]
-    assert "MouseButton.Right" in scripts["OfficeSelectionController.cs"]
-    assert "Key.Escape" in scripts["OfficeSelectionController.cs"]
-    assert "_isDraggingSelection" in scripts["OfficeSelectionController.cs"]
-    assert "GetCanvasTransform().AffineInverse()" in scripts["OfficeSelectionController.cs"]
+    assert "ShowHoverCell" in scripts["PlacementPreview3DController.cs"]
+    assert "ShowSelectionRect" in scripts["PlacementPreview3DController.cs"]
+    assert "ClearPreview" in scripts["PlacementPreview3DController.cs"]
+    assert "MouseButton.Left" in scripts["OfficeSelection3DController.cs"]
+    assert "Key.Escape" in scripts["OfficeSelection3DController.cs"]
+    assert "Plane(Vector3.Up, 0.0f)" in scripts["OfficeSelection3DController.cs"]
+    assert "ShowPointerTooltip" in scripts["OfficeSelection3DController.cs"]
 
 
 def test_get_the_best_v2_0_2_room_footprint_baseline_exists() -> None:
@@ -146,11 +154,11 @@ def test_get_the_best_v2_0_2_room_footprint_baseline_exists() -> None:
     }
 
     assert "RoomFootprintStore" in scene_text
-    assert "RoomOverlayRenderer" in scene_text
+    assert "RoomOverlay3DRenderer" in scene_text
     assert 'parent="InteractionRoot"' in scene_text
 
     assert "RoomFootprintStore.cs" in scripts
-    assert "RoomOverlayRenderer.cs" in scripts
+    assert "RoomOverlay3DRenderer.cs" in scripts
     assert "CanReserve" in scripts["RoomFootprintStore.cs"]
     assert "TryReserve" in scripts["RoomFootprintStore.cs"]
     assert "Overlaps" in scripts["RoomFootprintStore.cs"]
@@ -158,9 +166,9 @@ def test_get_the_best_v2_0_2_room_footprint_baseline_exists() -> None:
     assert "GetRooms" in scripts["RoomFootprintStore.cs"]
     assert "RoomFootprintStore" in scripts["BuildModeController.cs"]
     assert "TryCreateRoom" in scripts["BuildModeController.cs"]
-    assert "RoomOverlayRenderer" in scripts["OfficeSelectionController.cs"]
-    assert "ShowOccupiedRoom" in scripts["OfficeSelectionController.cs"]
-    assert "RefreshRooms" in scripts["RoomOverlayRenderer.cs"]
+    assert "RoomOverlay3DRenderer" in scripts["OfficeSelection3DController.cs"]
+    assert "ShowOccupiedRoom" in scripts["OfficeSelection3DController.cs"]
+    assert "RefreshRooms" in scripts["RoomOverlay3DRenderer.cs"]
 
 
 def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
@@ -224,7 +232,7 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "GetActiveRoomType" in scripts["BuildModeController.cs"]
     assert "GetActiveRoomTypeLabel" in scripts["BuildModeController.cs"]
     assert "RoomBuildType RoomType" in scripts["RoomFootprintStore.cs"]
-    assert "GetRoomFillColor" in scripts["RoomOverlayRenderer.cs"]
+    assert "GetRoomFillColor" in scripts["RoomOverlay3DRenderer.cs"]
     assert "ResearchRoomButton" in scripts["BuildModeHudController.cs"]
     assert "MarketRoomButton" in scripts["BuildModeHudController.cs"]
     assert "ServerRoomButton" in scripts["BuildModeHudController.cs"]
@@ -271,23 +279,23 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
     assert "RemoveAtCell" in scripts["RoomFootprintStore.cs"]
     assert "RemoveCells" in scripts["RoomFootprintStore.cs"]
     assert "IReadOnlyCollection<Vector2I> Cells" in scripts["RoomFootprintStore.cs"]
-    assert "HighlightRoom" in scripts["RoomOverlayRenderer.cs"]
-    assert "HighlightedRoomStroke" in scripts["RoomOverlayRenderer.cs"]
-    assert "FinishDeleteSelection" in scripts["OfficeSelectionController.cs"]
-    assert "SelectRoomAtPointer" in scripts["OfficeSelectionController.cs"]
-    assert "ClearSelectedRoom();" in scripts["OfficeSelectionController.cs"]
-    assert "_roomOverlayRenderer?.RefreshRooms();" in scripts["OfficeSelectionController.cs"]
-    assert "CancelActiveTool" in scripts["OfficeSelectionController.cs"]
-    assert "if (_isDraggingSelection)" in scripts["OfficeSelectionController.cs"]
-    assert "CancelInteraction();" in scripts["OfficeSelectionController.cs"]
-    assert "ShowPointerTooltip" in scripts["OfficeSelectionController.cs"]
-    assert "PositionPointerTooltip" in scripts["OfficeSelectionController.cs"]
-    assert "TooltipOffset = 6.0f" in scripts["OfficeSelectionController.cs"]
-    assert "ShowPointerTooltip(size, screenPosition)" in scripts["OfficeSelectionController.cs"]
-    assert "HorizontalAlignment.Left" in scripts["OfficeSelectionController.cs"]
-    assert "GetMinimumSize()" in scripts["OfficeSelectionController.cs"]
-    assert "ShowHoverCell(cell)" not in scripts["OfficeSelectionController.cs"]
-    assert "IsDeleteRoomMode" in scripts["OfficeSelectionController.cs"]
+    assert "HighlightRoom" in scripts["RoomOverlay3DRenderer.cs"]
+    assert "HighlightedRoomStroke" in scripts["RoomOverlay3DRenderer.cs"]
+    assert "FinishDeleteSelection" in scripts["OfficeSelection3DController.cs"]
+    assert "SelectRoomAtPointer" in scripts["OfficeSelection3DController.cs"]
+    assert "ClearSelectedRoom();" in scripts["OfficeSelection3DController.cs"]
+    assert "_roomOverlayRenderer?.RefreshRooms();" in scripts["OfficeSelection3DController.cs"]
+    assert "CancelActiveTool" in scripts["OfficeSelection3DController.cs"]
+    assert "if (_isDraggingSelection)" in scripts["OfficeSelection3DController.cs"]
+    assert "CancelInteraction();" in scripts["OfficeSelection3DController.cs"]
+    assert "ShowPointerTooltip" in scripts["OfficeSelection3DController.cs"]
+    assert "PositionPointerTooltip" in scripts["OfficeSelection3DController.cs"]
+    assert "TooltipOffset = 6.0f" in scripts["OfficeSelection3DController.cs"]
+    assert "ShowPointerTooltip(size, screenPosition)" in scripts["OfficeSelection3DController.cs"]
+    assert "HorizontalAlignment.Left" in scripts["OfficeSelection3DController.cs"]
+    assert "GetMinimumSize()" in scripts["OfficeSelection3DController.cs"]
+    assert "ShowHoverCell(cell)" not in scripts["OfficeSelection3DController.cs"]
+    assert "IsDeleteRoomMode" in scripts["OfficeSelection3DController.cs"]
     assert "_deleteRoomButton" in scripts["BuildModeHudController.cs"]
     assert "_cancelActionButton" not in scripts["BuildModeHudController.cs"]
     assert 'AddThemeColorOverride("font_shadow_color"' in scripts["MainController.cs"]
@@ -304,7 +312,7 @@ def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
     }
 
     assert "FacilityPlacementStore" in scene_text
-    assert "FacilityRenderer" in scene_text
+    assert "Facility3DRenderer" in scene_text
     assert "FacilityTypeButtons" in scene_text
     assert "FacilityMenuButton" in scene_text
     assert "DeskFacilityButton" in scene_text
@@ -312,7 +320,7 @@ def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
     assert "ServerRackFacilityButton" in scene_text
 
     assert "FacilityPlacementStore.cs" in scripts
-    assert "FacilityRenderer.cs" in scripts
+    assert "Facility3DRenderer.cs" in scripts
     assert "enum FacilityBuildType" in scripts["BuildModeController.cs"]
     assert "PlaceFacility" in scripts["BuildModeController.cs"]
     assert "IsPlaceFacilityMode" in scripts["BuildModeController.cs"]
@@ -331,15 +339,17 @@ def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
     assert "ProductWhiteboard" in scripts["FacilityPlacementStore.cs"]
     assert "ServerRack" in scripts["FacilityPlacementStore.cs"]
 
-    assert "HighlightFacility" in scripts["FacilityRenderer.cs"]
-    assert "GetFacilityFillColor" in scripts["FacilityRenderer.cs"]
-    assert "RefreshFacilities" in scripts["FacilityRenderer.cs"]
-    assert "ShowFacilityCell" in scripts["PlacementPreviewController.cs"]
-    assert "FinishFacilityPlacement" in scripts["OfficeSelectionController.cs"]
-    assert "SelectFacilityAtPointer" in scripts["OfficeSelectionController.cs"]
-    assert "ShowFacilityTooltip" in scripts["OfficeSelectionController.cs"]
-    assert "_facilityRenderer?.RefreshFacilities();" in scripts["OfficeSelectionController.cs"]
-    assert "_facilityRenderer?.HighlightFacility(null);" in scripts["OfficeSelectionController.cs"]
+    assert "HighlightFacility" in scripts["Facility3DRenderer.cs"]
+    assert "GetFacilityFillColor" in scripts["Facility3DRenderer.cs"]
+    assert "RefreshFacilities" in scripts["Facility3DRenderer.cs"]
+    assert "ShowFacilityCell" in scripts["PlacementPreview3DController.cs"]
+    assert "FinishFacilityPlacement" in scripts["OfficeSelection3DController.cs"]
+    assert "SelectFacilityAtPointer" in scripts["OfficeSelection3DController.cs"]
+    assert "ShowFacilityTooltip" in scripts["OfficeSelection3DController.cs"]
+    assert "_facilityRenderer?.RefreshFacilities();" in scripts["OfficeSelection3DController.cs"]
+    assert (
+        "_facilityRenderer?.HighlightFacility(null);" in scripts["OfficeSelection3DController.cs"]
+    )
 
     assert "FacilityMenuText" in scripts["BuildModeHudController.cs"]
     assert "_facilityMenuButton" in scripts["BuildModeHudController.cs"]
@@ -393,7 +403,7 @@ def test_get_the_best_v2_0_4_facility_definitions_and_texture_rendering_exist() 
 
     assert "FacilityDefinitionCatalog.cs" in scripts
     catalog = scripts["FacilityDefinitionCatalog.cs"]
-    renderer = scripts["FacilityRenderer.cs"]
+    renderer = scripts["Facility3DRenderer.cs"]
 
     assert "FacilityDefinition" in catalog
     assert "GetDefinition" in catalog
@@ -419,5 +429,5 @@ def test_get_the_best_v2_0_4_facility_definitions_and_texture_rendering_exist() 
     assert "Texture2D" in renderer
     assert "ResourceLoader.Load<Texture2D>" in renderer
     assert "GetFacilityTexture" in renderer
-    assert "DrawTextureRect" in renderer
+    assert "Sprite3D" in renderer
     assert "GetFacilityFillColor" in renderer

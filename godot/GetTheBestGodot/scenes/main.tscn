@@ -1,150 +1,154 @@
-[gd_scene format=3 uid="uid://b4vcxuul0q6oo"]
+[gd_scene format=3 uid="uid://c11x26g6ewkcl"]
 
 [ext_resource type="Script" uid="uid://7ua1q82hvrch" path="res://scripts/MainController.cs" id="1_main"]
-[ext_resource type="Script" uid="uid://bs2sxocrmf52g" path="res://scripts/OfficeCameraController.cs" id="2_camera"]
-[ext_resource type="Script" uid="uid://b8a73fywwlab7" path="res://scripts/OfficeSelectionController.cs" id="3_selection"]
+[ext_resource type="Script" path="res://scripts/OfficeFloor3DRenderer.cs" id="2_floor"]
+[ext_resource type="Script" uid="uid://x174pq4quava" path="res://scripts/OfficeGrid3DRenderer.cs" id="3_eb6dy"]
 [ext_resource type="Script" uid="uid://dbm47tftogskb" path="res://scripts/V2CoreBridge.cs" id="4_bridge"]
+[ext_resource type="Script" uid="uid://2na32d4jtqtn" path="res://scripts/OfficeCamera3DController.cs" id="4_trceg"]
 [ext_resource type="Script" uid="uid://dpe4uh4dibdn3" path="res://scripts/BuildModeHudController.cs" id="5_choun"]
-[ext_resource type="Script" uid="uid://co06yttcveq8h" path="res://scripts/OfficeGridRenderer.cs" id="5_grid"]
 [ext_resource type="Script" uid="uid://c3tf1aq1gsjbr" path="res://scripts/BuildModeController.cs" id="6_o6xl0"]
-[ext_resource type="Script" uid="uid://bdbsxu26s6162" path="res://scripts/PlacementPreviewController.cs" id="7_tipki"]
+[ext_resource type="Script" uid="uid://c0ffqy7icjtir" path="res://scripts/PlacementPreview3DController.cs" id="7_a8y0u"]
+[ext_resource type="Script" uid="uid://b4we7xo0xi02h" path="res://scripts/OfficeSelection3DController.cs" id="8_jkv2x"]
 [ext_resource type="Script" uid="uid://cj4wk6r5docf6" path="res://scripts/RoomFootprintStore.cs" id="8_tipki"]
-[ext_resource type="Script" uid="uid://b4h4cuyv3kcvq" path="res://scripts/RoomOverlayRenderer.cs" id="9_85g3d"]
+[ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
-[ext_resource type="Script" uid="uid://dkcfgkkg3idyg" path="res://scripts/FacilityRenderer.cs" id="12_eb6dy"]
+[ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
 
-[node name="Main" type="Node2D" unique_id=1154896660]
+[node name="Main" type="Node3D" unique_id=1957351103]
 script = ExtResource("1_main")
 
-[node name="V2CoreBridge" type="Node" parent="." unique_id=853664877]
+[node name="V2CoreBridge" type="Node" parent="." unique_id=1766827815]
 script = ExtResource("4_bridge")
 
-[node name="OfficeWorld" type="Node2D" parent="." unique_id=1812664464]
+[node name="OfficeWorld" type="Node3D" parent="." unique_id=839112780]
 
-[node name="OfficeFloor" type="Polygon2D" parent="OfficeWorld" unique_id=533739897]
-position = Vector2(-1600, -1000)
-color = Color(0.22, 0.25, 0.23, 1)
-polygon = PackedVector2Array(0, 0, 3200, 0, 3200, 2000, 0, 2000)
+[node name="OfficeFloor" type="MeshInstance3D" parent="OfficeWorld" unique_id=656113080]
+script = ExtResource("2_floor")
 
-[node name="OfficeGrid" type="Node2D" parent="OfficeWorld" unique_id=944764141]
-z_index = 1
-script = ExtResource("5_grid")
+[node name="OfficeGrid3D" type="Node3D" parent="OfficeWorld" unique_id=1142435212]
+script = ExtResource("3_eb6dy")
 
-[node name="OfficeCamera" type="Camera2D" parent="." unique_id=1879581597]
-zoom = Vector2(0.65, 0.65)
-script = ExtResource("2_camera")
+[node name="OfficeCamera" type="Camera3D" parent="OfficeWorld" unique_id=447521787]
+transform = Transform3D(1, 0, 0, 0, 0.52991927, 0.8480481, 0, -0.8480481, 0.52991927, 0, 34, 26)
+projection = 1
+current = true
+size = 36.0
+script = ExtResource("4_trceg")
 
-[node name="HudRoot" type="CanvasLayer" parent="." unique_id=495860634]
+[node name="SunLight" type="DirectionalLight3D" parent="OfficeWorld" unique_id=695379734]
+transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
+light_energy = 1.2
 
-[node name="TopStatusBar" type="PanelContainer" parent="HudRoot" unique_id=732732305]
+[node name="WorldSize3200x2000Marker" type="Node3D" parent="OfficeWorld" unique_id=239089964]
+
+[node name="HudRoot" type="CanvasLayer" parent="." unique_id=1023233117]
+
+[node name="TopStatusBar" type="PanelContainer" parent="HudRoot" unique_id=1191419523]
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 760.0
 offset_bottom = 52.0
 mouse_filter = 2
 
-[node name="StatusLabel" type="Label" parent="HudRoot/TopStatusBar" unique_id=972117518]
+[node name="StatusLabel" type="Label" parent="HudRoot/TopStatusBar" unique_id=1534223925]
 layout_mode = 2
-text = "Get The Best V2-0：启动中"
+text = "Get The Best V2-0:3D ????????"
 
-[node name="BuildModePanel" type="PanelContainer" parent="HudRoot" unique_id=1758798614]
+[node name="BuildModePanel" type="PanelContainer" parent="HudRoot" unique_id=466452476]
 offset_left = 760.0
 offset_top = 12.0
 offset_right = 1248.0
 offset_bottom = 124.0
 script = ExtResource("5_choun")
 
-[node name="BuildModeRows" type="VBoxContainer" parent="HudRoot/BuildModePanel" unique_id=536325811]
+[node name="BuildModeRows" type="VBoxContainer" parent="HudRoot/BuildModePanel" unique_id=1993170608]
 layout_mode = 2
 
-[node name="BuildEntryButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=486393867]
+[node name="BuildEntryButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1778906187]
 layout_mode = 2
 
-[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=667040778]
+[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1746442359]
 layout_mode = 2
 text = "??"
 
-[node name="EntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=853115631]
+[node name="EntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1040878296]
 layout_mode = 2
 text = "|"
 
-[node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1581832478]
+[node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=386794345]
 layout_mode = 2
 text = "??"
 
-[node name="FacilityEntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=507707695]
+[node name="FacilityEntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=566916671]
 layout_mode = 2
 text = "|"
 
-[node name="FacilityMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=295200462]
+[node name="FacilityMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=2141391404]
 layout_mode = 2
 text = "??"
 
-[node name="RoomTypeButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1261356519]
+[node name="RoomTypeButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1363755373]
 visible = false
 layout_mode = 2
 
-[node name="ResearchRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1234831213]
+[node name="ResearchRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1172918629]
 layout_mode = 2
 text = "???"
 
-[node name="MarketRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=94124974]
+[node name="MarketRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1801534935]
 layout_mode = 2
 text = "???"
 
-[node name="ServerRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1435614175]
+[node name="ServerRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1024989526]
 layout_mode = 2
 text = "????"
 
-[node name="FacilityTypeButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1239094477]
+[node name="FacilityTypeButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=381332910]
 visible = false
 layout_mode = 2
 
-[node name="DeskFacilityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/FacilityTypeButtons" unique_id=1413295773]
+[node name="DeskFacilityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/FacilityTypeButtons" unique_id=1380846794]
 layout_mode = 2
 text = "???"
 
-[node name="WhiteboardFacilityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/FacilityTypeButtons" unique_id=972230506]
+[node name="WhiteboardFacilityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/FacilityTypeButtons" unique_id=1290115170]
 layout_mode = 2
 text = "????"
 
-[node name="ServerRackFacilityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/FacilityTypeButtons" unique_id=1178989375]
+[node name="ServerRackFacilityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/FacilityTypeButtons" unique_id=614685686]
 layout_mode = 2
 text = "?????"
 
-[node name="FloatingTooltip" type="PanelContainer" parent="HudRoot" unique_id=541956466]
+[node name="FloatingTooltip" type="PanelContainer" parent="HudRoot" unique_id=418273176]
 visible = false
 offset_right = 160.0
 offset_bottom = 32.0
 mouse_filter = 2
 
-[node name="TooltipLabel" type="Label" parent="HudRoot/FloatingTooltip" unique_id=1068162327]
+[node name="TooltipLabel" type="Label" parent="HudRoot/FloatingTooltip" unique_id=258624006]
 layout_mode = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="InteractionRoot" type="Node2D" parent="." unique_id=327777287]
+[node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 
-[node name="BuildModeController" type="Node" parent="InteractionRoot" unique_id=570298049]
+[node name="BuildModeController" type="Node" parent="InteractionRoot" unique_id=728750041]
 script = ExtResource("6_o6xl0")
 
-[node name="PlacementPreviewController" type="Node2D" parent="InteractionRoot" unique_id=1291357778]
-z_index = 3
-script = ExtResource("7_tipki")
+[node name="PlacementPreview3DController" type="Node3D" parent="InteractionRoot" unique_id=652081872]
+script = ExtResource("7_a8y0u")
 
-[node name="OfficeSelectionController" type="Node2D" parent="InteractionRoot" unique_id=178840877]
-script = ExtResource("3_selection")
+[node name="OfficeSelection3DController" type="Node" parent="InteractionRoot" unique_id=615271609]
+script = ExtResource("8_jkv2x")
 
-[node name="RoomFootprintStore" type="Node" parent="InteractionRoot" unique_id=771130518]
+[node name="RoomFootprintStore" type="Node" parent="InteractionRoot" unique_id=176752106]
 script = ExtResource("8_tipki")
 
-[node name="RoomOverlayRenderer" type="Node2D" parent="InteractionRoot" unique_id=1198884630]
-z_index = 1
-script = ExtResource("9_85g3d")
+[node name="RoomOverlay3DRenderer" type="Node3D" parent="InteractionRoot" unique_id=783504620]
+script = ExtResource("10_jbj1t")
 
-[node name="FacilityPlacementStore" type="Node" parent="InteractionRoot" unique_id=208902322]
+[node name="FacilityPlacementStore" type="Node" parent="InteractionRoot" unique_id=1306445863]
 script = ExtResource("11_ya4ey")
 
-[node name="FacilityRenderer" type="Node2D" parent="InteractionRoot" unique_id=1479647018]
-z_index = 2
-script = ExtResource("12_eb6dy")
+[node name="Facility3DRenderer" type="Node3D" parent="InteractionRoot" unique_id=1352949738]
+script = ExtResource("12_muem4")

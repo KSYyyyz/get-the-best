@@ -2,7 +2,7 @@ using Godot;
 
 namespace GetTheBestGodot;
 
-public partial class MainController : Node2D
+public partial class MainController : Node3D
 {
     private Label? _statusLabel;
     private Control? _topStatusBar;
@@ -40,7 +40,7 @@ public partial class MainController : Node2D
 
     public override void _Process(double delta)
     {
-        var viewportSize = GetViewportRect().Size;
+        var viewportSize = GetViewport().GetVisibleRect().Size;
         if (viewportSize != _lastViewportSize)
         {
             LayoutHud();
@@ -49,7 +49,7 @@ public partial class MainController : Node2D
 
     private void LayoutHud()
     {
-        var viewportSize = GetViewportRect().Size;
+        var viewportSize = GetViewport().GetVisibleRect().Size;
         _lastViewportSize = viewportSize;
 
         if (_topStatusBar != null)
