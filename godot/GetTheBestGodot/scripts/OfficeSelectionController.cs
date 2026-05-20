@@ -48,6 +48,12 @@ public partial class OfficeSelectionController : Node2D
 
         if (mouseEvent.ButtonIndex == MouseButton.Right && mouseEvent.Pressed)
         {
+            if (_isDraggingSelection)
+            {
+                CancelDragSelection();
+                return;
+            }
+
             CancelInteraction();
             return;
         }
@@ -59,6 +65,12 @@ public partial class OfficeSelectionController : Node2D
 
         if (mouseEvent.Pressed)
         {
+            if (_buildModeController?.IsPointerMode() == true)
+            {
+                SelectRoomAtPointer(mouseEvent.Position);
+                return;
+            }
+
             BeginSelection(mouseEvent.Position);
             return;
         }
@@ -69,14 +81,17 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
-        FinishSelection(mouseEvent.Position);
+        if (_buildModeController?.IsBuildRoomMode() == true)
+        {
+            FinishSelection(mouseEvent.Position);
+        }
     }
 
     private void BeginSelection(Vector2 screenPosition)
     {
         if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
-            CancelInteraction();
+            CancelDragSelection();
             return;
         }
 
@@ -102,7 +117,7 @@ public partial class OfficeSelectionController : Node2D
         if (_buildModeController?.TryCreateRoom(_dragStartCell, _dragCurrentCell, out var room) == true && room != null)
         {
             _placementPreviewController?.ClearPreview();
-            _roomOverlayRenderer?.RefreshRooms();
+            SelectRoom(room);
             ShowOccupiedRoom(room, screenPosition);
             return;
         }
@@ -126,15 +141,36 @@ public partial class OfficeSelectionController : Node2D
         if (_buildModeController?.TryDeleteRoomsInSelection(_dragStartCell, _dragCurrentCell, out var deletedCount) == true)
         {
             _placementPreviewController?.ClearPreview();
-            _roomOverlayRenderer?.HighlightRoom(null);
+            ClearSelectedRoom();
             _roomOverlayRenderer?.RefreshRooms();
             ShowPointerTooltip($"已删除 {deletedCount} 格", screenPosition);
             return;
         }
 
         _placementPreviewController?.ClearPreview();
-        _roomOverlayRenderer?.HighlightRoom(null);
+        ClearSelectedRoom();
         ShowPointerTooltip("没有可删除地块", screenPosition);
+    }
+
+    private void SelectRoomAtPointer(Vector2 screenPosition)
+    {
+        if (!TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            ClearSelectedRoom();
+            HidePointerTooltip();
+            return;
+        }
+
+        var room = _buildModeController?.FindRoomAtCell(cell);
+        if (room == null)
+        {
+            ClearSelectedRoom();
+            HidePointerTooltip();
+            return;
+        }
+
+        SelectRoom(room);
+        ShowOccupiedRoom(room, screenPosition);
     }
 
     private void UpdateHoverOrDragPreview(Vector2 screenPosition)
@@ -144,7 +180,6 @@ public partial class OfficeSelectionController : Node2D
             if (!_isDraggingSelection)
             {
                 _placementPreviewController?.ClearPreview();
-                _roomOverlayRenderer?.HighlightRoom(null);
                 HidePointerTooltip();
             }
             return;
@@ -157,17 +192,14 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
+        _placementPreviewController?.ClearPreview();
         var hoveredRoom = _buildModeController?.FindRoomAtCell(cell);
         if (hoveredRoom != null)
         {
-            _roomOverlayRenderer?.HighlightRoom(hoveredRoom);
-            _placementPreviewController?.ShowHoverCell(cell);
             ShowOccupiedRoom(hoveredRoom, screenPosition);
             return;
         }
 
-        _roomOverlayRenderer?.HighlightRoom(null);
-        _placementPreviewController?.ShowHoverCell(cell);
         HidePointerTooltip();
     }
 
@@ -189,10 +221,27 @@ public partial class OfficeSelectionController : Node2D
 
     private void CancelInteraction()
     {
+        CancelDragSelection();
+        ClearSelectedRoom();
+        _buildModeController?.CancelActiveTool();
+    }
+
+    private void CancelDragSelection()
+    {
         _isDraggingSelection = false;
         _placementPreviewController?.ClearPreview();
-        _roomOverlayRenderer?.HighlightRoom(null);
         HidePointerTooltip();
+    }
+
+    private void SelectRoom(RoomFootprint room)
+    {
+        _roomOverlayRenderer?.HighlightRoom(room);
+        _roomOverlayRenderer?.RefreshRooms();
+    }
+
+    private void ClearSelectedRoom()
+    {
+        _roomOverlayRenderer?.HighlightRoom(null);
     }
 
     private void ShowOccupiedRoom(RoomFootprint room, Vector2 screenPosition)

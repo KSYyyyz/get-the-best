@@ -55,29 +55,30 @@ script = ExtResource("5_choun")
 [node name="BuildModeRows" type="VBoxContainer" parent="HudRoot/BuildModePanel" unique_id=536325811]
 layout_mode = 2
 
-[node name="BuildEntryButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1693183547]
+[node name="BuildEntryButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1340281344]
 layout_mode = 2
 
-[node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=563829205]
+[node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1244129055]
 layout_mode = 2
 text = "??"
 
-[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=827017963]
+[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=614219295]
 layout_mode = 2
-text = "????"
+text = "??"
 
-[node name="RoomTypeButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1291022369]
+[node name="RoomTypeButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1261356519]
+visible = false
 layout_mode = 2
 
-[node name="ResearchRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=2131082528]
-layout_mode = 2
-text = "???"
-
-[node name="MarketRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1397749704]
+[node name="ResearchRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1234831213]
 layout_mode = 2
 text = "???"
 
-[node name="ServerRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=646221106]
+[node name="MarketRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=94124974]
+layout_mode = 2
+text = "???"
+
+[node name="ServerRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/RoomTypeButtons" unique_id=1435614175]
 layout_mode = 2
 text = "????"
 

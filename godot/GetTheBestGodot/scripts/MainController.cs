@@ -60,12 +60,12 @@ public partial class MainController : Node2D
 
         if (_buildModePanel != null)
         {
-            var width = Mathf.Clamp(viewportSize.X * 0.42f, 460.0f, 680.0f);
+            var width = Mathf.Clamp(viewportSize.X * 0.13f, 150.0f, 210.0f);
             _buildModePanel.Position = new Vector2(
                 Mathf.Max(16.0f, viewportSize.X - width - 16.0f),
                 12.0f
             );
-            _buildModePanel.Size = new Vector2(width, 72.0f);
+            _buildModePanel.Size = new Vector2(width, 180.0f);
         }
 
         if (_floatingTooltip != null)

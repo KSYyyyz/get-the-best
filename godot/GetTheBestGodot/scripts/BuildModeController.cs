@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace GetTheBestGodot;
@@ -11,6 +12,7 @@ public enum RoomBuildType
 
 public enum BuildToolMode
 {
+    Pointer,
     BuildRoom,
     DeleteRoom,
 }
@@ -19,7 +21,9 @@ public partial class BuildModeController : Node
 {
     private RoomFootprintStore? _roomFootprintStore;
     private RoomBuildType _activeRoomType = RoomBuildType.ResearchRoom;
-    private BuildToolMode _activeToolMode = BuildToolMode.BuildRoom;
+    private BuildToolMode _activeToolMode = BuildToolMode.Pointer;
+
+    public event Action? ToolModeChanged;
 
     public override void _Ready()
     {
@@ -105,7 +109,7 @@ public partial class BuildModeController : Node
     public void SetActiveRoomType(RoomBuildType roomType)
     {
         _activeRoomType = roomType;
-        _activeToolMode = BuildToolMode.BuildRoom;
+        SetActiveToolMode(BuildToolMode.BuildRoom);
     }
 
     public RoomBuildType GetActiveRoomType()
@@ -113,14 +117,29 @@ public partial class BuildModeController : Node
         return _activeRoomType;
     }
 
+    public BuildToolMode GetActiveToolMode()
+    {
+        return _activeToolMode;
+    }
+
     public void StartDeleteRoomMode()
     {
-        _activeToolMode = BuildToolMode.DeleteRoom;
+        SetActiveToolMode(BuildToolMode.DeleteRoom);
     }
 
     public void CancelActiveTool()
     {
-        _activeToolMode = BuildToolMode.BuildRoom;
+        SetActiveToolMode(BuildToolMode.Pointer);
+    }
+
+    public bool IsPointerMode()
+    {
+        return _activeToolMode == BuildToolMode.Pointer;
+    }
+
+    public bool IsBuildRoomMode()
+    {
+        return _activeToolMode == BuildToolMode.BuildRoom;
     }
 
     public bool IsDeleteRoomMode()
@@ -151,5 +170,16 @@ public partial class BuildModeController : Node
         var minY = Mathf.Min(startCell.Y, endCell.Y);
         var maxY = Mathf.Max(startCell.Y, endCell.Y);
         return $"{maxX - minX + 1}x{maxY - minY + 1}";
+    }
+
+    private void SetActiveToolMode(BuildToolMode toolMode)
+    {
+        if (_activeToolMode == toolMode)
+        {
+            return;
+        }
+
+        _activeToolMode = toolMode;
+        ToolModeChanged?.Invoke();
     }
 }
