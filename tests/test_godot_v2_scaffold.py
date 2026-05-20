@@ -451,7 +451,7 @@ def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
     room_renderer = scripts["RoomOverlay3DRenderer.cs"]
     assert "RoomCarpetHeight" in room_renderer
     assert "RoomBoundaryHeight" in room_renderer
-    assert "AddRoomBoundary" in room_renderer
+    assert "AddRoomCellBoundary" in room_renderer
     assert "AddRoomSignPlate" in room_renderer
     assert "HighlightedRoomStroke" in room_renderer
 
@@ -474,3 +474,16 @@ def test_get_the_best_v2_interaction_controller_uses_scene_relative_paths() -> N
     assert 'GetNodeOrNull<BuildModeController>("../BuildModeController")' in controller
     assert 'GetNodeOrNull<RoomOverlay3DRenderer>("../RoomOverlay3DRenderer")' in controller
     assert 'GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer")' in controller
+
+
+def test_get_the_best_v2_room_overlay_renders_actual_cells_after_single_cell_delete() -> None:
+    renderer = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+
+    assert "foreach (var cell in room.Cells)" in renderer
+    assert "AddRoomCellCarpet(room, cell)" in renderer
+    assert "AddRoomCellBoundary(room, cell)" in renderer
+    assert "HasNeighbor(room, cell + Vector2I.Left)" in renderer
+    assert "HasNeighbor(room, cell + Vector2I.Right)" in renderer
+    assert "HasNeighbor(room, cell + Vector2I.Up)" in renderer
+    assert "HasNeighbor(room, cell + Vector2I.Down)" in renderer
+    assert "SelectionSize(room.MinCell, room.MaxCell" not in renderer

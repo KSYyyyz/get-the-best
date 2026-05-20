@@ -49,58 +49,79 @@ public partial class RoomOverlay3DRenderer : Node3D
 
     private void AddRoomMesh(RoomFootprint room)
     {
-        AddRoomCarpet(room);
-        AddRoomBoundary(room);
+        foreach (var cell in room.Cells)
+        {
+            AddRoomCellCarpet(room, cell);
+            AddRoomCellBoundary(room, cell);
+        }
+
         AddRoomSignPlate(room);
     }
 
-    private void AddRoomCarpet(RoomFootprint room)
+    private void AddRoomCellCarpet(RoomFootprint room, Vector2I cell)
     {
         var mesh = new MeshInstance3D
         {
             Mesh = new BoxMesh
             {
-                Size = OfficeWorld3DConfig.SelectionSize(room.MinCell, room.MaxCell, RoomCarpetHeight),
+                Size = new Vector3(
+                    OfficeWorld3DConfig.GridSize,
+                    RoomCarpetHeight,
+                    OfficeWorld3DConfig.GridSize
+                ),
             },
             MaterialOverride = CreateMaterial(GetRoomFillColor(room.RoomType)),
             Position =
-                OfficeWorld3DConfig.SelectionCenter(room.MinCell, room.MaxCell)
+                OfficeWorld3DConfig.CellToWorldPosition(cell)
                 + Vector3.Up * (RoomCarpetHeight / 2.0f + 0.04f),
         };
         AddChild(mesh);
         _renderedRooms.Add(mesh);
     }
 
-    private void AddRoomBoundary(RoomFootprint room)
+    private void AddRoomCellBoundary(RoomFootprint room, Vector2I cell)
     {
-        var size = OfficeWorld3DConfig.SelectionSize(room.MinCell, room.MaxCell, RoomBoundaryHeight);
-        var center = OfficeWorld3DConfig.SelectionCenter(room.MinCell, room.MaxCell);
+        var center = OfficeWorld3DConfig.CellToWorldPosition(cell);
         var color = _highlightedRoom == room ? HighlightedRoomStroke : GetRoomBoundaryColor(room.RoomType);
         var material = CreateMaterial(color);
-        var halfX = size.X / 2.0f;
-        var halfZ = size.Z / 2.0f;
+        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
         var y = RoomBoundaryHeight / 2.0f + 0.08f;
 
-        AddBoundaryStrip(
-            center + new Vector3(0.0f, y, -halfZ),
-            new Vector3(size.X, RoomBoundaryHeight, RoomBoundaryThickness),
-            material
-        );
-        AddBoundaryStrip(
-            center + new Vector3(0.0f, y, halfZ),
-            new Vector3(size.X, RoomBoundaryHeight, RoomBoundaryThickness),
-            material
-        );
-        AddBoundaryStrip(
-            center + new Vector3(-halfX, y, 0.0f),
-            new Vector3(RoomBoundaryThickness, RoomBoundaryHeight, size.Z),
-            material
-        );
-        AddBoundaryStrip(
-            center + new Vector3(halfX, y, 0.0f),
-            new Vector3(RoomBoundaryThickness, RoomBoundaryHeight, size.Z),
-            material
-        );
+        if (!HasNeighbor(room, cell + Vector2I.Up))
+        {
+            AddBoundaryStrip(
+                center + new Vector3(0.0f, y, -halfCell),
+                new Vector3(OfficeWorld3DConfig.GridSize, RoomBoundaryHeight, RoomBoundaryThickness),
+                material
+            );
+        }
+
+        if (!HasNeighbor(room, cell + Vector2I.Down))
+        {
+            AddBoundaryStrip(
+                center + new Vector3(0.0f, y, halfCell),
+                new Vector3(OfficeWorld3DConfig.GridSize, RoomBoundaryHeight, RoomBoundaryThickness),
+                material
+            );
+        }
+
+        if (!HasNeighbor(room, cell + Vector2I.Left))
+        {
+            AddBoundaryStrip(
+                center + new Vector3(-halfCell, y, 0.0f),
+                new Vector3(RoomBoundaryThickness, RoomBoundaryHeight, OfficeWorld3DConfig.GridSize),
+                material
+            );
+        }
+
+        if (!HasNeighbor(room, cell + Vector2I.Right))
+        {
+            AddBoundaryStrip(
+                center + new Vector3(halfCell, y, 0.0f),
+                new Vector3(RoomBoundaryThickness, RoomBoundaryHeight, OfficeWorld3DConfig.GridSize),
+                material
+            );
+        }
     }
 
     private void AddBoundaryStrip(Vector3 position, Vector3 size, Material material)
@@ -113,6 +134,11 @@ public partial class RoomOverlay3DRenderer : Node3D
         };
         AddChild(mesh);
         _renderedRooms.Add(mesh);
+    }
+
+    private static bool HasNeighbor(RoomFootprint room, Vector2I cell)
+    {
+        return room.Contains(cell);
     }
 
     private void AddRoomSignPlate(RoomFootprint room)
