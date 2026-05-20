@@ -7,12 +7,14 @@ public partial class BuildModeHudController : PanelContainer
     private static readonly Color NormalButtonColor = new(0.90f, 0.94f, 0.92f, 0.82f);
     private static readonly Color HoverButtonColor = new(1.0f, 0.95f, 0.58f, 1.0f);
     private static readonly Color ActiveButtonColor = new(0.54f, 1.0f, 0.68f, 1.0f);
+    private static readonly Color SeparatorColor = new(0.72f, 0.76f, 0.74f, 0.82f);
     private const string BuildMenuText = "建造";
     private const string DeleteRoomText = "删除";
 
     private BuildModeController? _buildModeController;
     private Button? _buildMenuButton;
     private Button? _deleteRoomButton;
+    private Label? _entrySeparator;
     private VBoxContainer? _roomTypeButtons;
     private Button? _researchRoomButton;
     private Button? _marketRoomButton;
@@ -32,13 +34,15 @@ public partial class BuildModeHudController : PanelContainer
 
         _buildMenuButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/BuildMenuButton");
         _deleteRoomButton = GetNodeOrNull<Button>("BuildModeRows/BuildEntryButtons/DeleteRoomButton");
+        _entrySeparator = GetNodeOrNull<Label>("BuildModeRows/BuildEntryButtons/EntrySeparator");
         _roomTypeButtons = GetNodeOrNull<VBoxContainer>("BuildModeRows/RoomTypeButtons");
         _researchRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ResearchRoomButton");
         _marketRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/MarketRoomButton");
         _serverRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ServerRoomButton");
 
-        ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode, minWidth: 84.0f);
-        ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu, minWidth: 84.0f);
+        ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode, minWidth: 62.0f);
+        ConfigureSeparator();
+        ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu, minWidth: 62.0f);
         ConfigureButton(
             _researchRoomButton,
             BuildModeController.GetRoomTypeLabel(RoomBuildType.ResearchRoom),
@@ -133,6 +137,20 @@ public partial class BuildModeHudController : PanelContainer
         button.Pressed += action;
         button.MouseEntered += () => ApplyHoverState(button, isHovered: true);
         button.MouseExited += () => ApplyHoverState(button, isHovered: false);
+    }
+
+    private void ConfigureSeparator()
+    {
+        if (_entrySeparator == null)
+        {
+            return;
+        }
+
+        _entrySeparator.Text = "|";
+        _entrySeparator.CustomMinimumSize = new Vector2(14.0f, 30.0f);
+        _entrySeparator.HorizontalAlignment = HorizontalAlignment.Center;
+        _entrySeparator.VerticalAlignment = VerticalAlignment.Center;
+        _entrySeparator.AddThemeColorOverride("font_color", SeparatorColor);
     }
 
     private void ApplyHoverState(Button button, bool isHovered)

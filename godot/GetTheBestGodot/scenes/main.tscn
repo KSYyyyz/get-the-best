@@ -62,6 +62,10 @@ layout_mode = 2
 layout_mode = 2
 text = "??"
 
+[node name="EntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=853115631]
+layout_mode = 2
+text = "|"
+
 [node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1581832478]
 layout_mode = 2
 text = "??"

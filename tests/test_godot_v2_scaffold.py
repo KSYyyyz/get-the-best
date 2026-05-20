@@ -173,6 +173,7 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "BuildModePanel" in scene_text
     assert "BuildEntryButtons" in scene_text
     assert "BuildMenuButton" in scene_text
+    assert "EntrySeparator" in scene_text
     assert "ResearchRoomButton" in scene_text
     assert "MarketRoomButton" in scene_text
     assert "ServerRoomButton" in scene_text
@@ -180,11 +181,17 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert '[node name="BuildEntryButtons" type="HBoxContainer"' in scene_text
     assert '[node name="RoomTypeButtons" type="VBoxContainer"' in scene_text
     assert scene_text.index('[node name="DeleteRoomButton"') < scene_text.index(
+        '[node name="EntrySeparator"'
+    )
+    assert scene_text.index('[node name="EntrySeparator"') < scene_text.index(
         '[node name="BuildMenuButton"'
     )
 
     assert "BuildModeHudController.cs" in scripts
     assert "_buildMenuButton" in scripts["BuildModeHudController.cs"]
+    assert "_entrySeparator" in scripts["BuildModeHudController.cs"]
+    assert "ConfigureSeparator" in scripts["BuildModeHudController.cs"]
+    assert 'Text = "|"' in scripts["BuildModeHudController.cs"]
     assert "VBoxContainer? _roomTypeButtons" in scripts["BuildModeHudController.cs"]
     assert "ToggleBuildMenu" in scripts["BuildModeHudController.cs"]
     assert "RefreshRoomTypeVisibility" in scripts["BuildModeHudController.cs"]
@@ -197,11 +204,12 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "ActiveButtonColor" in scripts["BuildModeHudController.cs"]
     assert "HoverButtonColor" in scripts["BuildModeHudController.cs"]
     assert "GetButtonPrefix" in scripts["BuildModeHudController.cs"]
-    assert "minWidth: 84.0f" in scripts["BuildModeHudController.cs"]
+    assert "minWidth: 62.0f" in scripts["BuildModeHudController.cs"]
     assert (
         "CustomMinimumSize = new Vector2(minWidth, 30.0f)" in scripts["BuildModeHudController.cs"]
     )
-    assert "viewportSize.X * 0.16f" in scripts["MainController.cs"]
+    assert "viewportSize.X * 0.14f" in scripts["MainController.cs"]
+    assert "viewportSize.X - width - 180.0f" in scripts["MainController.cs"]
     assert "new Vector2(width, 180.0f)" in scripts["MainController.cs"]
     assert "enum RoomBuildType" in scripts["BuildModeController.cs"]
     assert "ResearchRoom" in scripts["BuildModeController.cs"]
