@@ -5,8 +5,9 @@ namespace GetTheBestGodot;
 public partial class OfficeCameraController : Camera2D
 {
     private const float MoveSpeed = 900.0f;
-    private const float MinZoom = 0.45f;
-    private const float MaxZoom = 2.0f;
+    private const float MinZoom = 0.25f;
+    private const float MaxZoom = 3.25f;
+    private const float ZoomStepFactor = 1.18f;
     private bool _isDragging;
 
     public override void _Process(double delta)
@@ -63,18 +64,24 @@ public partial class OfficeCameraController : Camera2D
 
         if (mouseEvent.ButtonIndex == MouseButton.WheelUp)
         {
-            SetZoomLevel(Zoom.X + 0.1f);
+            SetZoomLevel(Zoom.X * ZoomStepFactor, keepMouseAnchored: true);
         }
         else if (mouseEvent.ButtonIndex == MouseButton.WheelDown)
         {
-            SetZoomLevel(Zoom.X - 0.1f);
+            SetZoomLevel(Zoom.X / ZoomStepFactor, keepMouseAnchored: true);
         }
     }
 
-    private void SetZoomLevel(float zoomLevel)
+    private void SetZoomLevel(float zoomLevel, bool keepMouseAnchored)
     {
+        var mouseBefore = keepMouseAnchored ? GetGlobalMousePosition() : Position;
         var clampedZoom = Mathf.Clamp(zoomLevel, MinZoom, MaxZoom);
         Zoom = new Vector2(clampedZoom, clampedZoom);
+        if (keepMouseAnchored)
+        {
+            var mouseAfter = GetGlobalMousePosition();
+            Position += mouseBefore - mouseAfter;
+        }
         ClampToOfficeBounds();
     }
 

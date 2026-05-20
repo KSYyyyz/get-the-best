@@ -73,6 +73,10 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
     assert "new(new Vector2(-1600, -1000), new Vector2(3200, 2000))" in scripts["OfficeWorldConfig.cs"]
     assert "LayoutHud" in scripts["MainController.cs"]
     assert "InputEventMouseMotion" in scripts["OfficeCameraController.cs"]
+    assert "MinZoom = 0.25f" in scripts["OfficeCameraController.cs"]
+    assert "MaxZoom = 3.25f" in scripts["OfficeCameraController.cs"]
+    assert "ZoomStepFactor = 1.18f" in scripts["OfficeCameraController.cs"]
+    assert "GetGlobalMousePosition()" in scripts["OfficeCameraController.cs"]
     assert "规则核心桥接待接入" in scripts["V2CoreBridge.cs"]
     assert "G2OperationsPanel" not in "\n".join(scripts.values())
 
