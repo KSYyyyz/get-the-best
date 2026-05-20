@@ -37,8 +37,8 @@ public partial class BuildModeHudController : PanelContainer
         _marketRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/MarketRoomButton");
         _serverRoomButton = GetNodeOrNull<Button>("BuildModeRows/RoomTypeButtons/ServerRoomButton");
 
-        ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu);
-        ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode);
+        ConfigureButton(_deleteRoomButton, DeleteRoomText, StartDeleteRoomMode, minWidth: 84.0f);
+        ConfigureButton(_buildMenuButton, BuildMenuText, ToggleBuildMenu, minWidth: 84.0f);
         ConfigureButton(
             _researchRoomButton,
             BuildModeController.GetRoomTypeLabel(RoomBuildType.ResearchRoom),
@@ -80,7 +80,13 @@ public partial class BuildModeHudController : PanelContainer
 
     private void ToggleBuildMenu()
     {
-        _isBuildMenuOpen = !_isBuildMenuOpen;
+        var nextOpenState = !_isBuildMenuOpen;
+        if (_buildModeController?.IsDeleteRoomMode() == true)
+        {
+            _buildModeController.CancelActiveTool();
+        }
+
+        _isBuildMenuOpen = nextOpenState;
         RefreshRoomTypeVisibility();
         ApplyToolButtonState();
     }
@@ -95,7 +101,7 @@ public partial class BuildModeHudController : PanelContainer
 
     private void StartDeleteRoomMode()
     {
-        _buildModeController?.StartDeleteRoomMode();
+        _buildModeController?.ToggleDeleteRoomMode();
         _isBuildMenuOpen = false;
         RefreshRoomTypeVisibility();
         ApplyToolButtonState();
@@ -109,7 +115,12 @@ public partial class BuildModeHudController : PanelContainer
         }
     }
 
-    private void ConfigureButton(Button? button, string text, System.Action action)
+    private void ConfigureButton(
+        Button? button,
+        string text,
+        System.Action action,
+        float minWidth = 120.0f
+    )
     {
         if (button == null)
         {
@@ -117,7 +128,7 @@ public partial class BuildModeHudController : PanelContainer
         }
 
         button.Text = text;
-        button.CustomMinimumSize = new Vector2(120.0f, 30.0f);
+        button.CustomMinimumSize = new Vector2(minWidth, 30.0f);
         button.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         button.Pressed += action;
         button.MouseEntered += () => ApplyHoverState(button, isHovered: true);

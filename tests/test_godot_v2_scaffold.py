@@ -177,8 +177,11 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "MarketRoomButton" in scene_text
     assert "ServerRoomButton" in scene_text
     assert "BuildModeHudController" in scene_text
-    assert '[node name="BuildEntryButtons" type="VBoxContainer"' in scene_text
+    assert '[node name="BuildEntryButtons" type="HBoxContainer"' in scene_text
     assert '[node name="RoomTypeButtons" type="VBoxContainer"' in scene_text
+    assert scene_text.index('[node name="DeleteRoomButton"') < scene_text.index(
+        '[node name="BuildMenuButton"'
+    )
 
     assert "BuildModeHudController.cs" in scripts
     assert "_buildMenuButton" in scripts["BuildModeHudController.cs"]
@@ -194,8 +197,11 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "ActiveButtonColor" in scripts["BuildModeHudController.cs"]
     assert "HoverButtonColor" in scripts["BuildModeHudController.cs"]
     assert "GetButtonPrefix" in scripts["BuildModeHudController.cs"]
-    assert "CustomMinimumSize = new Vector2(120.0f, 30.0f)" in scripts["BuildModeHudController.cs"]
-    assert "viewportSize.X * 0.13f" in scripts["MainController.cs"]
+    assert "minWidth: 84.0f" in scripts["BuildModeHudController.cs"]
+    assert (
+        "CustomMinimumSize = new Vector2(minWidth, 30.0f)" in scripts["BuildModeHudController.cs"]
+    )
+    assert "viewportSize.X * 0.16f" in scripts["MainController.cs"]
     assert "new Vector2(width, 180.0f)" in scripts["MainController.cs"]
     assert "enum RoomBuildType" in scripts["BuildModeController.cs"]
     assert "ResearchRoom" in scripts["BuildModeController.cs"]
@@ -240,6 +246,7 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
     assert "Pointer" in scripts["BuildModeController.cs"]
     assert "DeleteRoom" in scripts["BuildModeController.cs"]
     assert "StartDeleteRoomMode" in scripts["BuildModeController.cs"]
+    assert "ToggleDeleteRoomMode" in scripts["BuildModeController.cs"]
     assert "CancelActiveTool" in scripts["BuildModeController.cs"]
     assert "ToolModeChanged" in scripts["BuildModeController.cs"]
     assert "IsPointerMode" in scripts["BuildModeController.cs"]
@@ -255,6 +262,8 @@ def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
     assert "HighlightedRoomStroke" in scripts["RoomOverlayRenderer.cs"]
     assert "FinishDeleteSelection" in scripts["OfficeSelectionController.cs"]
     assert "SelectRoomAtPointer" in scripts["OfficeSelectionController.cs"]
+    assert "ClearSelectedRoom();" in scripts["OfficeSelectionController.cs"]
+    assert "_roomOverlayRenderer?.RefreshRooms();" in scripts["OfficeSelectionController.cs"]
     assert "CancelActiveTool" in scripts["OfficeSelectionController.cs"]
     assert "if (_isDraggingSelection)" in scripts["OfficeSelectionController.cs"]
     assert "CancelInteraction();" in scripts["OfficeSelectionController.cs"]

@@ -127,6 +127,17 @@ public partial class BuildModeController : Node
         SetActiveToolMode(BuildToolMode.DeleteRoom);
     }
 
+    public void ToggleDeleteRoomMode()
+    {
+        if (IsDeleteRoomMode())
+        {
+            CancelActiveTool();
+            return;
+        }
+
+        StartDeleteRoomMode();
+    }
+
     public void CancelActiveTool()
     {
         SetActiveToolMode(BuildToolMode.Pointer);

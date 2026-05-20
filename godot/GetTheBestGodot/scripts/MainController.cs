@@ -60,7 +60,7 @@ public partial class MainController : Node2D
 
         if (_buildModePanel != null)
         {
-            var width = Mathf.Clamp(viewportSize.X * 0.13f, 150.0f, 210.0f);
+            var width = Mathf.Clamp(viewportSize.X * 0.16f, 190.0f, 250.0f);
             _buildModePanel.Position = new Vector2(
                 Mathf.Max(16.0f, viewportSize.X - width - 16.0f),
                 12.0f

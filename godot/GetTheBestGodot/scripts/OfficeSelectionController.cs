@@ -117,7 +117,8 @@ public partial class OfficeSelectionController : Node2D
         if (_buildModeController?.TryCreateRoom(_dragStartCell, _dragCurrentCell, out var room) == true && room != null)
         {
             _placementPreviewController?.ClearPreview();
-            SelectRoom(room);
+            ClearSelectedRoom();
+            _roomOverlayRenderer?.RefreshRooms();
             ShowOccupiedRoom(room, screenPosition);
             return;
         }
