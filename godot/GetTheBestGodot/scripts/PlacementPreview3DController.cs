@@ -36,8 +36,8 @@ public partial class PlacementPreview3DController : Node3D
     {
         _doorPreviewMesh ??= CreatePreviewMesh();
         _doorPreviewMesh.Visible = true;
-        _doorPreviewMesh.Position = GetDoorPreviewPosition(doorPlacement);
-        _doorPreviewMesh.Mesh = new BoxMesh { Size = GetDoorPreviewSize(doorPlacement.Side) };
+        _doorPreviewMesh.Position = RoomDoorGeometry.GetPosition(doorPlacement);
+        _doorPreviewMesh.Mesh = new BoxMesh { Size = RoomDoorGeometry.GetSize(doorPlacement.Side) };
         _doorPreviewMesh.MaterialOverride = CreateMaterial(DoorPreviewFill);
     }
 
@@ -71,27 +71,4 @@ public partial class PlacementPreview3DController : Node3D
         };
     }
 
-    private static Vector3 GetDoorPreviewPosition(RoomDoorPlacement doorPlacement)
-    {
-        var center = OfficeWorld3DConfig.CellToWorldPosition(doorPlacement.Cell);
-        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
-        var y = 0.56f;
-        return doorPlacement.Side switch
-        {
-            RoomDoorSide.North => center + new Vector3(0.0f, y, -halfCell),
-            RoomDoorSide.South => center + new Vector3(0.0f, y, halfCell),
-            RoomDoorSide.West => center + new Vector3(-halfCell, y, 0.0f),
-            RoomDoorSide.East => center + new Vector3(halfCell, y, 0.0f),
-            _ => center + Vector3.Up * y,
-        };
-    }
-
-    private static Vector3 GetDoorPreviewSize(RoomDoorSide side)
-    {
-        return side switch
-        {
-            RoomDoorSide.North or RoomDoorSide.South => new Vector3(1.20f, 0.16f, 0.26f),
-            _ => new Vector3(0.26f, 0.16f, 1.20f),
-        };
-    }
 }

@@ -210,30 +210,15 @@ public partial class RoomFootprintStore : Node
 
     private static bool IsWorldPositionOnDoor(Vector3 worldPosition, RoomDoorPlacement doorPlacement)
     {
-        var delta = worldPosition - GetDoorWorldPosition(doorPlacement);
-        var wideHalfExtent = OfficeWorld3DConfig.GridSize * 0.80f;
-        var narrowHalfExtent = OfficeWorld3DConfig.GridSize * 0.80f;
+        var delta = worldPosition - RoomDoorGeometry.GetPosition(doorPlacement);
+        var halfExtents = RoomDoorGeometry.GetHitHalfExtents(doorPlacement.Side);
         return doorPlacement.Side switch
         {
             RoomDoorSide.North or RoomDoorSide.South =>
-                Mathf.Abs(delta.X) <= wideHalfExtent && Mathf.Abs(delta.Z) <= narrowHalfExtent,
+                Mathf.Abs(delta.X) <= halfExtents.X && Mathf.Abs(delta.Z) <= halfExtents.Y,
             RoomDoorSide.West or RoomDoorSide.East =>
-                Mathf.Abs(delta.X) <= narrowHalfExtent && Mathf.Abs(delta.Z) <= wideHalfExtent,
+                Mathf.Abs(delta.X) <= halfExtents.X && Mathf.Abs(delta.Z) <= halfExtents.Y,
             _ => false,
-        };
-    }
-
-    private static Vector3 GetDoorWorldPosition(RoomDoorPlacement doorPlacement)
-    {
-        var center = OfficeWorld3DConfig.CellToWorldPosition(doorPlacement.Cell);
-        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
-        return doorPlacement.Side switch
-        {
-            RoomDoorSide.North => center + new Vector3(0.0f, 0.0f, -halfCell),
-            RoomDoorSide.South => center + new Vector3(0.0f, 0.0f, halfCell),
-            RoomDoorSide.West => center + new Vector3(-halfCell, 0.0f, 0.0f),
-            RoomDoorSide.East => center + new Vector3(halfCell, 0.0f, 0.0f),
-            _ => center,
         };
     }
 }

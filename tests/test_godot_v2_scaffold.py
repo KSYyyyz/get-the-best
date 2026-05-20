@@ -528,7 +528,14 @@ def test_get_the_best_v2_room_build_requires_pending_confirmation_and_door() -> 
     assert "FinishPointerSelection(mouseEvent.Position)" in selection
     assert "SelectObjectAtPointer(screenPosition)" in selection
     assert "IsPointerSelectionDrag()" in selection
-    assert "ShowPointerTooltip(size, screenPosition)" in selection
+    assert "ShowPointerSelectionRect()" in selection
+    pointer_selection_block = selection[
+        selection.index("private void FinishPointerSelection") : selection.index(
+            "private void FinishDoorPlacement"
+        )
+    ]
+    assert "ShowPointerTooltip(size, screenPosition)" not in pointer_selection_block
+    assert "HidePointerTooltip();" in pointer_selection_block
     assert "TryCreateRoom(_dragStartCell" not in selection
     assert "RefreshPendingRoomPreview()" in selection
     assert "ShowRoomDoorPreview" in read_text(
@@ -553,6 +560,8 @@ def test_get_the_best_v2_room_build_requires_pending_confirmation_and_door() -> 
 def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete() -> None:
     room_store = read_text(GODOT_ROOT / "scripts" / "RoomFootprintStore.cs")
     room_renderer = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+    placement_preview = read_text(GODOT_ROOT / "scripts" / "PlacementPreview3DController.cs")
+    door_geometry = read_text(GODOT_ROOT / "scripts" / "RoomDoorGeometry.cs")
     selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
 
     assert "RoomDoorSide" in room_store
@@ -570,8 +579,12 @@ def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete(
     assert "IsDoorEdge(room, cell, RoomDoorSide.South)" in room_renderer
     assert "IsDoorEdge(room, cell, RoomDoorSide.West)" in room_renderer
     assert "IsDoorEdge(room, cell, RoomDoorSide.East)" in room_renderer
-    assert "GetDoorPosition" in room_renderer
-    assert "GetDoorSize" in room_renderer
+    assert "RoomDoorGeometry.GetPosition(doorPlacement)" in room_renderer
+    assert "RoomDoorGeometry.GetSize(doorPlacement.Side)" in room_renderer
+    assert "RoomDoorGeometry.GetPosition(doorPlacement)" in placement_preview
+    assert "RoomDoorGeometry.GetSize(doorPlacement.Side)" in placement_preview
+    assert "DoorHeight = 0.16f" in door_geometry
+    assert "DoorY = RoomBoundaryHeight + DoorHeight / 2.0f" in door_geometry
     assert "RoomSignPlateFill" not in room_renderer
     assert "AddRoomSignPlate" not in room_renderer
     assert "DeleteSingleCellAtPointer(screenPosition)" in selection

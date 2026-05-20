@@ -158,36 +158,12 @@ public partial class RoomOverlay3DRenderer : Node3D
         var doorPlacement = room.DoorPlacement;
         var mesh = new MeshInstance3D
         {
-            Mesh = new BoxMesh { Size = GetDoorSize(doorPlacement.Side) },
+            Mesh = new BoxMesh { Size = RoomDoorGeometry.GetSize(doorPlacement.Side) },
             MaterialOverride = CreateMaterial(RoomDoorFill),
-            Position = GetDoorPosition(doorPlacement),
+            Position = RoomDoorGeometry.GetPosition(doorPlacement),
         };
         AddChild(mesh);
         _renderedRooms.Add(mesh);
-    }
-
-    private static Vector3 GetDoorPosition(RoomDoorPlacement doorPlacement)
-    {
-        var center = OfficeWorld3DConfig.CellToWorldPosition(doorPlacement.Cell);
-        var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
-        var y = RoomBoundaryHeight + 0.16f;
-        return doorPlacement.Side switch
-        {
-            RoomDoorSide.North => center + new Vector3(0.0f, y, -halfCell),
-            RoomDoorSide.South => center + new Vector3(0.0f, y, halfCell),
-            RoomDoorSide.West => center + new Vector3(-halfCell, y, 0.0f),
-            RoomDoorSide.East => center + new Vector3(halfCell, y, 0.0f),
-            _ => center + Vector3.Up * y,
-        };
-    }
-
-    private static Vector3 GetDoorSize(RoomDoorSide side)
-    {
-        return side switch
-        {
-            RoomDoorSide.North or RoomDoorSide.South => new Vector3(1.10f, 0.12f, 0.22f),
-            _ => new Vector3(0.22f, 0.12f, 1.10f),
-        };
     }
 
     private static Color GetRoomFillColor(RoomBuildType roomType)
