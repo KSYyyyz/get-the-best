@@ -194,3 +194,28 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "_researchRoomButton.Text" in scripts["BuildModeHudController.cs"]
     assert "_marketRoomButton.Text" in scripts["BuildModeHudController.cs"]
     assert "_serverRoomButton.Text" in scripts["BuildModeHudController.cs"]
+
+
+def test_get_the_best_v2_0_2_room_delete_and_hover_highlight_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "DeleteRoomButton" in scene_text
+    assert "CancelActionButton" in scene_text
+
+    assert "enum BuildToolMode" in scripts["BuildModeController.cs"]
+    assert "DeleteRoom" in scripts["BuildModeController.cs"]
+    assert "StartDeleteRoomMode" in scripts["BuildModeController.cs"]
+    assert "CancelActiveTool" in scripts["BuildModeController.cs"]
+    assert "TryDeleteRoomAtCell" in scripts["BuildModeController.cs"]
+    assert "RemoveAtCell" in scripts["RoomFootprintStore.cs"]
+    assert "HighlightRoom" in scripts["RoomOverlayRenderer.cs"]
+    assert "HighlightedRoomStroke" in scripts["RoomOverlayRenderer.cs"]
+    assert "TryDeleteRoomAtScreenPosition" in scripts["OfficeSelectionController.cs"]
+    assert "IsDeleteRoomMode" in scripts["OfficeSelectionController.cs"]
+    assert "_deleteRoomButton" in scripts["BuildModeHudController.cs"]
+    assert "_cancelActionButton" in scripts["BuildModeHudController.cs"]

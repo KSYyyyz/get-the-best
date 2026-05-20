@@ -59,6 +59,24 @@ public partial class RoomFootprintStore : Node
 
         return null;
     }
+
+    public bool RemoveAtCell(Vector2I cell, out RoomFootprint? room)
+    {
+        for (var index = _rooms.Count - 1; index >= 0; index--)
+        {
+            if (!_rooms[index].Contains(cell))
+            {
+                continue;
+            }
+
+            room = _rooms[index];
+            _rooms.RemoveAt(index);
+            return true;
+        }
+
+        room = null;
+        return false;
+    }
 }
 
 public sealed class RoomFootprint

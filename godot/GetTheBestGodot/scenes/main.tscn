@@ -78,6 +78,14 @@ layout_mode = 2
 layout_mode = 2
 text = "??"
 
+[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=827017963]
+layout_mode = 2
+text = "????"
+
+[node name="CancelActionButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=2049910416]
+layout_mode = 2
+text = "??"
+
 [node name="RoomTypeButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1291022369]
 layout_mode = 2
 

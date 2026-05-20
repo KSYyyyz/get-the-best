@@ -9,10 +9,17 @@ public enum RoomBuildType
     ServerRoom,
 }
 
+public enum BuildToolMode
+{
+    BuildRoom,
+    DeleteRoom,
+}
+
 public partial class BuildModeController : Node
 {
     private RoomFootprintStore? _roomFootprintStore;
     private RoomBuildType _activeRoomType = RoomBuildType.ResearchRoom;
+    private BuildToolMode _activeToolMode = BuildToolMode.BuildRoom;
 
     public override void _Ready()
     {
@@ -38,6 +45,12 @@ public partial class BuildModeController : Node
 
     public bool TryCreateRoom(Vector2I startCell, Vector2I endCell, out RoomFootprint? room)
     {
+        if (_activeToolMode != BuildToolMode.BuildRoom)
+        {
+            room = null;
+            return false;
+        }
+
         if (_roomFootprintStore == null)
         {
             room = null;
@@ -45,6 +58,17 @@ public partial class BuildModeController : Node
         }
 
         return _roomFootprintStore.TryReserve(_activeRoomType, startCell, endCell, out room);
+    }
+
+    public bool TryDeleteRoomAtCell(Vector2I cell, out RoomFootprint? room)
+    {
+        if (_roomFootprintStore == null)
+        {
+            room = null;
+            return false;
+        }
+
+        return _roomFootprintStore.RemoveAtCell(cell, out room);
     }
 
     public RoomFootprint? FindRoomAtCell(Vector2I cell)
@@ -55,11 +79,27 @@ public partial class BuildModeController : Node
     public void SetActiveRoomType(RoomBuildType roomType)
     {
         _activeRoomType = roomType;
+        _activeToolMode = BuildToolMode.BuildRoom;
     }
 
     public RoomBuildType GetActiveRoomType()
     {
         return _activeRoomType;
+    }
+
+    public void StartDeleteRoomMode()
+    {
+        _activeToolMode = BuildToolMode.DeleteRoom;
+    }
+
+    public void CancelActiveTool()
+    {
+        _activeToolMode = BuildToolMode.BuildRoom;
+    }
+
+    public bool IsDeleteRoomMode()
+    {
+        return _activeToolMode == BuildToolMode.DeleteRoom;
     }
 
     public string GetActiveRoomTypeLabel()

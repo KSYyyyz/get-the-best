@@ -51,6 +51,15 @@ public partial class OfficeSelectionController : Node2D
             return;
         }
 
+        if (_buildModeController?.IsDeleteRoomMode() == true)
+        {
+            if (mouseEvent.Pressed)
+            {
+                TryDeleteRoomAtScreenPosition(mouseEvent.Position);
+            }
+            return;
+        }
+
         if (mouseEvent.Pressed)
         {
             BeginSelection(mouseEvent.Position);
@@ -105,6 +114,7 @@ public partial class OfficeSelectionController : Node2D
             if (!_isDraggingSelection)
             {
                 _placementPreviewController?.ClearPreview();
+                _roomOverlayRenderer?.HighlightRoom(null);
                 SetContextText("未选中对象");
             }
             return;
@@ -120,13 +130,19 @@ public partial class OfficeSelectionController : Node2D
         var hoveredRoom = _buildModeController?.FindRoomAtCell(cell);
         if (hoveredRoom != null)
         {
+            _roomOverlayRenderer?.HighlightRoom(hoveredRoom);
             _placementPreviewController?.ShowHoverCell(cell);
             ShowOccupiedRoom(hoveredRoom);
             return;
         }
 
+        _roomOverlayRenderer?.HighlightRoom(null);
         _placementPreviewController?.ShowHoverCell(cell);
-        SetContextText($"空地：格子 {FormatCell(cell)}，可建造");
+        SetContextText(
+            _buildModeController?.IsDeleteRoomMode() == true
+                ? $"删除房间：格子 {FormatCell(cell)} 没有房间"
+                : $"空地：格子 {FormatCell(cell)}，可建造"
+        );
     }
 
     private void ShowSelectionPreview()
@@ -141,14 +157,38 @@ public partial class OfficeSelectionController : Node2D
     {
         _isDraggingSelection = false;
         _placementPreviewController?.ClearPreview();
+        _roomOverlayRenderer?.HighlightRoom(null);
         SetContextText("未选中对象");
+    }
+
+    private void TryDeleteRoomAtScreenPosition(Vector2 screenPosition)
+    {
+        if (!TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            SetContextText("删除房间：请选择已有房间");
+            return;
+        }
+
+        if (_buildModeController?.TryDeleteRoomAtCell(cell, out var room) == true && room != null)
+        {
+            _placementPreviewController?.ClearPreview();
+            _roomOverlayRenderer?.HighlightRoom(null);
+            _roomOverlayRenderer?.RefreshRooms();
+            SetContextText($"已删除 {BuildModeController.GetRoomTypeLabel(room.RoomType)} #{room.Id}");
+            return;
+        }
+
+        _roomOverlayRenderer?.HighlightRoom(null);
+        SetContextText("删除房间：这里没有房间");
     }
 
     private void ShowOccupiedRoom(RoomFootprint room)
     {
+        var actionHint = _buildModeController?.IsDeleteRoomMode() == true ? "\n点击删除该房间" : string.Empty;
         SetContextText(
             $"{BuildModeController.GetRoomTypeLabel(room.RoomType)} #{room.Id}：{room.CellCount} 格\n"
                 + $"范围 x={room.MinCell.X}-{room.MaxCell.X}，y={room.MinCell.Y}-{room.MaxCell.Y}"
+                + actionHint
         );
     }
 

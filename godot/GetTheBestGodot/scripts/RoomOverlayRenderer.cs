@@ -5,8 +5,10 @@ namespace GetTheBestGodot;
 public partial class RoomOverlayRenderer : Node2D
 {
     private static readonly Color RoomStroke = new(0.86f, 0.90f, 0.86f, 0.90f);
+    private static readonly Color HighlightedRoomStroke = new(1.0f, 0.95f, 0.42f, 1.0f);
 
     private RoomFootprintStore? _roomFootprintStore;
+    private RoomFootprint? _highlightedRoom;
 
     public override void _Ready()
     {
@@ -15,6 +17,12 @@ public partial class RoomOverlayRenderer : Node2D
 
     public void RefreshRooms()
     {
+        QueueRedraw();
+    }
+
+    public void HighlightRoom(RoomFootprint? room)
+    {
+        _highlightedRoom = room;
         QueueRedraw();
     }
 
@@ -30,6 +38,11 @@ public partial class RoomOverlayRenderer : Node2D
             var rect = room.ToWorldRect();
             DrawRect(rect, GetRoomFillColor(room.RoomType), filled: true);
             DrawRect(rect, RoomStroke, filled: false, width: 4.0f);
+
+            if (_highlightedRoom?.Id == room.Id)
+            {
+                DrawRect(rect.Grow(4.0f), HighlightedRoomStroke, filled: false, width: 8.0f);
+            }
         }
     }
 
