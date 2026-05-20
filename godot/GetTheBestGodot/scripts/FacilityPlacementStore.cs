@@ -8,7 +8,7 @@ public partial class FacilityPlacementStore : Node
     private static readonly Dictionary<FacilityBuildType, RoomBuildType> RequiredRooms = new()
     {
         [FacilityBuildType.OfficeDesk] = RoomBuildType.ResearchRoom,
-        [FacilityBuildType.ProductWhiteboard] = RoomBuildType.ResearchRoom,
+        [FacilityBuildType.ProductWhiteboard] = RoomBuildType.MarketRoom,
         [FacilityBuildType.ServerRack] = RoomBuildType.ServerRoom,
     };
 

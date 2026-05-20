@@ -347,3 +347,11 @@ def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
     assert "SetFacilityType" in scripts["BuildModeHudController.cs"]
     assert "RefreshToolMenuVisibility" in scripts["BuildModeHudController.cs"]
     assert "BuildModeController.GetFacilityTypeLabel" in scripts["BuildModeHudController.cs"]
+
+
+def test_get_the_best_v2_0_3_product_whiteboard_requires_market_room() -> None:
+    build_mode = read_text(GODOT_ROOT / "scripts" / "BuildModeController.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+
+    assert "FacilityBuildType.ProductWhiteboard => RoomBuildType.MarketRoom" in build_mode
+    assert "[FacilityBuildType.ProductWhiteboard] = RoomBuildType.MarketRoom" in facility_store

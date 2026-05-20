@@ -254,6 +254,7 @@ public partial class BuildModeController : Node
     {
         return facilityType switch
         {
+            FacilityBuildType.ProductWhiteboard => RoomBuildType.MarketRoom,
             FacilityBuildType.ServerRack => RoomBuildType.ServerRoom,
             _ => RoomBuildType.ResearchRoom,
         };
