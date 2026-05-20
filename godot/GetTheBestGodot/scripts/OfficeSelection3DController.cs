@@ -69,12 +69,6 @@ public partial class OfficeSelection3DController : Node
 
         if (mouseEvent.Pressed)
         {
-            if (_buildModeController?.IsPointerMode() == true)
-            {
-                SelectObjectAtPointer(mouseEvent.Position);
-                return;
-            }
-
             if (_buildModeController?.IsPlaceFacilityMode() == true)
             {
                 FinishFacilityPlacement(mouseEvent.Position);
@@ -91,6 +85,12 @@ public partial class OfficeSelection3DController : Node
             {
                 BeginSelection(mouseEvent.Position);
             }
+            return;
+        }
+
+        if (_buildModeController?.IsPointerMode() == true)
+        {
+            FinishPointerSelection(mouseEvent.Position);
             return;
         }
 
@@ -142,6 +142,32 @@ public partial class OfficeSelection3DController : Node
         }
 
         ShowSelectionPreview(screenPosition);
+    }
+
+    private void FinishPointerSelection(Vector2 screenPosition)
+    {
+        if (!_isDraggingSelection)
+        {
+            return;
+        }
+
+        if (TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            _dragCurrentCell = cell;
+        }
+
+        _isDraggingSelection = false;
+        if (!IsPointerSelectionDrag())
+        {
+            _placementPreviewController?.ClearPreview();
+            SelectObjectAtPointer(screenPosition);
+            return;
+        }
+
+        ClearSelectedObjects();
+        var size = BuildModeController.FormatSelectionSize(_dragStartCell, _dragCurrentCell);
+        _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isLegal: true);
+        ShowPointerTooltip(size, screenPosition);
     }
 
     private void FinishDoorPlacement(Vector2 screenPosition)
@@ -427,6 +453,13 @@ public partial class OfficeSelection3DController : Node
     private void ShowSelectionPreview(Vector2 screenPosition)
     {
         var size = BuildModeController.FormatSelectionSize(_dragStartCell, _dragCurrentCell);
+        if (_buildModeController?.IsPointerMode() == true)
+        {
+            _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isLegal: true);
+            ShowPointerTooltip(size, screenPosition);
+            return;
+        }
+
         if (_buildModeController?.IsDeleteRoomMode() == true)
         {
             var isLegal = _buildModeController.CanDeleteSelection(_dragStartCell, _dragCurrentCell);
@@ -475,8 +508,14 @@ public partial class OfficeSelection3DController : Node
 
     private bool ShouldBeginAreaSelection()
     {
-        return _buildModeController?.IsBuildRoomMode() == true
+        return _buildModeController?.IsPointerMode() == true
+            || _buildModeController?.IsBuildRoomMode() == true
             || _buildModeController?.IsDeleteRoomMode() == true;
+    }
+
+    private bool IsPointerSelectionDrag()
+    {
+        return _dragStartCell != _dragCurrentCell;
     }
 
     private void ClearSelectedObjects()

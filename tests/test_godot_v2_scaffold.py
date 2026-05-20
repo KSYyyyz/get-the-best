@@ -525,8 +525,10 @@ def test_get_the_best_v2_room_build_requires_pending_confirmation_and_door() -> 
     assert "FinishDoorPlacement" in selection
     assert "ShouldBeginAreaSelection()" in selection
     assert "BeginSelection(mouseEvent.Position)" in selection
-    assert "IsPointerMode() == true" in selection
-    assert "SelectObjectAtPointer(mouseEvent.Position)" in selection
+    assert "FinishPointerSelection(mouseEvent.Position)" in selection
+    assert "SelectObjectAtPointer(screenPosition)" in selection
+    assert "IsPointerSelectionDrag()" in selection
+    assert "ShowPointerTooltip(size, screenPosition)" in selection
     assert "TryCreateRoom(_dragStartCell" not in selection
     assert "RefreshPendingRoomPreview()" in selection
     assert "ShowRoomDoorPreview" in read_text(
