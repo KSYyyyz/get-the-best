@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://d2gnd36eblkmm" path="res://scripts/OfficeBoundary3DRenderer.cs" id="6_a8y0u"]
 [ext_resource type="Script" uid="uid://c3tf1aq1gsjbr" path="res://scripts/BuildModeController.cs" id="6_o6xl0"]
 [ext_resource type="Script" uid="uid://c0ffqy7icjtir" path="res://scripts/PlacementPreview3DController.cs" id="7_a8y0u"]
-[ext_resource type="Script" path="res://scripts/BuildConfirmationHudController.cs" id="8_jbj1t"]
+[ext_resource type="Script" uid="uid://dejpmawofhx7o" path="res://scripts/BuildConfirmationHudController.cs" id="8_jbj1t"]
 [ext_resource type="Script" uid="uid://b4we7xo0xi02h" path="res://scripts/OfficeSelection3DController.cs" id="8_jkv2x"]
 [ext_resource type="Script" uid="uid://cj4wk6r5docf6" path="res://scripts/RoomFootprintStore.cs" id="8_tipki"]
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
@@ -34,7 +34,7 @@ script = ExtResource("3_eb6dy")
 transform = Transform3D(1, 0, 0, 0, 0.52991927, 0.8480481, 0, -0.8480481, 0.52991927, 0, 34, 26)
 projection = 1
 current = true
-size = 36.0
+size = 58.0
 script = ExtResource("4_trceg")
 
 [node name="SunLight" type="DirectionalLight3D" parent="OfficeWorld" unique_id=695379734]

@@ -48,7 +48,7 @@ def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
     assert "OfficeGrid3D" in scene_text
     assert 'type="Camera3D"' in scene_text
     assert "projection = 1" in scene_text
-    assert "size = 36.0" in scene_text
+    assert "size = 58.0" in scene_text
     assert "3200" in scene_text
     assert "2000" in scene_text
     assert "OfficeCamera" in scene_text
@@ -86,8 +86,8 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
     assert "RemoveHudChrome(childControl)" in scripts["MainController.cs"]
     assert "Camera3D" in scripts["OfficeCamera3DController.cs"]
     assert "ProjectionType.Orthogonal" in scripts["OfficeCamera3DController.cs"]
-    assert "MinCameraSize = 12.0f" in scripts["OfficeCamera3DController.cs"]
-    assert "MaxCameraSize = 64.0f" in scripts["OfficeCamera3DController.cs"]
+    assert "MinCameraSize = 10.0f" in scripts["OfficeCamera3DController.cs"]
+    assert "MaxCameraSize = 96.0f" in scripts["OfficeCamera3DController.cs"]
     assert "ProjectRayOrigin" in scripts["OfficeSelection3DController.cs"]
     assert "ProjectRayNormal" in scripts["OfficeSelection3DController.cs"]
     assert "TryScreenPositionToCell" in scripts["OfficeSelection3DController.cs"]
@@ -600,3 +600,29 @@ def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete(
     assert "TryDeleteRoomDoorAtWorldPosition" in read_text(
         GODOT_ROOT / "scripts" / "BuildModeController.cs"
     )
+
+
+def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -> None:
+    camera = read_text(GODOT_ROOT / "scripts" / "OfficeCamera3DController.cs")
+    grid = read_text(GODOT_ROOT / "scripts" / "OfficeGrid3DRenderer.cs")
+    boundary = read_text(GODOT_ROOT / "scripts" / "OfficeBoundary3DRenderer.cs")
+
+    assert "DefaultCameraSize = 58.0f" in camera
+    assert "MinCameraSize = 10.0f" in camera
+    assert "MaxCameraSize = 96.0f" in camera
+    assert "YawDegrees" in camera
+    assert "RotateLeftKey = Key.Q" in camera
+    assert "RotateRightKey = Key.E" in camera
+    assert "RotationSpeedDegrees = 90.0f" in camera
+    assert "ApplyCameraPose()" in camera
+    assert "GetPlanarForward()" in camera
+    assert "GetPlanarRight()" in camera
+    assert "Size = Mathf.Min(" in camera
+    assert "GetViewport().SizeChanged" in camera
+
+    assert "GridColor = new(0.56f, 0.66f, 0.60f, 0.34f)" in grid
+    assert "MajorGridColor" in grid
+    assert "lineIndex % 5 == 0" in grid
+
+    assert "CornerPostColor" in boundary
+    assert "AddCornerPost" in boundary
