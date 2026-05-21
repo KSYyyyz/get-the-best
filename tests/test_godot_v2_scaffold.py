@@ -394,6 +394,33 @@ def test_get_the_best_v2_0_4_facility_art_placeholders_are_registered() -> None:
         assert imported_path.exists()
 
 
+def test_get_the_best_v2_0_17_kenney_character_floor_and_wall_assets_are_registered() -> None:
+    asset_index_path = GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "asset-index.json"
+    asset_index = json.loads(read_text(asset_index_path))
+    assets = {asset["asset_id"]: asset for asset in asset_index["assets"]}
+
+    expected_assets = {
+        "kenney_blocky_characters_character_a": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-a.glb",
+        "kenney_blocky_characters_character_b": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-b.glb",
+        "kenney_blocky_characters_character_c": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-c.glb",
+        "kenney_blocky_characters_texture_a": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-a.png",
+        "kenney_blocky_characters_texture_b": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-b.png",
+        "kenney_blocky_characters_texture_c": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png",
+        "kenney_prototype_textures_floor_light_02": "res://assets/third_party_placeholder_assets/kenney_prototype_textures/floor_light_texture_02.png",
+        "kenney_prototype_textures_wall_dark_03": "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png",
+    }
+
+    for asset_id, imported_path in expected_assets.items():
+        assert asset_id in assets
+        asset = assets[asset_id]
+        assert asset["source_site"] == "Kenney"
+        assert asset["license"] == "CC0-1.0"
+        assert asset["commercial_use_allowed"] is True
+        assert asset["attribution_required"] is False
+        assert asset["imported_path"] == imported_path
+        assert (GODOT_ROOT / imported_path.replace("res://", "")).exists()
+
+
 def test_get_the_best_v2_0_4_facility_definitions_and_model_rendering_exist() -> None:
     scripts = {
         path.name: read_text(path)
@@ -629,9 +656,13 @@ def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -
     assert "BuildFloorTiles" in grid
     assert "FloorTileA" in grid
     assert "FloorTileB" in grid
+    assert "FloorTileTexturePath" in grid
+    assert "GD.Load<Texture2D>(FloorTileTexturePath)" in grid
     assert "GridLineThickness" not in grid
     assert "AddLine" not in grid
 
+    assert "WallTexturePath" in boundary
+    assert "GD.Load<Texture2D>(WallTexturePath)" in boundary
     assert "CornerPostColor" in boundary
     assert "AddCornerPost" in boundary
 
@@ -825,8 +856,9 @@ def test_get_the_best_v2_employee_visual_selection_baseline_exists() -> None:
     assert "HighlightEmployee" in employee_renderer
     assert "HighlightEmployees" in employee_renderer
     assert "AddEmployeeModel" in employee_renderer
-    assert "SphereMesh" in employee_renderer
-    assert "CylinderMesh" in employee_renderer
+    assert "EmployeeModelScenePaths" in employee_renderer
+    assert "PackedScene" in employee_renderer
+    assert "ApplyEmployeeOutline" in employee_renderer
 
     assert 'GetNodeOrNull<EmployeeStore>("../EmployeeStore")' in selection
     assert 'GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer")' in selection
@@ -857,7 +889,7 @@ def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> N
     assert "_dragPreviewCell" in employee_renderer
     assert "_dragPreviewIsLegal" in employee_renderer
     assert "GetRenderCell(employee)" in employee_renderer
-    assert "GetRenderAccentColor(employee)" in employee_renderer
+    assert "ApplyEmployeeTint(modelRoot, IllegalDragFill)" in employee_renderer
     assert "DragPreviewYOffset" in employee_renderer
 
     assert "_isDraggingEmployee" in selection
@@ -887,13 +919,19 @@ def test_get_the_best_v2_object_selection_uses_instance_outlines_not_grid_bases(
     selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
 
     assert "OutlineStroke" in employee_renderer
-    assert "AddEmployeeOutlineShell" in employee_renderer
+    assert "EmployeeModelScenePaths" in employee_renderer
+    assert "GD.Load<PackedScene>(modelScenePath)" in employee_renderer
+    assert "Instantiate<Node3D>()" in employee_renderer
+    assert "GetEmployeeModelScene" in employee_renderer
+    assert "ApplyEmployeeOutline" in employee_renderer
     assert "CreateOutlineMaterial" in employee_renderer
+    assert "material.NextPass = CreateOutlineMaterial(outlineColor)" in employee_renderer
     assert "CullMode = BaseMaterial3D.CullModeEnum.Front" in employee_renderer
     assert "HoverEmployee" in employee_renderer
     assert "SelectionFill" not in employee_renderer
     assert "AddSelectionRing" not in employee_renderer
     assert "AddOutlinePost" not in employee_renderer
+    assert "AddEmployeeOutlineShell" not in employee_renderer
     assert "OutlineHeight" not in employee_renderer
     assert "OutlineRadius" not in employee_renderer
 
@@ -908,6 +946,93 @@ def test_get_the_best_v2_object_selection_uses_instance_outlines_not_grid_bases(
     assert "_employeeRenderer?.HoverEmployee(hoveredEmployee);" in selection
     assert "_facilityRenderer?.HoverFacility(hoveredFacility);" in selection
     assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" not in selection
+
+
+def test_get_the_best_v2_employee_uses_kenney_glb_model_resources() -> None:
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    model_dir = (
+        GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "kenney_blocky_characters"
+    )
+
+    assert (model_dir / "character-a.glb").exists()
+    assert (model_dir / "character-b.glb").exists()
+    assert (model_dir / "character-c.glb").exists()
+    assert (model_dir / "Textures" / "texture-a.png").exists()
+    assert (model_dir / "Textures" / "texture-b.png").exists()
+    assert (model_dir / "Textures" / "texture-c.png").exists()
+    assert (model_dir / "License.txt").exists()
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-a.glb"
+        in employee_renderer
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-b.glb"
+        in employee_renderer
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-c.glb"
+        in employee_renderer
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-a.png"
+        in employee_renderer
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-b.png"
+        in employee_renderer
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png"
+        in employee_renderer
+    )
+    assert "ApplyEmployeeTexture(modelRoot, GetEmployeeTexture(employee));" in employee_renderer
+    assert "RemoveChild(renderedEmployee);" in employee_renderer
+    assert (
+        "private const float EmployeeModelScale = OfficeWorld3DConfig.GridSize * 0.34f"
+        in employee_renderer
+    )
+    assert "new CylinderMesh" not in employee_renderer
+    assert "new SphereMesh" not in employee_renderer
+    assert "new BoxMesh" not in employee_renderer
+
+
+def test_get_the_best_v2_floor_and_wall_use_kenney_texture_resources() -> None:
+    grid = read_text(GODOT_ROOT / "scripts" / "OfficeGrid3DRenderer.cs")
+    floor = read_text(GODOT_ROOT / "scripts" / "OfficeFloor3DRenderer.cs")
+    room = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+    boundary = read_text(GODOT_ROOT / "scripts" / "OfficeBoundary3DRenderer.cs")
+
+    texture_dir = (
+        GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "kenney_prototype_textures"
+    )
+    assert (texture_dir / "floor_light_texture_02.png").exists()
+    assert (texture_dir / "wall_dark_texture_03.png").exists()
+    assert (texture_dir / "License.txt").exists()
+
+    assert "FloorTileTexturePath" in grid
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/floor_light_texture_02.png"
+        in grid
+    )
+    assert "AlbedoTexture = LoadFloorTileTexture()" in grid
+    assert "FloorBaseTexturePath" in floor
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/floor_light_texture_02.png"
+        in floor
+    )
+    assert "AlbedoTexture = GD.Load<Texture2D>(FloorBaseTexturePath)" in floor
+    assert "WallTexturePath" in room
+    assert "WallTexturePath" in boundary
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png"
+        in room
+    )
+    assert (
+        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png"
+        in boundary
+    )
+    assert "AlbedoTexture = GD.Load<Texture2D>(WallTexturePath)" in room
+    assert "AlbedoTexture = GD.Load<Texture2D>(WallTexturePath)" in boundary
 
 
 def test_get_the_best_v2_instance_drag_uses_click_pickup_and_click_drop() -> None:

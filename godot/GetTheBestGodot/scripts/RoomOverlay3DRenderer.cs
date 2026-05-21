@@ -5,6 +5,8 @@ namespace GetTheBestGodot;
 
 public partial class RoomOverlay3DRenderer : Node3D
 {
+    private const string WallTexturePath =
+        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png";
     private const float RoomCarpetHeight = OfficeWorld3DConfig.GridSize * 0.010f;
     private const float RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f;
     private const float RoomWallThickness = OfficeWorld3DConfig.GridSize * 0.10f;
@@ -87,7 +89,7 @@ public partial class RoomOverlay3DRenderer : Node3D
     {
         var center = OfficeWorld3DConfig.CellToWorldPosition(cell);
         var color = _highlightedRoom == room ? HighlightedRoomStroke : GetRoomWallColor(room.RoomType);
-        var material = CreateSolidMaterial(color);
+        var material = CreateTexturedWallMaterial(color);
         var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
         var y = RoomWallHeight / 2.0f + RoomCarpetHeight;
 
@@ -256,6 +258,16 @@ public partial class RoomOverlay3DRenderer : Node3D
         return new StandardMaterial3D
         {
             AlbedoColor = color,
+            Roughness = 0.92f,
+        };
+    }
+
+    private static StandardMaterial3D CreateTexturedWallMaterial(Color color)
+    {
+        return new StandardMaterial3D
+        {
+            AlbedoColor = color,
+            AlbedoTexture = GD.Load<Texture2D>(WallTexturePath),
             Roughness = 0.92f,
         };
     }

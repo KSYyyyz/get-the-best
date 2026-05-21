@@ -5,15 +5,22 @@ namespace GetTheBestGodot;
 
 public partial class Employee3DRenderer : Node3D
 {
-    private const float BodyHeight = OfficeWorld3DConfig.GridSize * 0.95f;
-    private const float BodyRadius = OfficeWorld3DConfig.GridSize * 0.28f;
-    private const float HeadRadius = OfficeWorld3DConfig.GridSize * 0.22f;
-    private const float OutlineShellScale = 1.14f;
+    private const float EmployeeModelScale = OfficeWorld3DConfig.GridSize * 0.34f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
-    private static readonly Color HeadFill = new(0.90f, 0.76f, 0.60f, 1.0f);
-    private static readonly Color LegFill = new(0.16f, 0.18f, 0.22f, 1.0f);
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
+    private static readonly string[] EmployeeModelScenePaths =
+    [
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-a.glb",
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-b.glb",
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-c.glb",
+    ];
+    private static readonly string[] EmployeeTexturePaths =
+    [
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-a.png",
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-b.png",
+        "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png",
+    ];
     private readonly HashSet<int> _highlightedEmployeeIds = [];
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
@@ -32,6 +39,7 @@ public partial class Employee3DRenderer : Node3D
     {
         foreach (var renderedEmployee in _renderedEmployees)
         {
+            RemoveChild(renderedEmployee);
             renderedEmployee.QueueFree();
         }
         _renderedEmployees.Clear();
@@ -109,9 +117,27 @@ public partial class Employee3DRenderer : Node3D
                 : 0.02f;
         var position =
             OfficeWorld3DConfig.CellToWorldPosition(renderCell) + new Vector3(0.0f, yOffset, 0.0f);
-        var modelRoot = new Node3D { Position = position };
+
+        var modelScene = GetEmployeeModelScene(employee);
+        if (modelScene == null)
+        {
+            GD.PushWarning($"Unable to load employee model for employee {employee.Id}.");
+            return;
+        }
+
+        var modelRoot = modelScene.Instantiate<Node3D>();
+        modelRoot.Name = $"Employee_{employee.Id}";
+        modelRoot.Position = position;
+        modelRoot.Scale = Vector3.One * EmployeeModelScale;
+        modelRoot.RotationDegrees = new Vector3(0.0f, 180.0f, 0.0f);
         AddChild(modelRoot);
         _renderedEmployees.Add(modelRoot);
+        ApplyEmployeeTexture(modelRoot, GetEmployeeTexture(employee));
+
+        if (_dragPreviewEmployeeId == employee.Id && !_dragPreviewIsLegal)
+        {
+            ApplyEmployeeTint(modelRoot, IllegalDragFill);
+        }
 
         if (
             _highlightedEmployeeIds.Contains(employee.Id)
@@ -119,68 +145,36 @@ public partial class Employee3DRenderer : Node3D
             || _dragPreviewEmployeeId == employee.Id
         )
         {
-            AddEmployeeOutlineShell(modelRoot, GetRenderOutlineColor(employee));
+            ApplyEmployeeOutline(modelRoot, GetRenderOutlineColor(employee));
+        }
+    }
+
+    private static PackedScene? GetEmployeeModelScene(EmployeeVisual employee)
+    {
+        var index = (employee.Id - 1) % EmployeeModelScenePaths.Length;
+        if (index < 0)
+        {
+            index += EmployeeModelScenePaths.Length;
         }
 
-        AddMeshPart(
-            modelRoot,
-            new CylinderMesh
-            {
-                TopRadius = BodyRadius,
-                BottomRadius = BodyRadius * 1.10f,
-                Height = BodyHeight,
-                RadialSegments = 18,
-            },
-            GetRenderAccentColor(employee),
-            new Vector3(0.0f, BodyHeight / 2.0f, 0.0f)
-        );
-        AddMeshPart(
-            modelRoot,
-            new SphereMesh { Radius = HeadRadius, Height = HeadRadius * 2.0f },
-            HeadFill,
-            new Vector3(0.0f, BodyHeight + HeadRadius * 0.95f, 0.0f)
-        );
-        AddMeshPart(
-            modelRoot,
-            new BoxMesh
-            {
-                Size = new Vector3(
-                    BodyRadius * 0.95f,
-                    OfficeWorld3DConfig.GridSize * 0.22f,
-                    BodyRadius * 0.80f
-                ),
-            },
-            LegFill,
-            new Vector3(-BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f)
-        );
-        AddMeshPart(
-            modelRoot,
-            new BoxMesh
-            {
-                Size = new Vector3(
-                    BodyRadius * 0.95f,
-                    OfficeWorld3DConfig.GridSize * 0.22f,
-                    BodyRadius * 0.80f
-                ),
-            },
-            LegFill,
-            new Vector3(BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f)
-        );
+        var modelScenePath = EmployeeModelScenePaths[index];
+        return GD.Load<PackedScene>(modelScenePath);
+    }
+
+    private static Texture2D? GetEmployeeTexture(EmployeeVisual employee)
+    {
+        var index = (employee.Id - 1) % EmployeeTexturePaths.Length;
+        if (index < 0)
+        {
+            index += EmployeeTexturePaths.Length;
+        }
+
+        return GD.Load<Texture2D>(EmployeeTexturePaths[index]);
     }
 
     private Vector2I GetRenderCell(EmployeeVisual employee)
     {
         return _dragPreviewEmployeeId == employee.Id ? _dragPreviewCell : employee.Cell;
-    }
-
-    private Color GetRenderAccentColor(EmployeeVisual employee)
-    {
-        if (_dragPreviewEmployeeId != employee.Id)
-        {
-            return employee.AccentColor;
-        }
-
-        return _dragPreviewIsLegal ? employee.AccentColor : IllegalDragFill;
     }
 
     private Color GetRenderOutlineColor(EmployeeVisual employee)
@@ -190,94 +184,101 @@ public partial class Employee3DRenderer : Node3D
             : OutlineStroke;
     }
 
-    private void AddEmployeeOutlineShell(Node3D parent, Color color)
+    private static void ApplyEmployeeTint(Node node, Color color)
     {
-        var shellRoot = new Node3D
+        foreach (var child in node.GetChildren())
         {
-            Scale = new Vector3(OutlineShellScale, OutlineShellScale, OutlineShellScale),
-        };
-        parent.AddChild(shellRoot);
+            if (child is MeshInstance3D mesh)
+            {
+                ApplyMaterialToMesh(mesh, color);
+            }
 
-        AddMeshPart(
-            shellRoot,
-            new CylinderMesh
-            {
-                TopRadius = BodyRadius,
-                BottomRadius = BodyRadius * 1.10f,
-                Height = BodyHeight,
-                RadialSegments = 18,
-            },
-            color,
-            new Vector3(0.0f, BodyHeight / 2.0f, 0.0f),
-            useOutlineMaterial: true
-        );
-        AddMeshPart(
-            shellRoot,
-            new SphereMesh { Radius = HeadRadius, Height = HeadRadius * 2.0f },
-            color,
-            new Vector3(0.0f, BodyHeight + HeadRadius * 0.95f, 0.0f),
-            useOutlineMaterial: true
-        );
-        AddMeshPart(
-            shellRoot,
-            new BoxMesh
-            {
-                Size = new Vector3(
-                    BodyRadius * 0.95f,
-                    OfficeWorld3DConfig.GridSize * 0.22f,
-                    BodyRadius * 0.80f
-                ),
-            },
-            color,
-            new Vector3(-BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f),
-            useOutlineMaterial: true
-        );
-        AddMeshPart(
-            shellRoot,
-            new BoxMesh
-            {
-                Size = new Vector3(
-                    BodyRadius * 0.95f,
-                    OfficeWorld3DConfig.GridSize * 0.22f,
-                    BodyRadius * 0.80f
-                ),
-            },
-            color,
-            new Vector3(BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f),
-            useOutlineMaterial: true
-        );
+            ApplyEmployeeTint(child, color);
+        }
     }
 
-    private void AddMeshPart(
-        Node parent,
-        Mesh mesh,
-        Color color,
-        Vector3 position,
-        bool useOutlineMaterial = false
-    )
+    private static void ApplyEmployeeTexture(Node node, Texture2D? texture)
     {
-        var part = new MeshInstance3D
+        if (texture == null)
         {
-            Mesh = mesh,
-            MaterialOverride = useOutlineMaterial
-                ? CreateOutlineMaterial(color)
-                : CreateMaterial(color),
-            Position = position,
-        };
-        parent.AddChild(part);
-        if (ReferenceEquals(parent, this))
-        {
-            _renderedEmployees.Add(part);
+            return;
         }
+
+        foreach (var child in node.GetChildren())
+        {
+            if (child is MeshInstance3D mesh)
+            {
+                ApplyTextureToMesh(mesh, texture);
+            }
+
+            ApplyEmployeeTexture(child, texture);
+        }
+    }
+
+    private static void ApplyEmployeeOutline(Node node, Color outlineColor)
+    {
+        foreach (var child in node.GetChildren())
+        {
+            if (child is MeshInstance3D mesh)
+            {
+                ApplyOutlineToMesh(mesh, outlineColor);
+            }
+
+            ApplyEmployeeOutline(child, outlineColor);
+        }
+    }
+
+    private static void ApplyMaterialToMesh(MeshInstance3D mesh, Color color)
+    {
+        var surfaceCount = mesh.Mesh?.GetSurfaceCount() ?? 0;
+        for (var surfaceIndex = 0; surfaceIndex < surfaceCount; surfaceIndex++)
+        {
+            mesh.SetSurfaceOverrideMaterial(surfaceIndex, CreateMaterial(color));
+        }
+    }
+
+    private static void ApplyTextureToMesh(MeshInstance3D mesh, Texture2D texture)
+    {
+        var surfaceCount = mesh.Mesh?.GetSurfaceCount() ?? 0;
+        for (var surfaceIndex = 0; surfaceIndex < surfaceCount; surfaceIndex++)
+        {
+            var material = CreateMaterial(new Color(1.0f, 1.0f, 1.0f, 1.0f));
+            material.AlbedoTexture = texture;
+            mesh.SetSurfaceOverrideMaterial(surfaceIndex, material);
+        }
+    }
+
+    private static void ApplyOutlineToMesh(MeshInstance3D mesh, Color outlineColor)
+    {
+        var surfaceCount = mesh.Mesh?.GetSurfaceCount() ?? 0;
+        for (var surfaceIndex = 0; surfaceIndex < surfaceCount; surfaceIndex++)
+        {
+            var material = DuplicateMaterial(
+                mesh.GetSurfaceOverrideMaterial(surfaceIndex)
+                    ?? mesh.Mesh?.SurfaceGetMaterial(surfaceIndex)
+            );
+            material.NextPass = CreateOutlineMaterial(outlineColor);
+            mesh.SetSurfaceOverrideMaterial(surfaceIndex, material);
+        }
+    }
+
+    private static Material DuplicateMaterial(Material? material)
+    {
+        if (material?.Duplicate() is Material duplicate)
+        {
+            return duplicate;
+        }
+
+        return CreateMaterial(new Color(1.0f, 1.0f, 1.0f, 1.0f));
     }
 
     private static StandardMaterial3D CreateMaterial(Color color)
     {
         return new StandardMaterial3D
-        {
-            AlbedoColor = color,
-            Roughness = 0.88f,
-        };
+            {
+                AlbedoColor = color,
+                Roughness = 0.88f,
+            };
     }
 
     private static StandardMaterial3D CreateOutlineMaterial(Color color)
@@ -287,9 +288,9 @@ public partial class Employee3DRenderer : Node3D
             AlbedoColor = color,
             EmissionEnabled = true,
             Emission = color,
-            EmissionEnergyMultiplier = 0.75f,
+            EmissionEnergyMultiplier = 0.15f,
             Grow = true,
-            GrowAmount = 0.025f,
+            GrowAmount = 0.075f,
             CullMode = BaseMaterial3D.CullModeEnum.Front,
             Roughness = 0.55f,
         };
