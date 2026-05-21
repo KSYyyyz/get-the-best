@@ -4,10 +4,10 @@ namespace GetTheBestGodot;
 
 public static class RoomDoorGeometry
 {
-    private const float RoomBoundaryHeight = 0.30f;
-    private const float DoorLength = 1.20f;
-    private const float DoorThickness = 0.26f;
-    private const float DoorHeight = 0.16f;
+    private const float RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f;
+    private const float DoorLength = OfficeWorld3DConfig.GridSize * 0.62f;
+    private const float DoorThickness = OfficeWorld3DConfig.GridSize * 0.12f;
+    private const float DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f;
     private const float DoorY = RoomBoundaryHeight + DoorHeight / 2.0f;
 
     public static Vector3 GetPosition(RoomDoorPlacement doorPlacement)

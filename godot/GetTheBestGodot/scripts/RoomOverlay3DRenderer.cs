@@ -5,9 +5,9 @@ namespace GetTheBestGodot;
 
 public partial class RoomOverlay3DRenderer : Node3D
 {
-    private const float RoomCarpetHeight = 0.08f;
-    private const float RoomBoundaryHeight = 0.30f;
-    private const float RoomBoundaryThickness = 0.10f;
+    private const float RoomCarpetHeight = OfficeWorld3DConfig.GridSize * 0.008f;
+    private const float RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f;
+    private const float RoomBoundaryThickness = OfficeWorld3DConfig.GridSize * 0.08f;
     private static readonly Color ResearchRoomFill = new(0.20f, 0.48f, 0.74f, 0.42f);
     private static readonly Color MarketRoomFill = new(0.56f, 0.42f, 0.82f, 0.42f);
     private static readonly Color ServerRoomFill = new(0.30f, 0.64f, 0.56f, 0.42f);
@@ -85,7 +85,7 @@ public partial class RoomOverlay3DRenderer : Node3D
         var color = _highlightedRoom == room ? HighlightedRoomStroke : GetRoomBoundaryColor(room.RoomType);
         var material = CreateMaterial(color);
         var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
-        var y = RoomBoundaryHeight / 2.0f + 0.08f;
+        var y = RoomBoundaryHeight / 2.0f + RoomCarpetHeight;
 
         if (!HasNeighbor(room, cell + Vector2I.Up) && !IsDoorEdge(room, cell, RoomDoorSide.North))
         {

@@ -5,6 +5,8 @@ namespace GetTheBestGodot;
 
 public partial class Facility3DRenderer : Node3D
 {
+    private const float CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f;
+    private const float HighlightStrokeSize = OfficeWorld3DConfig.GridSize * 0.86f;
     private static readonly Color DeskFill = new(0.72f, 0.50f, 0.28f, 0.92f);
     private static readonly Color WhiteboardFill = new(0.86f, 0.92f, 0.90f, 0.92f);
     private static readonly Color ServerRackFill = new(0.34f, 0.46f, 0.70f, 0.92f);
@@ -80,7 +82,7 @@ public partial class Facility3DRenderer : Node3D
         var sprite = new Sprite3D
         {
             Texture = texture,
-            PixelSize = 0.018f,
+            PixelSize = 0.07f,
             Position = position + Vector3.Up * GetFacilitySpriteHeight(facility.FacilityType),
             RotationDegrees = new Vector3(-60.0f, 0.0f, 0.0f),
         };
@@ -107,11 +109,19 @@ public partial class Facility3DRenderer : Node3D
 
         if (facility.FacilityType == FacilityBuildType.ProductWhiteboard)
         {
-            AddVerticalPanel(position, new Vector3(1.45f, 1.10f, 0.10f), WhiteboardFill);
+            AddVerticalPanel(
+                position,
+                new Vector3(CellInnerSize * 0.86f, OfficeWorld3DConfig.GridSize * 0.55f, CellInnerSize * 0.08f),
+                WhiteboardFill
+            );
         }
         else if (facility.FacilityType == FacilityBuildType.ServerRack)
         {
-            AddVerticalPanel(position, new Vector3(1.30f, 1.35f, 0.55f), ServerRackFill);
+            AddVerticalPanel(
+                position,
+                new Vector3(CellInnerSize * 0.70f, OfficeWorld3DConfig.GridSize * 0.60f, CellInnerSize * 0.34f),
+                ServerRackFill
+            );
         }
     }
 
@@ -121,7 +131,13 @@ public partial class Facility3DRenderer : Node3D
         {
             Mesh = new BoxMesh { Size = size },
             MaterialOverride = CreateMaterial(color),
-            Position = position + new Vector3(0.0f, size.Y / 2.0f + 0.18f, -0.34f),
+            Position =
+                position
+                + new Vector3(
+                    0.0f,
+                    size.Y / 2.0f + OfficeWorld3DConfig.GridSize * 0.08f,
+                    -OfficeWorld3DConfig.GridSize * 0.22f
+                ),
         };
         AddChild(mesh);
         _renderedFacilities.Add(mesh);
@@ -131,9 +147,17 @@ public partial class Facility3DRenderer : Node3D
     {
         var mesh = new MeshInstance3D
         {
-            Mesh = new BoxMesh { Size = new Vector3(1.7f, 0.08f, 1.7f) },
+            Mesh =
+                new BoxMesh
+                {
+                    Size = new Vector3(
+                        HighlightStrokeSize,
+                        OfficeWorld3DConfig.GridSize * 0.035f,
+                        HighlightStrokeSize
+                    ),
+                },
             MaterialOverride = CreateMaterial(HighlightStroke),
-            Position = position - Vector3.Up * 0.35f,
+            Position = position - Vector3.Up * (OfficeWorld3DConfig.GridSize * 0.035f),
         };
         AddChild(mesh);
         _renderedFacilities.Add(mesh);
@@ -148,9 +172,24 @@ public partial class Facility3DRenderer : Node3D
     {
         return facilityType switch
         {
-            FacilityBuildType.ProductWhiteboard => new Vector3(1.45f, 0.18f, 0.55f),
-            FacilityBuildType.ServerRack => new Vector3(1.30f, 0.22f, 1.10f),
-            _ => new Vector3(1.45f, 0.42f, 1.15f),
+            FacilityBuildType.ProductWhiteboard =>
+                new Vector3(
+                    CellInnerSize * 0.88f,
+                    OfficeWorld3DConfig.GridSize * 0.08f,
+                    CellInnerSize * 0.32f
+                ),
+            FacilityBuildType.ServerRack =>
+                new Vector3(
+                    CellInnerSize * 0.72f,
+                    OfficeWorld3DConfig.GridSize * 0.10f,
+                    CellInnerSize * 0.60f
+                ),
+            _ =>
+                new Vector3(
+                    CellInnerSize,
+                    OfficeWorld3DConfig.GridSize * 0.18f,
+                    CellInnerSize * 0.74f
+                ),
         };
     }
 
@@ -158,9 +197,9 @@ public partial class Facility3DRenderer : Node3D
     {
         return facilityType switch
         {
-            FacilityBuildType.ProductWhiteboard => 1.15f,
-            FacilityBuildType.ServerRack => 1.25f,
-            _ => 0.62f,
+            FacilityBuildType.ProductWhiteboard => OfficeWorld3DConfig.GridSize * 0.72f,
+            FacilityBuildType.ServerRack => OfficeWorld3DConfig.GridSize * 0.76f,
+            _ => OfficeWorld3DConfig.GridSize * 0.34f,
         };
     }
 

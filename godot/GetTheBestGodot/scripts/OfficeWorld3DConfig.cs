@@ -4,11 +4,11 @@ namespace GetTheBestGodot;
 
 public static class OfficeWorld3DConfig
 {
-    public const int SourcePixelWidth = 3200;
-    public const int SourcePixelHeight = 2000;
-    public const int Columns = 40;
-    public const int Rows = 25;
-    public const float GridSize = 2.0f;
+    public const int SourcePixelWidth = 6400;
+    public const int SourcePixelHeight = 4000;
+    public const int Columns = 16;
+    public const int Rows = 10;
+    public const float GridSize = 10.0f;
     public const float FloorY = 0.0f;
 
     public static readonly Rect2 OfficeBounds = new(

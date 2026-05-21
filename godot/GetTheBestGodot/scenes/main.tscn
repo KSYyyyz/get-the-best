@@ -34,14 +34,14 @@ script = ExtResource("3_eb6dy")
 transform = Transform3D(1, 0, 0, 0, 0.52991927, 0.8480481, 0, -0.8480481, 0.52991927, 0, 34, 26)
 projection = 1
 current = true
-size = 58.0
+size = 112.0
 script = ExtResource("4_trceg")
 
 [node name="SunLight" type="DirectionalLight3D" parent="OfficeWorld" unique_id=695379734]
 transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
 light_energy = 1.2
 
-[node name="WorldSize3200x2000Marker" type="Node3D" parent="OfficeWorld" unique_id=239089964]
+[node name="WorldSize6400x4000Marker" type="Node3D" parent="OfficeWorld" unique_id=239089964]
 
 [node name="OfficeBoundary3D" type="Node3D" parent="OfficeWorld" unique_id=1929792548]
 script = ExtResource("6_a8y0u")

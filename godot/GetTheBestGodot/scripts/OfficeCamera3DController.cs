@@ -4,17 +4,21 @@ namespace GetTheBestGodot;
 
 public partial class OfficeCamera3DController : Camera3D
 {
-    private const float MoveSpeed = 24.0f;
-    private const float DefaultCameraSize = 58.0f;
-    private const float MinCameraSize = 10.0f;
-    private const float MaxCameraSize = 96.0f;
+    private const float MoveSpeed = 72.0f;
+    private const float DefaultCameraSize = 112.0f;
+    private const float MinCameraSize = 28.0f;
+    private const float MaxCameraSize = 210.0f;
     private const float ZoomStepFactor = 1.14f;
     private const float RotationSpeedDegrees = 90.0f;
-    private const float PitchDegrees = 58.0f;
-    private const float CameraDistance = 72.0f;
+    private const float DefaultPitchDegrees = 58.0f;
+    private const float MinPitchDegrees = 42.0f;
+    private const float MaxPitchDegrees = 74.0f;
+    private const float MiddlePitchSensitivity = 0.12f;
+    private const float CameraDistance = 170.0f;
     private const Key RotateLeftKey = Key.Q;
     private const Key RotateRightKey = Key.E;
-    private bool _isDragging;
+    private bool _isPitchDragging;
+    private float _pitchDegrees = DefaultPitchDegrees;
     private float YawDegrees = -35.0f;
     private Vector3 _focus = Vector3.Zero;
 
@@ -73,13 +77,9 @@ public partial class OfficeCamera3DController : Camera3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventMouseMotion motionEvent && _isDragging)
+        if (@event is InputEventMouseMotion motionEvent && _isPitchDragging)
         {
-            var panScale = Size / GetViewport().GetVisibleRect().Size.Y;
-            _focus += -GetPlanarRight() * motionEvent.Relative.X * panScale;
-            _focus += GetPlanarForward() * motionEvent.Relative.Y * panScale;
-            ClampToOfficeBounds();
-            ApplyCameraPose();
+            AdjustPitchFromMiddleDrag(motionEvent.Relative.Y);
             return;
         }
 
@@ -90,7 +90,7 @@ public partial class OfficeCamera3DController : Camera3D
 
         if (mouseEvent.ButtonIndex == MouseButton.Middle)
         {
-            _isDragging = mouseEvent.Pressed;
+            _isPitchDragging = mouseEvent.Pressed;
             return;
         }
 
@@ -115,6 +115,16 @@ public partial class OfficeCamera3DController : Camera3D
         ApplyCameraPose();
     }
 
+    private void AdjustPitchFromMiddleDrag(float relativeY)
+    {
+        _pitchDegrees = Mathf.Clamp(
+            _pitchDegrees + relativeY * MiddlePitchSensitivity,
+            MinPitchDegrees,
+            MaxPitchDegrees
+        );
+        ApplyCameraPose();
+    }
+
     private void FitCameraSizeToViewport()
     {
         var viewportSize = GetViewport().GetVisibleRect().Size;
@@ -127,7 +137,7 @@ public partial class OfficeCamera3DController : Camera3D
     private void ApplyCameraPose()
     {
         var yawRadians = Mathf.DegToRad(YawDegrees);
-        var pitchRadians = Mathf.DegToRad(PitchDegrees);
+        var pitchRadians = Mathf.DegToRad(_pitchDegrees);
         var lookDirection = new Vector3(
             Mathf.Sin(yawRadians) * Mathf.Cos(pitchRadians),
             -Mathf.Sin(pitchRadians),

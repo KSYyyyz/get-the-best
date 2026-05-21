@@ -48,9 +48,9 @@ def test_get_the_best_v2_main_scene_is_office_first_not_old_panel_ui() -> None:
     assert "OfficeGrid3D" in scene_text
     assert 'type="Camera3D"' in scene_text
     assert "projection = 1" in scene_text
-    assert "size = 58.0" in scene_text
-    assert "3200" in scene_text
-    assert "2000" in scene_text
+    assert "size = 112.0" in scene_text
+    assert "6400" in scene_text
+    assert "4000" in scene_text
     assert "OfficeCamera" in scene_text
     assert "OfficeSelection3DController" in scene_text
     assert "HudRoot" in scene_text
@@ -86,8 +86,8 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
     assert "RemoveHudChrome(childControl)" in scripts["MainController.cs"]
     assert "Camera3D" in scripts["OfficeCamera3DController.cs"]
     assert "ProjectionType.Orthogonal" in scripts["OfficeCamera3DController.cs"]
-    assert "MinCameraSize = 10.0f" in scripts["OfficeCamera3DController.cs"]
-    assert "MaxCameraSize = 96.0f" in scripts["OfficeCamera3DController.cs"]
+    assert "MinCameraSize = 28.0f" in scripts["OfficeCamera3DController.cs"]
+    assert "MaxCameraSize = 210.0f" in scripts["OfficeCamera3DController.cs"]
     assert "ProjectRayOrigin" in scripts["OfficeSelection3DController.cs"]
     assert "ProjectRayNormal" in scripts["OfficeSelection3DController.cs"]
     assert "TryScreenPositionToCell" in scripts["OfficeSelection3DController.cs"]
@@ -444,8 +444,14 @@ def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
     assert "OfficeBoundary3D" in scene_text
     assert "OfficeBoundary3DRenderer.cs" in scripts
     assert "AddWall" in scripts["OfficeBoundary3DRenderer.cs"]
-    assert "WallHeight = 1.4f" in scripts["OfficeBoundary3DRenderer.cs"]
-    assert "WallThickness = 0.45f" in scripts["OfficeBoundary3DRenderer.cs"]
+    assert (
+        "WallHeight = OfficeWorld3DConfig.GridSize * 0.22f"
+        in scripts["OfficeBoundary3DRenderer.cs"]
+    )
+    assert (
+        "WallThickness = OfficeWorld3DConfig.GridSize * 0.06f"
+        in scripts["OfficeBoundary3DRenderer.cs"]
+    )
     assert "OfficeWorld3DConfig.OfficeBounds" in scripts["OfficeBoundary3DRenderer.cs"]
 
     room_renderer = scripts["RoomOverlay3DRenderer.cs"]
@@ -582,7 +588,7 @@ def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete(
     assert "RoomDoorGeometry.GetSize(doorPlacement.Side)" in room_renderer
     assert "RoomDoorGeometry.GetPosition(doorPlacement)" in placement_preview
     assert "RoomDoorGeometry.GetSize(doorPlacement.Side)" in placement_preview
-    assert "DoorHeight = 0.16f" in door_geometry
+    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f" in door_geometry
     assert "DoorY = RoomBoundaryHeight + DoorHeight / 2.0f" in door_geometry
     assert "RoomSignPlateFill" not in room_renderer
     assert "AddRoomSignPlate" not in room_renderer
@@ -603,9 +609,9 @@ def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -
     grid = read_text(GODOT_ROOT / "scripts" / "OfficeGrid3DRenderer.cs")
     boundary = read_text(GODOT_ROOT / "scripts" / "OfficeBoundary3DRenderer.cs")
 
-    assert "DefaultCameraSize = 58.0f" in camera
-    assert "MinCameraSize = 10.0f" in camera
-    assert "MaxCameraSize = 96.0f" in camera
+    assert "DefaultCameraSize = 112.0f" in camera
+    assert "MinCameraSize = 28.0f" in camera
+    assert "MaxCameraSize = 210.0f" in camera
     assert "YawDegrees" in camera
     assert "RotateLeftKey = Key.Q" in camera
     assert "RotateRightKey = Key.E" in camera
@@ -616,12 +622,46 @@ def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -
     assert "Size = Mathf.Min(" in camera
     assert "GetViewport().SizeChanged" in camera
 
-    assert "GridColor = new(0.56f, 0.66f, 0.60f, 0.34f)" in grid
-    assert "MajorGridColor" in grid
-    assert "lineIndex % 5 == 0" in grid
+    assert "GridColor = new(0.56f, 0.66f, 0.60f, 0.48f)" in grid
+    assert "MajorGridColor" not in grid
+    assert "lineIndex % 5 == 0" not in grid
 
     assert "CornerPostColor" in boundary
     assert "AddCornerPost" in boundary
+
+
+def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists() -> None:
+    config = read_text(GODOT_ROOT / "scripts" / "OfficeWorld3DConfig.cs")
+    camera = read_text(GODOT_ROOT / "scripts" / "OfficeCamera3DController.cs")
+    grid = read_text(GODOT_ROOT / "scripts" / "OfficeGrid3DRenderer.cs")
+    door = read_text(GODOT_ROOT / "scripts" / "RoomDoorGeometry.cs")
+    facility = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+    room_renderer = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+
+    assert "SourcePixelWidth = 6400" in config
+    assert "SourcePixelHeight = 4000" in config
+    assert "Columns = 16" in config
+    assert "Rows = 10" in config
+    assert "GridSize = 10.0f" in config
+    assert "new Vector2(Columns * GridSize, Rows * GridSize)" in config
+
+    assert "MiddlePitchSensitivity = 0.12f" in camera
+    assert "MinPitchDegrees = 42.0f" in camera
+    assert "MaxPitchDegrees = 74.0f" in camera
+    assert "AdjustPitchFromMiddleDrag" in camera
+    assert "_isPitchDragging" in camera
+    assert "_focus += -GetPlanarRight() * motionEvent.Relative.X" not in camera
+
+    assert "MajorGridColor" not in grid
+    assert "lineIndex % 5 == 0" not in grid
+    assert "DoorLength = OfficeWorld3DConfig.GridSize * 0.62f" in door
+    assert "DoorThickness = OfficeWorld3DConfig.GridSize * 0.12f" in door
+    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f" in door
+
+    assert "CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f" in facility
+    assert "HighlightStrokeSize = OfficeWorld3DConfig.GridSize * 0.86f" in facility
+    assert "RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f" in room_renderer
+    assert "RoomBoundaryThickness = OfficeWorld3DConfig.GridSize * 0.08f" in room_renderer
 
 
 def test_get_the_best_v2_interaction_right_click_and_door_delete_are_precise() -> None:
