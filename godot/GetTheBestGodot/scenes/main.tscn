@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://vwi5tn4mcavf" path="res://scripts/EmployeeStore.cs" id="16_jbj1t"]
 [ext_resource type="Script" uid="uid://dihs32kp50ure" path="res://scripts/Employee3DRenderer.cs" id="17_muem4"]
 [ext_resource type="Script" uid="uid://d4l5mgyjwnfar" path="res://scripts/OfficeNavigationStore.cs" id="18_dp3eg"]
+[ext_resource type="Script" uid="uid://m0dm0ymr3yaj" path="res://scripts/EmployeeAutonomyController.cs" id="19_0ld40"]
 
 [node name="Main" type="Node3D" unique_id=1957351103]
 script = ExtResource("1_main")
@@ -188,3 +189,6 @@ script = ExtResource("17_muem4")
 
 [node name="OfficeNavigationStore" type="Node" parent="InteractionRoot" unique_id=1533655475]
 script = ExtResource("18_dp3eg")
+
+[node name="EmployeeAutonomyController" type="Node" parent="InteractionRoot" unique_id=2047997289]
+script = ExtResource("19_0ld40")

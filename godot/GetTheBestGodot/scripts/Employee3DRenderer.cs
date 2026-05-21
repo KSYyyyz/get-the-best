@@ -8,6 +8,7 @@ public partial class Employee3DRenderer : Node3D
     private const float EmployeeModelScale = OfficeWorld3DConfig.GridSize * 0.34f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
     private const float SmoothMoveDurationSeconds = 0.12f;
+    private const float PathMoveStepDurationSeconds = 0.18f;
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private static readonly string[] EmployeeModelScenePaths =
@@ -27,6 +28,7 @@ public partial class Employee3DRenderer : Node3D
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
     private int? _dragPreviewEmployeeId;
+    private int? _pathMovingEmployeeId;
     private Vector2I _dragPreviewCell;
     private bool _dragPreviewIsLegal = true;
     private EmployeeStore? _employeeStore;
@@ -115,6 +117,36 @@ public partial class Employee3DRenderer : Node3D
         RefreshEmployees();
     }
 
+    public void PlayEmployeePathMove(
+        EmployeeVisual employee,
+        IReadOnlyList<Vector2I> path,
+        System.Action onFinished
+    )
+    {
+        var modelRoot = GetNodeOrNull<Node3D>($"Employee_{employee.Id}");
+        if (modelRoot == null || path.Count <= 1)
+        {
+            onFinished();
+            return;
+        }
+
+        _pathMovingEmployeeId = employee.Id;
+        ApplyEmployeeOutline(modelRoot, OutlineStroke);
+
+        var tween = CreateTween();
+        for (var index = 1; index < path.Count; index++)
+        {
+            TweenEmployeePathStep(tween, modelRoot, path[index]);
+        }
+
+        tween.Finished += () =>
+        {
+            _lastEmployeePositions[employee.Id] = modelRoot.Position;
+            _pathMovingEmployeeId = null;
+            onFinished();
+        };
+    }
+
     private void AddEmployeeModel(EmployeeVisual employee)
     {
         var renderCell = GetRenderCell(employee);
@@ -151,6 +183,7 @@ public partial class Employee3DRenderer : Node3D
             _highlightedEmployeeIds.Contains(employee.Id)
             || _hoveredEmployeeId == employee.Id
             || _dragPreviewEmployeeId == employee.Id
+            || _pathMovingEmployeeId == employee.Id
         )
         {
             ApplyEmployeeOutline(modelRoot, GetRenderOutlineColor(employee));
@@ -188,6 +221,21 @@ public partial class Employee3DRenderer : Node3D
             .TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)
             .SetTrans(Tween.TransitionType.Cubic)
             .SetEase(Tween.EaseType.Out);
+    }
+
+    private static void TweenEmployeePathStep(Tween tween, Node3D modelRoot, Vector2I pathCell)
+    {
+        var targetPosition =
+            OfficeWorld3DConfig.CellToWorldPosition(pathCell) + new Vector3(0.0f, 0.02f, 0.0f);
+        tween
+            .TweenProperty(
+                modelRoot,
+                "position",
+                targetPosition,
+                PathMoveStepDurationSeconds
+            )
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.InOut);
     }
 
     private static bool TryGetEmployeeId(string nodeName, out int employeeId)

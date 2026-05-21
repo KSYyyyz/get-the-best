@@ -1294,3 +1294,31 @@ def test_get_the_best_v2_0_19_drag_legality_uses_navigation_store() -> None:
 
     assert 'GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore")' in selection
     assert "_officeNavigationStore?.FindPath(_dragEmployeeOriginCell, cell)" in selection
+
+
+def test_get_the_best_v2_0_20_employee_autonomy_moves_on_navigation_path() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "EmployeeAutonomyController" in scene_text
+    assert "public partial class EmployeeAutonomyController : Node" in employee_autonomy
+    assert "EmployeeActivityKind" in employee_autonomy
+    assert "EmployeeAutonomyState" in employee_autonomy
+    assert "AutonomousMoveIntervalSeconds" in employee_autonomy
+    assert "MaxAutonomousPathCells" in employee_autonomy
+    assert "CandidateTargetOffsets" in employee_autonomy
+    assert "TryStartNextAutonomousMove" in employee_autonomy
+    assert "FindAutonomousTarget" in employee_autonomy
+    assert "_officeNavigationStore.FindPath(employee.Cell, candidate)" in employee_autonomy
+    assert "CanMoveEmployee(employee, candidate)" in employee_autonomy
+    assert "_employeeRenderer?.PlayEmployeePathMove(employee, path, () =>" in employee_autonomy
+    assert "TryMoveEmployee(employeeId, targetCell, out var movedEmployee)" in employee_autonomy
+    assert "EmployeeActivityKind.WalkingToTarget" in employee_autonomy
+
+    assert "PathMoveStepDurationSeconds" in employee_renderer
+    assert "_pathMovingEmployeeId" in employee_renderer
+    assert "PlayEmployeePathMove(" in employee_renderer
+    assert "IReadOnlyList<Vector2I> path" in employee_renderer
+    assert "TweenEmployeePathStep" in employee_renderer
+    assert "tween.Finished +=" in employee_renderer
