@@ -20,6 +20,12 @@ public partial class PlacementPreview3DController : Node3D
         ShowSelectionRect(cell, cell, isLegal);
     }
 
+    public void ShowFacilityCell(Vector2I cell, bool isLegal, FacilityDefinition definition)
+    {
+        var endCell = cell + definition.Footprint - Vector2I.One;
+        ShowSelectionRect(cell, endCell, isLegal);
+    }
+
     public void ShowSelectionRect(Vector2I startCell, Vector2I endCell, bool isLegal)
     {
         _previewMesh ??= CreatePreviewMesh();

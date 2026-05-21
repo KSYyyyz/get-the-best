@@ -28,13 +28,32 @@ public partial class FacilityPlacementStore : Node
 
     public bool CanPlace(FacilityBuildType facilityType, Vector2I cell)
     {
+        return CanPlace(facilityType, cell, out _);
+    }
+
+    public bool CanPlace(FacilityBuildType facilityType, Vector2I cell, out FacilityPlacementIssue issue)
+    {
         if (FindAtCell(cell) != null)
         {
+            issue = FacilityPlacementIssue.Occupied;
             return false;
         }
 
         var room = _roomFootprintStore?.FindAtCell(cell);
-        return room != null && room.RoomType == RequiredRooms[facilityType];
+        if (room == null)
+        {
+            issue = FacilityPlacementIssue.MissingRequiredRoom;
+            return false;
+        }
+
+        if (room.RoomType != RequiredRooms[facilityType])
+        {
+            issue = FacilityPlacementIssue.WrongRoomType;
+            return false;
+        }
+
+        issue = FacilityPlacementIssue.None;
+        return true;
     }
 
     public bool TryPlace(FacilityBuildType facilityType, Vector2I cell, out FacilityPlacement? facility)
@@ -87,6 +106,14 @@ public partial class FacilityPlacementStore : Node
 
         return removed;
     }
+}
+
+public enum FacilityPlacementIssue
+{
+    None,
+    Occupied,
+    MissingRequiredRoom,
+    WrongRoomType,
 }
 
 public sealed record FacilityPlacement(int Id, FacilityBuildType FacilityType, Vector2I Cell);

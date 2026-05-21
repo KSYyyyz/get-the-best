@@ -201,13 +201,17 @@ public partial class OfficeSelection3DController : Node
         if (_buildModeController?.TryPlaceFacility(cell, out var facility) == true && facility != null)
         {
             _placementPreviewController?.ClearPreview();
-            ClearSelectedObjects();
             _facilityRenderer?.RefreshFacilities();
+            ClearSelectedRoom();
+            _facilityRenderer?.HighlightFacility(facility);
             ShowFacilityTooltip(facility, screenPosition);
             return;
         }
 
-        ShowPointerTooltip("不能放置在这里", screenPosition);
+        ShowPointerTooltip(
+            _buildModeController?.GetFacilityPlacementFailureMessage(cell) ?? string.Empty,
+            screenPosition
+        );
     }
 
     private void FinishDeleteSelection(Vector2 screenPosition)
@@ -290,6 +294,18 @@ public partial class OfficeSelection3DController : Node
         }
 
         var deletedFacilities = _buildModeController?.DeleteFacilitiesInSelection(cell, cell) ?? 0;
+        if (deletedFacilities > 0)
+        {
+            _placementPreviewController?.ClearPreview();
+            ClearSelectedObjects();
+            _facilityRenderer?.RefreshFacilities();
+            ShowPointerTooltip(
+                $"\u5df2\u51fa\u552e {deletedFacilities} \u4e2a\u8bbe\u65bd",
+                screenPosition
+            );
+            return;
+        }
+
         if (_buildModeController?.TryDeleteRoomAtCell(cell, out var room) == true && room != null)
         {
             RefreshAfterRoomDeletion(room, screenPosition);
@@ -303,18 +319,6 @@ public partial class OfficeSelection3DController : Node
         )
         {
             RefreshAfterRoomDeletion(room, screenPosition);
-            return;
-        }
-
-        if (deletedFacilities > 0)
-        {
-            _placementPreviewController?.ClearPreview();
-            ClearSelectedObjects();
-            _facilityRenderer?.RefreshFacilities();
-            ShowPointerTooltip(
-                $"\u5df2\u51fa\u552e {deletedFacilities} \u4e2a\u8bbe\u65bd",
-                screenPosition
-            );
             return;
         }
 
@@ -415,9 +419,7 @@ public partial class OfficeSelection3DController : Node
 
         if (_buildModeController?.IsPlaceFacilityMode() == true)
         {
-            var canPlace = _buildModeController.CanPlaceFacility(cell);
-            _placementPreviewController?.ShowFacilityCell(cell, canPlace);
-            ShowPointerTooltip(_buildModeController.GetActiveFacilityTypeLabel(), screenPosition);
+            ShowFacilityPlacementPreview(cell, screenPosition);
             return;
         }
 
@@ -520,6 +522,27 @@ public partial class OfficeSelection3DController : Node
     private void ShowPointerSelectionRect()
     {
         _placementPreviewController?.ShowSelectionRect(_dragStartCell, _dragCurrentCell, isLegal: true);
+    }
+
+    private void ShowFacilityPlacementPreview(Vector2I cell, Vector2 screenPosition)
+    {
+        if (_buildModeController == null)
+        {
+            return;
+        }
+
+        var canPlace = _buildModeController.CanPlaceFacility(cell);
+        _placementPreviewController?.ShowFacilityCell(
+            cell,
+            canPlace,
+            FacilityDefinitionCatalog.GetDefinition(_buildModeController.GetActiveFacilityType())
+        );
+        ShowPointerTooltip(
+            canPlace
+                ? _buildModeController.GetActiveFacilityTypeLabel()
+                : _buildModeController.GetFacilityPlacementFailureMessage(cell),
+            screenPosition
+        );
     }
 
     private void ClearSelectedObjects()

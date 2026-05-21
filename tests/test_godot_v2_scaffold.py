@@ -640,3 +640,44 @@ def test_get_the_best_v2_interaction_right_click_and_door_delete_are_precise() -
     assert "RemoveDoorOwnerAtWorldPosition" in room_store
     assert "RemoveDoorOwnerNearCell" not in room_store
     assert "Mathf.Abs(outsideCell.X - cell.X) <= 2" not in room_store
+
+
+def test_get_the_best_v2_0_8_facility_feedback_and_single_sell_baseline_exists() -> None:
+    build_mode = read_text(GODOT_ROOT / "scripts" / "BuildModeController.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    preview = read_text(GODOT_ROOT / "scripts" / "PlacementPreview3DController.cs")
+
+    assert "enum FacilityPlacementIssue" in facility_store
+    assert (
+        "CanPlace(FacilityBuildType facilityType, Vector2I cell, out FacilityPlacementIssue issue)"
+        in facility_store
+    )
+    assert "FacilityPlacementIssue.Occupied" in facility_store
+    assert "FacilityPlacementIssue.MissingRequiredRoom" in facility_store
+    assert "FacilityPlacementIssue.WrongRoomType" in facility_store
+
+    assert "GetFacilityPlacementIssue" in build_mode
+    assert "GetFacilityPlacementFailureMessage" in build_mode
+    assert "GetRequiredRoomType(_activeFacilityType)" in build_mode
+    assert "\\u9700\\u8981" in build_mode
+    assert "\\u683c\\u5b50\\u5df2\\u5360\\u7528" in build_mode
+
+    assert "ShowFacilityCell(" in selection
+    assert (
+        "FacilityDefinitionCatalog.GetDefinition(_buildModeController.GetActiveFacilityType())"
+        in selection
+    )
+    assert "definition.Footprint" in preview
+    assert "ShowFacilityPlacementPreview(cell, screenPosition)" in selection
+    assert "GetFacilityPlacementFailureMessage(cell)" in selection
+    assert "FinishFacilityPlacement(mouseEvent.Position)" in selection
+    assert "ShowFacilityTooltip(facility, screenPosition)" in selection
+    assert (
+        "return;"
+        in selection[
+            selection.index("if (deletedFacilities > 0)") : selection.index(
+                "if (_buildModeController?.TryDeleteRoomAtCell(cell"
+            )
+        ]
+    )

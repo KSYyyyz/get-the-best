@@ -257,6 +257,30 @@ public partial class BuildModeController : Node
         return _facilityPlacementStore?.CanPlace(_activeFacilityType, cell) ?? false;
     }
 
+    public FacilityPlacementIssue GetFacilityPlacementIssue(Vector2I cell)
+    {
+        if (_facilityPlacementStore == null)
+        {
+            return FacilityPlacementIssue.MissingRequiredRoom;
+        }
+
+        _facilityPlacementStore.CanPlace(_activeFacilityType, cell, out var issue);
+        return issue;
+    }
+
+    public string GetFacilityPlacementFailureMessage(Vector2I cell)
+    {
+        return GetFacilityPlacementIssue(cell) switch
+        {
+            FacilityPlacementIssue.Occupied => "\u683c\u5b50\u5df2\u5360\u7528",
+            FacilityPlacementIssue.WrongRoomType =>
+                $"\u9700\u8981{GetRoomTypeLabel(GetRequiredRoomType(_activeFacilityType))}",
+            FacilityPlacementIssue.MissingRequiredRoom =>
+                $"\u9700\u8981{GetRoomTypeLabel(GetRequiredRoomType(_activeFacilityType))}",
+            _ => string.Empty,
+        };
+    }
+
     public bool TryPlaceFacility(Vector2I cell, out FacilityPlacement? facility)
     {
         if (_activeToolMode != BuildToolMode.PlaceFacility)
