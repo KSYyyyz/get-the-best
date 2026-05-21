@@ -4,52 +4,45 @@ namespace GetTheBestGodot;
 
 public partial class OfficeGrid3DRenderer : Node3D
 {
-    private const float GridLineThickness = OfficeWorld3DConfig.GridSize * 0.006f;
-    private static readonly Color GridColor = new(0.56f, 0.66f, 0.60f, 0.48f);
+    private const float TileInset = OfficeWorld3DConfig.GridSize * 0.035f;
+    private const float TileHeight = OfficeWorld3DConfig.GridSize * 0.006f;
+    private static readonly Color FloorTileA = new(0.22f, 0.27f, 0.24f, 1.0f);
+    private static readonly Color FloorTileB = new(0.20f, 0.25f, 0.22f, 1.0f);
 
     public override void _Ready()
     {
-        BuildGrid();
+        BuildFloorTiles();
     }
 
-    private void BuildGrid()
+    private void BuildFloorTiles()
     {
-        var material = new StandardMaterial3D
-        {
-            AlbedoColor = GridColor,
-            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-        };
+        var materialA = CreateTileMaterial(FloorTileA);
+        var materialB = CreateTileMaterial(FloorTileB);
+        var tileSize = Mathf.Max(OfficeWorld3DConfig.GridSize - TileInset * 2.0f, 0.1f);
 
-        for (var x = 0; x <= OfficeWorld3DConfig.Columns; x++)
+        for (var x = 0; x < OfficeWorld3DConfig.Columns; x++)
         {
-            var worldX = OfficeWorld3DConfig.OfficeBounds.Position.X + x * OfficeWorld3DConfig.GridSize;
-            AddLine(
-                new Vector3(worldX, 0.025f, 0.0f),
-                new Vector3(GridLineThickness, GridLineThickness, OfficeWorld3DConfig.OfficeBounds.Size.Y),
-                material
-            );
-        }
-
-        for (var y = 0; y <= OfficeWorld3DConfig.Rows; y++)
-        {
-            var worldZ = OfficeWorld3DConfig.OfficeBounds.Position.Y + y * OfficeWorld3DConfig.GridSize;
-            AddLine(
-                new Vector3(0.0f, 0.025f, worldZ),
-                new Vector3(OfficeWorld3DConfig.OfficeBounds.Size.X, GridLineThickness, GridLineThickness),
-                material
-            );
+            for (var y = 0; y < OfficeWorld3DConfig.Rows; y++)
+            {
+                var tile = new MeshInstance3D
+                {
+                    Mesh = new BoxMesh { Size = new Vector3(tileSize, TileHeight, tileSize) },
+                    MaterialOverride = (x + y) % 2 == 0 ? materialA : materialB,
+                    Position =
+                        OfficeWorld3DConfig.CellToWorldPosition(new Vector2I(x, y))
+                        + Vector3.Up * (0.055f + TileHeight / 2.0f),
+                };
+                AddChild(tile);
+            }
         }
     }
 
-    private void AddLine(Vector3 position, Vector3 size, Material material)
+    private static StandardMaterial3D CreateTileMaterial(Color color)
     {
-        var line = new MeshInstance3D
+        return new StandardMaterial3D
         {
-            Mesh = new BoxMesh { Size = size },
-            MaterialOverride = material,
-            Position = position,
+            AlbedoColor = color,
+            Roughness = 1.0f,
         };
-        AddChild(line);
     }
-
 }

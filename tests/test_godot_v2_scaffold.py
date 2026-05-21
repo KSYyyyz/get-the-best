@@ -622,9 +622,11 @@ def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -
     assert "Size = Mathf.Min(" in camera
     assert "GetViewport().SizeChanged" in camera
 
-    assert "GridColor = new(0.56f, 0.66f, 0.60f, 0.48f)" in grid
-    assert "MajorGridColor" not in grid
-    assert "lineIndex % 5 == 0" not in grid
+    assert "BuildFloorTiles" in grid
+    assert "FloorTileA" in grid
+    assert "FloorTileB" in grid
+    assert "GridLineThickness" not in grid
+    assert "AddLine" not in grid
 
     assert "CornerPostColor" in boundary
     assert "AddCornerPost" in boundary
@@ -645,15 +647,20 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "GridSize = 10.0f" in config
     assert "new Vector2(Columns * GridSize, Rows * GridSize)" in config
 
-    assert "MiddlePitchSensitivity = 0.12f" in camera
-    assert "MinPitchDegrees = 42.0f" in camera
-    assert "MaxPitchDegrees = 74.0f" in camera
+    assert "MiddlePitchSensitivity = 0.18f" in camera
+    assert "MinPitchDegrees = 30.0f" in camera
+    assert "MaxPitchDegrees = DefaultPitchDegrees" in camera
     assert "AdjustPitchFromMiddleDrag" in camera
     assert "_isPitchDragging" in camera
+    assert "RotationDegrees = new Vector3(-_pitchDegrees, -YawDegrees, 0.0f)" in camera
+    assert "LookAt(_focus, Vector3.Up)" not in camera
     assert "_focus += -GetPlanarRight() * motionEvent.Relative.X" not in camera
 
     assert "MajorGridColor" not in grid
     assert "lineIndex % 5 == 0" not in grid
+    assert "BuildFloorTiles" in grid
+    assert "TileInset = OfficeWorld3DConfig.GridSize * 0.035f" in grid
+    assert "CreateTileMaterial" in grid
     assert "DoorLength = OfficeWorld3DConfig.GridSize * 0.62f" in door
     assert "DoorThickness = OfficeWorld3DConfig.GridSize * 0.12f" in door
     assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f" in door
