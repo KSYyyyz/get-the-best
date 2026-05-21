@@ -15,6 +15,7 @@ public partial class FacilityPlacementStore : Node
     private readonly List<FacilityPlacement> _facilities = [];
     private int _nextFacilityId = 1;
     private RoomFootprintStore? _roomFootprintStore;
+    private OfficeNavigationStore? _officeNavigationStore;
 
     public FacilityPlacementStore()
     {
@@ -24,6 +25,7 @@ public partial class FacilityPlacementStore : Node
     public override void _Ready()
     {
         _roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");
+        _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
     }
 
     public IReadOnlyList<FacilityPlacement> GetFacilities()
@@ -38,15 +40,21 @@ public partial class FacilityPlacementStore : Node
 
     public bool CanPlace(FacilityBuildType facilityType, Vector2I cell, out FacilityPlacementIssue issue)
     {
-        if (!IsCellInsideOffice(cell))
+        if (_officeNavigationStore?.IsFacilityOccupied(cell) == true)
+        {
+            issue = FacilityPlacementIssue.Occupied;
+            return false;
+        }
+
+        if (!(_officeNavigationStore?.CanStandAt(cell) == true))
         {
             issue = FacilityPlacementIssue.MissingRequiredRoom;
             return false;
         }
 
-        if (FindAtCell(cell) != null)
+        if (_officeNavigationStore?.IsDoorCell(cell) == true)
         {
-            issue = FacilityPlacementIssue.Occupied;
+            issue = FacilityPlacementIssue.DoorPassage;
             return false;
         }
 
@@ -69,12 +77,12 @@ public partial class FacilityPlacementStore : Node
 
     public bool CanMoveFacility(FacilityPlacement facility, Vector2I targetCell)
     {
-        if (!IsCellInsideOffice(targetCell))
+        if (!(_officeNavigationStore?.CanStandAt(targetCell, facility.Id) == true))
         {
             return false;
         }
 
-        if (FindAtCellExcluding(facility.Id, targetCell) != null)
+        if (_officeNavigationStore?.IsDoorCell(targetCell) == true)
         {
             return false;
         }
@@ -202,14 +210,6 @@ public partial class FacilityPlacementStore : Node
         _facilities.Add(new FacilityPlacement(_nextFacilityId, facilityType, cell, facing));
         _nextFacilityId++;
     }
-
-    private static bool IsCellInsideOffice(Vector2I cell)
-    {
-        return cell.X >= 0
-            && cell.Y >= 0
-            && cell.X < OfficeWorld3DConfig.Columns
-            && cell.Y < OfficeWorld3DConfig.Rows;
-    }
 }
 
 public enum FacilityPlacementIssue
@@ -218,6 +218,7 @@ public enum FacilityPlacementIssue
     Occupied,
     MissingRequiredRoom,
     WrongRoomType,
+    DoorPassage,
 }
 
 public enum FacilityFacing

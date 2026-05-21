@@ -15,6 +15,7 @@ public partial class OfficeSelection3DController : Node
     private BuildModeController? _buildModeController;
     private RoomOverlay3DRenderer? _roomOverlayRenderer;
     private Facility3DRenderer? _facilityRenderer;
+    private OfficeNavigationStore? _officeNavigationStore;
     private EmployeeStore? _employeeStore;
     private Employee3DRenderer? _employeeRenderer;
     private bool _isDraggingSelection;
@@ -44,6 +45,7 @@ public partial class OfficeSelection3DController : Node
         _buildModeController = GetNodeOrNull<BuildModeController>("../BuildModeController");
         _roomOverlayRenderer = GetNodeOrNull<RoomOverlay3DRenderer>("../RoomOverlay3DRenderer");
         _facilityRenderer = GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer");
+        _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         _employeeStore = GetNodeOrNull<EmployeeStore>("../EmployeeStore");
         _employeeRenderer = GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer");
         HidePointerTooltip();
@@ -474,7 +476,10 @@ public partial class OfficeSelection3DController : Node
         }
 
         _dragEmployeeCurrentCell = cell;
-        _dragEmployeeTargetLegal = _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true;
+        var path = _officeNavigationStore?.FindPath(_dragEmployeeOriginCell, cell);
+        _dragEmployeeTargetLegal =
+            _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true
+            && path is { Count: > 0 };
         _employeeRenderer?.ShowEmployeeDragPreview(_draggedEmployee, cell, _dragEmployeeTargetLegal);
         ShowPointerTooltip(
             _dragEmployeeTargetLegal ? "\u70b9\u51fb\u653e\u4e0b" : "\u4e0d\u80fd\u653e\u7f6e",

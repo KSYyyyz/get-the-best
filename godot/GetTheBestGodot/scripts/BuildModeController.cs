@@ -278,6 +278,7 @@ public partial class BuildModeController : Node
                 $"\u9700\u8981{GetRoomTypeLabel(GetRequiredRoomType(_activeFacilityType))}",
             FacilityPlacementIssue.MissingRequiredRoom =>
                 $"\u9700\u8981{GetRoomTypeLabel(GetRequiredRoomType(_activeFacilityType))}",
+            FacilityPlacementIssue.DoorPassage => "\u95e8\u53e3\u9700\u8981\u4fdd\u6301\u901a\u884c",
             _ => string.Empty,
         };
     }

@@ -878,7 +878,8 @@ def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> N
 
     assert "CanMoveEmployee" in employee_store
     assert "TryMoveEmployee" in employee_store
-    assert "IsCellInsideOffice" in employee_store
+    assert "OfficeNavigationStore? _officeNavigationStore" in employee_store
+    assert "_officeNavigationStore?.CanStandAt(targetCell) == true" in employee_store
     assert "employee with { Cell = targetCell }" in employee_store
 
     assert "ShowEmployeeDragPreview" in employee_renderer
@@ -1245,3 +1246,51 @@ def test_get_the_best_v2_sandbox_has_reasonable_preset_office_scene() -> None:
             )
         ]
     )
+
+
+def test_get_the_best_v2_0_19_office_navigation_store_defines_walkability_pathing() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "OfficeNavigationStore" in scene_text
+    assert "OfficeNavigationStore.cs" in scripts
+
+    navigation = scripts["OfficeNavigationStore.cs"]
+    assert "public partial class OfficeNavigationStore : Node" in navigation
+    assert "RoomFootprintStore? _roomFootprintStore" in navigation
+    assert "FacilityPlacementStore? _facilityPlacementStore" in navigation
+    assert "IsInsideOffice(Vector2I cell)" in navigation
+    assert "IsWalkable(Vector2I cell)" in navigation
+    assert "IsBlocked(Vector2I cell)" in navigation
+    assert "CanStandAt(Vector2I cell)" in navigation
+    assert "IsDoorPassage(Vector2I fromCell, Vector2I toCell)" in navigation
+    assert "CanMoveBetween(Vector2I fromCell, Vector2I toCell)" in navigation
+    assert "FindPath(Vector2I startCell, Vector2I targetCell)" in navigation
+    assert "Queue<Vector2I>" in navigation
+    assert "ReconstructPath" in navigation
+    assert "GetDoorOutsideCell" in navigation
+
+
+def test_get_the_best_v2_0_19_drag_legality_uses_navigation_store() -> None:
+    employee_store = read_text(GODOT_ROOT / "scripts" / "EmployeeStore.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert "OfficeNavigationStore? _officeNavigationStore" in employee_store
+    assert 'GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore")' in employee_store
+    assert "_officeNavigationStore?.CanStandAt(targetCell) == true" in employee_store
+    assert "IsCellInsideOffice" not in employee_store
+
+    assert "OfficeNavigationStore? _officeNavigationStore" in facility_store
+    assert 'GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore")' in facility_store
+    assert "_officeNavigationStore?.CanStandAt(cell) == true" in facility_store
+    assert "_officeNavigationStore?.CanStandAt(targetCell, facility.Id) == true" in facility_store
+    assert "_officeNavigationStore?.IsDoorCell(cell) == true" in facility_store
+    assert "IsCellInsideOffice" not in facility_store
+
+    assert 'GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore")' in selection
+    assert "_officeNavigationStore?.FindPath(_dragEmployeeOriginCell, cell)" in selection

@@ -29,11 +29,11 @@ public partial class EmployeeStore : Node
             new Color(0.42f, 0.78f, 0.48f, 1.0f)
         ),
     ];
-    private FacilityPlacementStore? _facilityPlacementStore;
+    private OfficeNavigationStore? _officeNavigationStore;
 
     public override void _Ready()
     {
-        _facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>("../FacilityPlacementStore");
+        _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
     }
 
     public IReadOnlyList<EmployeeVisual> GetEmployees()
@@ -81,8 +81,8 @@ public partial class EmployeeStore : Node
 
     public bool CanMoveEmployee(EmployeeVisual employee, Vector2I targetCell)
     {
-        return IsCellInsideOffice(targetCell)
-            && _facilityPlacementStore?.FindAtCell(targetCell) == null
+        return _officeNavigationStore?.CanStandAt(targetCell) == true
+            && _officeNavigationStore.FindPath(employee.Cell, targetCell).Count > 0
             && !IsCellOccupiedByOtherEmployee(employee.Id, targetCell);
     }
 
@@ -125,14 +125,6 @@ public partial class EmployeeStore : Node
         }
 
         return false;
-    }
-
-    private static bool IsCellInsideOffice(Vector2I cell)
-    {
-        return cell.X >= 0
-            && cell.Y >= 0
-            && cell.X < OfficeWorld3DConfig.Columns
-            && cell.Y < OfficeWorld3DConfig.Rows;
     }
 }
 
