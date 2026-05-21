@@ -10,7 +10,7 @@ public partial class OfficeCamera3DController : Camera3D
     private const float MaxCameraSize = 210.0f;
     private const float ZoomStepFactor = 1.14f;
     private const float RotationSpeedDegrees = 90.0f;
-    private const float CameraPitchDegrees = 58.0f;
+    private const float CameraPitchDegrees = 42.0f;
     private const float MiddleRotateSensitivity = 0.22f;
     private const float EdgePanMarginPixels = 28.0f;
     private const float EdgePanSpeed = 52.0f;

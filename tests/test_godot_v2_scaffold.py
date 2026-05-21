@@ -647,7 +647,7 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "GridSize = 10.0f" in config
     assert "new Vector2(Columns * GridSize, Rows * GridSize)" in config
 
-    assert "CameraPitchDegrees = 58.0f" in camera
+    assert "CameraPitchDegrees = 42.0f" in camera
     assert "MiddleRotateSensitivity = 0.22f" in camera
     assert "EdgePanMarginPixels = 28.0f" in camera
     assert "EdgePanSpeed = 52.0f" in camera
