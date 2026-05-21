@@ -7,6 +7,8 @@ public partial class Facility3DRenderer : Node3D
 {
     private const float CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f;
     private const float HighlightStrokeSize = OfficeWorld3DConfig.GridSize * 0.86f;
+    private const float OutlineThickness = OfficeWorld3DConfig.GridSize * 0.055f;
+    private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.16f;
     private static readonly Color DeskFill = new(0.72f, 0.50f, 0.28f, 1.0f);
     private static readonly Color DeskDarkFill = new(0.38f, 0.24f, 0.14f, 1.0f);
     private static readonly Color ChairFill = new(0.80f, 0.58f, 0.22f, 1.0f);
@@ -16,14 +18,20 @@ public partial class Facility3DRenderer : Node3D
     private static readonly Color ServerRackFill = new(0.18f, 0.26f, 0.36f, 1.0f);
     private static readonly Color ServerPanelFill = new(0.34f, 0.46f, 0.70f, 1.0f);
     private static readonly Color StatusLightFill = new(0.38f, 0.90f, 0.52f, 1.0f);
-    private static readonly Color HighlightStroke = new(1.0f, 0.95f, 0.42f, 1.0f);
+    private static readonly Color OutlineStroke = new(1.0f, 0.95f, 0.42f, 1.0f);
+    private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly List<Node> _renderedFacilities = [];
     private FacilityPlacementStore? _facilityPlacementStore;
     private FacilityPlacement? _highlightedFacility;
+    private int? _hoveredFacilityId;
+    private int? _dragPreviewFacilityId;
+    private Vector2I _dragPreviewCell;
+    private bool _dragPreviewIsLegal = true;
 
     public override void _Ready()
     {
         _facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>("../FacilityPlacementStore");
+        RefreshFacilities();
     }
 
     public void RefreshFacilities()
@@ -51,9 +59,46 @@ public partial class Facility3DRenderer : Node3D
         RefreshFacilities();
     }
 
+    public void HoverFacility(FacilityPlacement? facility)
+    {
+        _hoveredFacilityId = facility?.Id;
+        RefreshFacilities();
+    }
+
+    public void ShowFacilityDragPreview(
+        FacilityPlacement facility,
+        Vector2I targetCell,
+        bool isLegal
+    )
+    {
+        _dragPreviewFacilityId = facility.Id;
+        _dragPreviewCell = targetCell;
+        _dragPreviewIsLegal = isLegal;
+        _highlightedFacility = facility;
+        RefreshFacilities();
+    }
+
+    public void ClearFacilityDragPreview()
+    {
+        if (_dragPreviewFacilityId == null)
+        {
+            return;
+        }
+
+        _dragPreviewFacilityId = null;
+        RefreshFacilities();
+    }
+
     private void AddFacilityModel(FacilityPlacement facility)
     {
-        var position = OfficeWorld3DConfig.CellToWorldPosition(facility.Cell);
+        var renderCell = GetRenderCell(facility);
+        var yOffset =
+            _dragPreviewFacilityId == facility.Id
+                ? DragPreviewYOffset
+                : 0.0f;
+        var position =
+            OfficeWorld3DConfig.CellToWorldPosition(renderCell) + new Vector3(0.0f, yOffset, 0.0f);
+        var renderTint = GetRenderTint(facility);
         var modelRoot = new Node3D
         {
             Position = position,
@@ -65,23 +110,42 @@ public partial class Facility3DRenderer : Node3D
         switch (facility.FacilityType)
         {
             case FacilityBuildType.ProductWhiteboard:
-                AddProductWhiteboardModel(modelRoot);
+                AddProductWhiteboardModel(modelRoot, renderTint);
                 break;
             case FacilityBuildType.ServerRack:
-                AddServerRackModel(modelRoot);
+                AddServerRackModel(modelRoot, renderTint);
                 break;
             default:
-                AddDeskModel(modelRoot);
+                AddDeskModel(modelRoot, renderTint);
                 break;
         }
 
-        if (_highlightedFacility?.Id == facility.Id)
+        if (
+            _highlightedFacility?.Id == facility.Id
+            || _hoveredFacilityId == facility.Id
+            || _dragPreviewFacilityId == facility.Id
+        )
         {
-            AddHighlight(position);
+            AddFacilityOutline(modelRoot, OutlineStroke);
         }
     }
 
-    private void AddDeskModel(Node3D parent)
+    private Vector2I GetRenderCell(FacilityPlacement facility)
+    {
+        return _dragPreviewFacilityId == facility.Id ? _dragPreviewCell : facility.Cell;
+    }
+
+    private Color? GetRenderTint(FacilityPlacement facility)
+    {
+        if (_dragPreviewFacilityId != facility.Id || _dragPreviewIsLegal)
+        {
+            return null;
+        }
+
+        return IllegalDragFill;
+    }
+
+    private void AddDeskModel(Node3D parent, Color? tint)
     {
         AddMeshPart(
             parent,
@@ -93,7 +157,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.58f
                 ),
             },
-            DeskFill,
+            tint ?? DeskFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.35f, -CellInnerSize * 0.05f)
         );
         AddMeshPart(
@@ -106,14 +170,14 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.08f
                 ),
             },
-            DeskDarkFill,
+            tint ?? DeskDarkFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.22f, -CellInnerSize * 0.32f)
         );
 
-        AddDeskLeg(parent, -0.32f, -0.25f);
-        AddDeskLeg(parent, 0.32f, -0.25f);
-        AddDeskLeg(parent, -0.32f, 0.21f);
-        AddDeskLeg(parent, 0.32f, 0.21f);
+        AddDeskLeg(parent, -0.32f, -0.25f, tint);
+        AddDeskLeg(parent, 0.32f, -0.25f, tint);
+        AddDeskLeg(parent, -0.32f, 0.21f, tint);
+        AddDeskLeg(parent, 0.32f, 0.21f, tint);
 
         AddMeshPart(
             parent,
@@ -125,7 +189,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.05f
                 ),
             },
-            ScreenFill,
+            tint ?? ScreenFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.52f, -CellInnerSize * 0.11f)
         );
         AddMeshPart(
@@ -138,7 +202,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.14f
                 ),
             },
-            ScreenFill,
+            tint ?? ScreenFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.40f, -CellInnerSize * 0.03f)
         );
 
@@ -151,7 +215,7 @@ public partial class Facility3DRenderer : Node3D
                 Height = OfficeWorld3DConfig.GridSize * 0.10f,
                 RadialSegments = 18,
             },
-            ChairFill,
+            tint ?? ChairFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.24f, CellInnerSize * 0.32f)
         );
         AddMeshPart(
@@ -164,12 +228,12 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.06f
                 ),
             },
-            ChairFill,
+            tint ?? ChairFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.42f, CellInnerSize * 0.50f)
         );
     }
 
-    private void AddDeskLeg(Node3D parent, float xRatio, float zRatio)
+    private void AddDeskLeg(Node3D parent, float xRatio, float zRatio, Color? tint)
     {
         AddMeshPart(
             parent,
@@ -181,7 +245,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.07f
                 ),
             },
-            DeskDarkFill,
+            tint ?? DeskDarkFill,
             new Vector3(
                 CellInnerSize * xRatio,
                 OfficeWorld3DConfig.GridSize * 0.18f,
@@ -190,7 +254,7 @@ public partial class Facility3DRenderer : Node3D
         );
     }
 
-    private void AddProductWhiteboardModel(Node3D parent)
+    private void AddProductWhiteboardModel(Node3D parent, Color? tint)
     {
         AddMeshPart(
             parent,
@@ -202,7 +266,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.08f
                 ),
             },
-            WhiteboardFill,
+            tint ?? WhiteboardFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.54f, -CellInnerSize * 0.22f)
         );
         AddMeshPart(
@@ -215,7 +279,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.04f
                 ),
             },
-            WhiteboardFrameFill,
+            tint ?? WhiteboardFrameFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.54f, -CellInnerSize * 0.27f)
         );
         AddMeshPart(
@@ -228,7 +292,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.18f
                 ),
             },
-            WhiteboardFrameFill,
+            tint ?? WhiteboardFrameFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.20f, -CellInnerSize * 0.08f)
         );
         AddMeshPart(
@@ -241,7 +305,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.03f
                 ),
             },
-            new Color(0.96f, 0.72f, 0.18f, 1.0f),
+            tint ?? new Color(0.96f, 0.72f, 0.18f, 1.0f),
             new Vector3(
                 -CellInnerSize * 0.22f,
                 OfficeWorld3DConfig.GridSize * 0.58f,
@@ -258,7 +322,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.03f
                 ),
             },
-            new Color(0.50f, 0.78f, 0.96f, 1.0f),
+            tint ?? new Color(0.50f, 0.78f, 0.96f, 1.0f),
             new Vector3(
                 CellInnerSize * 0.12f,
                 OfficeWorld3DConfig.GridSize * 0.45f,
@@ -267,7 +331,7 @@ public partial class Facility3DRenderer : Node3D
         );
     }
 
-    private void AddServerRackModel(Node3D parent)
+    private void AddServerRackModel(Node3D parent, Color? tint)
     {
         AddMeshPart(
             parent,
@@ -279,7 +343,7 @@ public partial class Facility3DRenderer : Node3D
                     CellInnerSize * 0.54f
                 ),
             },
-            ServerRackFill,
+            tint ?? ServerRackFill,
             new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.48f, 0.0f)
         );
 
@@ -295,7 +359,7 @@ public partial class Facility3DRenderer : Node3D
                         CellInnerSize * 0.05f
                     ),
                 },
-                ServerPanelFill,
+                tint ?? ServerPanelFill,
                 new Vector3(
                     0.0f,
                     OfficeWorld3DConfig.GridSize * (0.22f + index * 0.16f),
@@ -311,7 +375,7 @@ public partial class Facility3DRenderer : Node3D
                     Height = CellInnerSize * 0.025f,
                     RadialSegments = 12,
                 },
-                StatusLightFill,
+                tint ?? StatusLightFill,
                 new Vector3(
                     CellInnerSize * 0.21f,
                     OfficeWorld3DConfig.GridSize * (0.22f + index * 0.16f),
@@ -322,20 +386,45 @@ public partial class Facility3DRenderer : Node3D
         }
     }
 
-    private void AddHighlight(Vector3 position)
+    private void AddFacilityOutline(Node3D parent, Color color)
     {
+        var topY = OfficeWorld3DConfig.GridSize * 0.96f;
+        var side = HighlightStrokeSize / 2.0f;
         AddMeshPart(
-            this,
+            parent,
             new BoxMesh
             {
-                Size = new Vector3(
-                    HighlightStrokeSize,
-                    OfficeWorld3DConfig.GridSize * 0.035f,
-                    HighlightStrokeSize
-                ),
+                Size = new Vector3(HighlightStrokeSize, OutlineThickness, OutlineThickness),
             },
-            HighlightStroke,
-            position - Vector3.Up * (OfficeWorld3DConfig.GridSize * 0.035f)
+            color,
+            new Vector3(0.0f, topY, -side)
+        );
+        AddMeshPart(
+            parent,
+            new BoxMesh
+            {
+                Size = new Vector3(HighlightStrokeSize, OutlineThickness, OutlineThickness),
+            },
+            color,
+            new Vector3(0.0f, topY, side)
+        );
+        AddMeshPart(
+            parent,
+            new BoxMesh
+            {
+                Size = new Vector3(OutlineThickness, OutlineThickness, HighlightStrokeSize),
+            },
+            color,
+            new Vector3(-side, topY, 0.0f)
+        );
+        AddMeshPart(
+            parent,
+            new BoxMesh
+            {
+                Size = new Vector3(OutlineThickness, OutlineThickness, HighlightStrokeSize),
+            },
+            color,
+            new Vector3(side, topY, 0.0f)
         );
     }
 

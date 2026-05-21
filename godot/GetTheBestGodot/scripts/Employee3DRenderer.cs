@@ -8,14 +8,17 @@ public partial class Employee3DRenderer : Node3D
     private const float BodyHeight = OfficeWorld3DConfig.GridSize * 0.95f;
     private const float BodyRadius = OfficeWorld3DConfig.GridSize * 0.28f;
     private const float HeadRadius = OfficeWorld3DConfig.GridSize * 0.22f;
-    private const float SelectionSize = OfficeWorld3DConfig.GridSize * 0.72f;
+    private const float OutlineThickness = OfficeWorld3DConfig.GridSize * 0.055f;
+    private const float OutlineHeight = OfficeWorld3DConfig.GridSize * 1.08f;
+    private const float OutlineRadius = OfficeWorld3DConfig.GridSize * 0.38f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
     private static readonly Color HeadFill = new(0.90f, 0.76f, 0.60f, 1.0f);
     private static readonly Color LegFill = new(0.16f, 0.18f, 0.22f, 1.0f);
-    private static readonly Color SelectionFill = new(1.0f, 0.95f, 0.30f, 1.0f);
+    private static readonly Color OutlineStroke = new(1.0f, 0.95f, 0.30f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly HashSet<int> _highlightedEmployeeIds = [];
     private readonly List<Node> _renderedEmployees = [];
+    private int? _hoveredEmployeeId;
     private int? _dragPreviewEmployeeId;
     private Vector2I _dragPreviewCell;
     private bool _dragPreviewIsLegal = true;
@@ -54,6 +57,12 @@ public partial class Employee3DRenderer : Node3D
             _highlightedEmployeeIds.Add(employee.Id);
         }
 
+        RefreshEmployees();
+    }
+
+    public void HoverEmployee(EmployeeVisual? employee)
+    {
+        _hoveredEmployeeId = employee?.Id;
         RefreshEmployees();
     }
 
@@ -153,7 +162,11 @@ public partial class Employee3DRenderer : Node3D
 
         if (_highlightedEmployeeIds.Contains(employee.Id))
         {
-            AddSelectionRing(position);
+            AddEmployeeOutline(modelRoot, OutlineStroke);
+        }
+        else if (_hoveredEmployeeId == employee.Id || _dragPreviewEmployeeId == employee.Id)
+        {
+            AddEmployeeOutline(modelRoot, OutlineStroke);
         }
     }
 
@@ -172,20 +185,54 @@ public partial class Employee3DRenderer : Node3D
         return _dragPreviewIsLegal ? employee.AccentColor : IllegalDragFill;
     }
 
-    private void AddSelectionRing(Vector3 position)
+    private void AddEmployeeOutline(Node3D parent, Color color)
     {
+        AddOutlinePost(parent, color, -OutlineRadius, -OutlineRadius);
+        AddOutlinePost(parent, color, OutlineRadius, -OutlineRadius);
+        AddOutlinePost(parent, color, -OutlineRadius, OutlineRadius);
+        AddOutlinePost(parent, color, OutlineRadius, OutlineRadius);
         AddMeshPart(
-            this,
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
-                    SelectionSize,
-                    OfficeWorld3DConfig.GridSize * 0.035f,
-                    SelectionSize
+                    OutlineRadius * 2.0f + OutlineThickness,
+                    OutlineThickness,
+                    OutlineThickness
                 ),
             },
-            SelectionFill,
-            position + Vector3.Up * (OfficeWorld3DConfig.GridSize * 0.02f)
+            color,
+            new Vector3(0.0f, OutlineHeight, -OutlineRadius)
+        );
+        AddMeshPart(
+            parent,
+            new BoxMesh
+            {
+                Size = new Vector3(
+                    OutlineRadius * 2.0f + OutlineThickness,
+                    OutlineThickness,
+                    OutlineThickness
+                ),
+            },
+            color,
+            new Vector3(0.0f, OutlineHeight, OutlineRadius)
+        );
+    }
+
+    private void AddOutlinePost(Node3D parent, Color color, float x, float z)
+    {
+        AddMeshPart(
+            parent,
+            new BoxMesh
+            {
+                Size = new Vector3(
+                    OutlineThickness,
+                    OutlineHeight,
+                    OutlineThickness
+                ),
+            },
+            color,
+            new Vector3(x, OutlineHeight / 2.0f, z)
         );
     }
 

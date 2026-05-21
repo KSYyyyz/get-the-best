@@ -5,6 +5,7 @@ namespace GetTheBestGodot;
 public partial class OfficeSelection3DController : Node
 {
     private const float TooltipOffset = 6.0f;
+    private const float ObjectHitRadiusPixels = 72.0f;
 
     private Camera3D? _camera;
     private PanelContainer? _floatingTooltip;
@@ -17,12 +18,17 @@ public partial class OfficeSelection3DController : Node
     private Employee3DRenderer? _employeeRenderer;
     private bool _isDraggingSelection;
     private bool _isDraggingEmployee;
+    private bool _isDraggingFacility;
     private Vector2I _dragStartCell;
     private Vector2I _dragCurrentCell;
     private EmployeeVisual? _draggedEmployee;
     private Vector2I _dragEmployeeOriginCell;
     private Vector2I _dragEmployeeCurrentCell;
     private bool _dragEmployeeTargetLegal;
+    private FacilityPlacement? _draggedFacility;
+    private Vector2I _dragFacilityOriginCell;
+    private Vector2I _dragFacilityCurrentCell;
+    private bool _dragFacilityTargetLegal;
     private Vector2I? _lastHoveredCell;
     private Vector2 _lastPointerScreenPosition;
 
@@ -115,6 +121,14 @@ public partial class OfficeSelection3DController : Node
                 return;
             }
 
+            if (
+                _buildModeController?.IsPointerMode() == true
+                && TryBeginFacilityDrag(mouseEvent.Position)
+            )
+            {
+                return;
+            }
+
             if (ShouldBeginAreaSelection())
             {
                 BeginSelection(mouseEvent.Position);
@@ -125,6 +139,12 @@ public partial class OfficeSelection3DController : Node
         if (_isDraggingEmployee)
         {
             FinishEmployeeDrag(mouseEvent.Position);
+            return;
+        }
+
+        if (_isDraggingFacility)
+        {
+            FinishFacilityDrag(mouseEvent.Position);
             return;
         }
 
@@ -387,6 +407,18 @@ public partial class OfficeSelection3DController : Node
 
     private void SelectObjectAtPointer(Vector2 screenPosition)
     {
+        if (TryScreenPositionToEmployee(screenPosition, out var employee) && employee != null)
+        {
+            SelectEmployeeAtPointer(employee, screenPosition);
+            return;
+        }
+
+        if (TryScreenPositionToFacility(screenPosition, out var facility) && facility != null)
+        {
+            SelectFacilityAtPointer(facility, screenPosition);
+            return;
+        }
+
         if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
             ClearSelectedObjects();
@@ -394,42 +426,24 @@ public partial class OfficeSelection3DController : Node
             return;
         }
 
-        if (SelectEmployeeAtPointer(cell, screenPosition))
-        {
-            return;
-        }
-
-        if (SelectFacilityAtPointer(cell, screenPosition))
-        {
-            return;
-        }
-
         SelectRoomAtPointer(cell, screenPosition);
     }
 
-    private bool SelectEmployeeAtPointer(Vector2I cell, Vector2 screenPosition)
+    private void SelectEmployeeAtPointer(EmployeeVisual employee, Vector2 screenPosition)
     {
-        var employee = _employeeStore?.FindAtCell(cell);
-        if (employee == null)
-        {
-            return false;
-        }
-
         ClearSelectedObjects();
         _employeeRenderer?.HighlightEmployee(employee);
         ShowEmployeeTooltip(employee, screenPosition);
-        return true;
     }
 
     private bool TryBeginEmployeeDrag(Vector2 screenPosition)
     {
-        if (!TryScreenPositionToCell(screenPosition, out var cell))
+        if (!TryScreenPositionToEmployee(screenPosition, out var employee) || employee == null)
         {
             return false;
         }
 
-        var employee = _employeeStore?.FindAtCell(cell);
-        if (employee == null)
+        if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
             return false;
         }
@@ -440,6 +454,7 @@ public partial class OfficeSelection3DController : Node
         _dragEmployeeCurrentCell = employee.Cell;
         _dragEmployeeTargetLegal = true;
         ClearSelectedObjects();
+        ClearObjectHoverState();
         _employeeRenderer?.HighlightEmployee(employee);
         UpdateEmployeeDragPreview(cell, screenPosition);
         return true;
@@ -454,7 +469,6 @@ public partial class OfficeSelection3DController : Node
 
         _dragEmployeeCurrentCell = cell;
         _dragEmployeeTargetLegal = _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true;
-        _placementPreviewController?.ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal);
         _employeeRenderer?.ShowEmployeeDragPreview(_draggedEmployee, cell, _dragEmployeeTargetLegal);
         ShowPointerTooltip(
             _dragEmployeeTargetLegal ? _draggedEmployee.DisplayName : "\u4e0d\u80fd\u653e\u7f6e",
@@ -474,8 +488,9 @@ public partial class OfficeSelection3DController : Node
         {
             _employeeRenderer?.ClearEmployeeDragPreview();
             _placementPreviewController?.ClearPreview();
-            _employeeRenderer?.HighlightEmployee(_draggedEmployee);
-            ShowEmployeeTooltip(_draggedEmployee, screenPosition);
+            _employeeRenderer?.HighlightEmployee(null);
+            ClearObjectHoverState();
+            HidePointerTooltip();
             ResetEmployeeDragState();
             return;
         }
@@ -493,8 +508,9 @@ public partial class OfficeSelection3DController : Node
             _employeeRenderer?.ClearEmployeeDragPreview();
             _placementPreviewController?.ClearPreview();
             _employeeRenderer?.RefreshEmployees();
-            _employeeRenderer?.HighlightEmployee(movedEmployee);
-            ShowEmployeeTooltip(movedEmployee, screenPosition);
+            _employeeRenderer?.HighlightEmployee(null);
+            ClearObjectHoverState();
+            HidePointerTooltip();
             ResetEmployeeDragState();
             return;
         }
@@ -502,9 +518,105 @@ public partial class OfficeSelection3DController : Node
         _employeeRenderer?.ClearEmployeeDragPreview();
         _placementPreviewController?.ClearPreview();
         _employeeRenderer?.RefreshEmployees();
-        _employeeRenderer?.HighlightEmployee(_draggedEmployee);
+        _employeeRenderer?.HighlightEmployee(null);
+        ClearObjectHoverState();
         ShowPointerTooltip("\u8fd4\u56de\u539f\u4f4d", screenPosition);
         ResetEmployeeDragState();
+    }
+
+    private bool TryBeginFacilityDrag(Vector2 screenPosition)
+    {
+        if (!TryScreenPositionToFacility(screenPosition, out var facility) || facility == null)
+        {
+            return false;
+        }
+
+        if (!TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            return false;
+        }
+
+        _isDraggingFacility = true;
+        _draggedFacility = facility;
+        _dragFacilityOriginCell = facility.Cell;
+        _dragFacilityCurrentCell = facility.Cell;
+        _dragFacilityTargetLegal = true;
+        ClearSelectedObjects();
+        ClearObjectHoverState();
+        _facilityRenderer?.HighlightFacility(facility);
+        UpdateFacilityDragPreview(cell, screenPosition);
+        return true;
+    }
+
+    private void UpdateFacilityDragPreview(Vector2I cell, Vector2 screenPosition)
+    {
+        if (_draggedFacility == null)
+        {
+            return;
+        }
+
+        _dragFacilityCurrentCell = cell;
+        _dragFacilityTargetLegal =
+            _buildModeController?.CanMoveFacility(_draggedFacility, cell) == true;
+        _facilityRenderer?.ShowFacilityDragPreview(
+            _draggedFacility,
+            cell,
+            _dragFacilityTargetLegal
+        );
+        ShowPointerTooltip(
+            _dragFacilityTargetLegal
+                ? BuildModeController.GetFacilityTypeLabel(_draggedFacility.FacilityType)
+                : "\u4e0d\u80fd\u653e\u7f6e",
+            screenPosition
+        );
+    }
+
+    private void FinishFacilityDrag(Vector2 screenPosition)
+    {
+        if (_draggedFacility == null)
+        {
+            CancelFacilityDrag();
+            return;
+        }
+
+        if (_dragFacilityCurrentCell == _dragFacilityOriginCell)
+        {
+            _facilityRenderer?.ClearFacilityDragPreview();
+            _placementPreviewController?.ClearPreview();
+            _facilityRenderer?.HighlightFacility(null);
+            ClearObjectHoverState();
+            HidePointerTooltip();
+            ResetFacilityDragState();
+            return;
+        }
+
+        if (
+            _dragFacilityTargetLegal
+            && _buildModeController?.TryMoveFacility(
+                _draggedFacility.Id,
+                _dragFacilityCurrentCell,
+                out var movedFacility
+            ) == true
+            && movedFacility != null
+        )
+        {
+            _facilityRenderer?.ClearFacilityDragPreview();
+            _placementPreviewController?.ClearPreview();
+            _facilityRenderer?.RefreshFacilities();
+            _facilityRenderer?.HighlightFacility(null);
+            ClearObjectHoverState();
+            HidePointerTooltip();
+            ResetFacilityDragState();
+            return;
+        }
+
+        _facilityRenderer?.ClearFacilityDragPreview();
+        _placementPreviewController?.ClearPreview();
+        _facilityRenderer?.RefreshFacilities();
+        _facilityRenderer?.HighlightFacility(null);
+        ClearObjectHoverState();
+        ShowPointerTooltip("\u8fd4\u56de\u539f\u4f4d", screenPosition);
+        ResetFacilityDragState();
     }
 
     private void CancelEmployeeDrag()
@@ -513,10 +625,24 @@ public partial class OfficeSelection3DController : Node
         {
             _employeeRenderer?.ClearEmployeeDragPreview();
             _employeeRenderer?.RefreshEmployees();
-            _employeeRenderer?.HighlightEmployee(_draggedEmployee);
+            _employeeRenderer?.HighlightEmployee(null);
         }
 
         ResetEmployeeDragState();
+        _placementPreviewController?.ClearPreview();
+        HidePointerTooltip();
+    }
+
+    private void CancelFacilityDrag()
+    {
+        if (_draggedFacility != null)
+        {
+            _facilityRenderer?.ClearFacilityDragPreview();
+            _facilityRenderer?.RefreshFacilities();
+            _facilityRenderer?.HighlightFacility(null);
+        }
+
+        ResetFacilityDragState();
         _placementPreviewController?.ClearPreview();
         HidePointerTooltip();
     }
@@ -528,6 +654,15 @@ public partial class OfficeSelection3DController : Node
         _dragEmployeeOriginCell = Vector2I.Zero;
         _dragEmployeeCurrentCell = Vector2I.Zero;
         _dragEmployeeTargetLegal = false;
+    }
+
+    private void ResetFacilityDragState()
+    {
+        _isDraggingFacility = false;
+        _draggedFacility = null;
+        _dragFacilityOriginCell = Vector2I.Zero;
+        _dragFacilityCurrentCell = Vector2I.Zero;
+        _dragFacilityTargetLegal = false;
     }
 
     private bool SelectEmployeesInSelection(Vector2 screenPosition)
@@ -544,18 +679,11 @@ public partial class OfficeSelection3DController : Node
         return true;
     }
 
-    private bool SelectFacilityAtPointer(Vector2I cell, Vector2 screenPosition)
+    private void SelectFacilityAtPointer(FacilityPlacement facility, Vector2 screenPosition)
     {
-        var facility = _buildModeController?.FindFacilityAtCell(cell);
-        if (facility == null)
-        {
-            return false;
-        }
-
         ClearSelectedObjects();
         _facilityRenderer?.HighlightFacility(facility);
         ShowFacilityTooltip(facility, screenPosition);
-        return true;
     }
 
     private void SelectRoomAtPointer(Vector2I cell, Vector2 screenPosition)
@@ -588,6 +716,14 @@ public partial class OfficeSelection3DController : Node
                 return;
             }
 
+            if (_isDraggingFacility)
+            {
+                _dragFacilityTargetLegal = false;
+                _placementPreviewController?.ClearPreview();
+                ShowPointerTooltip("\u4e0d\u80fd\u653e\u7f6e", screenPosition);
+                return;
+            }
+
             if (_buildModeController?.IsPlaceRoomDoorMode() == true)
             {
                 RefreshPendingRoomPreview();
@@ -603,6 +739,7 @@ public partial class OfficeSelection3DController : Node
             if (!_isDraggingSelection)
             {
                 _placementPreviewController?.ClearPreview();
+                ClearObjectHoverState();
                 HidePointerTooltip();
             }
             return;
@@ -612,6 +749,12 @@ public partial class OfficeSelection3DController : Node
         if (_isDraggingEmployee)
         {
             UpdateEmployeeDragPreview(cell, screenPosition);
+            return;
+        }
+
+        if (_isDraggingFacility)
+        {
+            UpdateFacilityDragPreview(cell, screenPosition);
             return;
         }
 
@@ -639,16 +782,18 @@ public partial class OfficeSelection3DController : Node
         }
 
         _placementPreviewController?.ClearPreview();
-        var hoveredEmployee = _employeeStore?.FindAtCell(cell);
-        if (hoveredEmployee != null)
+        if (TryScreenPositionToEmployee(screenPosition, out var hoveredEmployee) && hoveredEmployee != null)
         {
+            _employeeRenderer?.HoverEmployee(hoveredEmployee);
+            _facilityRenderer?.HoverFacility(null);
             ShowEmployeeTooltip(hoveredEmployee, screenPosition);
             return;
         }
 
-        var hoveredFacility = _buildModeController?.FindFacilityAtCell(cell);
-        if (hoveredFacility != null)
+        if (TryScreenPositionToFacility(screenPosition, out var hoveredFacility) && hoveredFacility != null)
         {
+            _employeeRenderer?.HoverEmployee(null);
+            _facilityRenderer?.HoverFacility(hoveredFacility);
             ShowFacilityTooltip(hoveredFacility, screenPosition);
             return;
         }
@@ -656,10 +801,12 @@ public partial class OfficeSelection3DController : Node
         var hoveredRoom = _buildModeController?.FindRoomAtCell(cell);
         if (hoveredRoom != null)
         {
+            ClearObjectHoverState();
             ShowOccupiedRoom(hoveredRoom, screenPosition);
             return;
         }
 
+        ClearObjectHoverState();
         HidePointerTooltip();
     }
 
@@ -710,6 +857,12 @@ public partial class OfficeSelection3DController : Node
         if (_isDraggingEmployee)
         {
             CancelEmployeeDrag();
+            return;
+        }
+
+        if (_isDraggingFacility)
+        {
+            CancelFacilityDrag();
             return;
         }
 
@@ -771,6 +924,12 @@ public partial class OfficeSelection3DController : Node
         _employeeRenderer?.HighlightEmployee(null);
     }
 
+    private void ClearObjectHoverState()
+    {
+        _employeeRenderer?.HoverEmployee(null);
+        _facilityRenderer?.HoverFacility(null);
+    }
+
     private void ClearSelectedRoom()
     {
         _roomOverlayRenderer?.HighlightRoom(null);
@@ -794,6 +953,110 @@ public partial class OfficeSelection3DController : Node
     private void ShowEmployeeTooltip(EmployeeVisual employee, Vector2 screenPosition)
     {
         ShowPointerTooltip($"{employee.DisplayName} / {employee.RoleLabel}", screenPosition);
+    }
+
+    private bool TryScreenPositionToEmployee(Vector2 screenPosition, out EmployeeVisual? employee)
+    {
+        employee = null;
+        if (_camera == null || _employeeStore == null)
+        {
+            return false;
+        }
+
+        var bestDistance = float.MaxValue;
+        foreach (var candidate in _employeeStore.GetEmployees())
+        {
+            var cellCenter = OfficeWorld3DConfig.CellToWorldPosition(candidate.Cell);
+            var distance = GetNearestProjectedObjectDistance(
+                screenPosition,
+                cellCenter,
+                [
+                    OfficeWorld3DConfig.GridSize * 0.25f,
+                    OfficeWorld3DConfig.GridSize * 0.75f,
+                    OfficeWorld3DConfig.GridSize * 1.15f,
+                ]
+            );
+            if (distance >= bestDistance || distance > ObjectHitRadiusPixels)
+            {
+                continue;
+            }
+
+            bestDistance = distance;
+            employee = candidate;
+        }
+
+        return employee != null;
+    }
+
+    private bool TryScreenPositionToFacility(Vector2 screenPosition, out FacilityPlacement? facility)
+    {
+        facility = null;
+        if (_camera == null || _buildModeController == null)
+        {
+            return false;
+        }
+
+        var bestDistance = float.MaxValue;
+        for (var y = 0; y < OfficeWorld3DConfig.Rows; y++)
+        {
+            for (var x = 0; x < OfficeWorld3DConfig.Columns; x++)
+            {
+                var candidate = _buildModeController.FindFacilityAtCell(new Vector2I(x, y));
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                var cellCenter = OfficeWorld3DConfig.CellToWorldPosition(candidate.Cell);
+                var distance = GetNearestProjectedObjectDistance(
+                    screenPosition,
+                    cellCenter,
+                    [
+                        OfficeWorld3DConfig.GridSize * 0.25f,
+                        OfficeWorld3DConfig.GridSize * 0.55f,
+                        OfficeWorld3DConfig.GridSize * 0.85f,
+                    ]
+                );
+                if (distance >= bestDistance || distance > ObjectHitRadiusPixels)
+                {
+                    continue;
+                }
+
+                bestDistance = distance;
+                facility = candidate;
+            }
+        }
+
+        return facility != null;
+    }
+
+    private float GetNearestProjectedObjectDistance(
+        Vector2 screenPosition,
+        Vector3 cellCenter,
+        float[] sampleHeights
+    )
+    {
+        if (_camera == null)
+        {
+            return float.MaxValue;
+        }
+
+        var bestDistance = float.MaxValue;
+        foreach (var height in sampleHeights)
+        {
+            var samplePoint = cellCenter + new Vector3(0.0f, height, 0.0f);
+            if (_camera.IsPositionBehind(samplePoint))
+            {
+                continue;
+            }
+
+            bestDistance = Mathf.Min(
+                bestDistance,
+                screenPosition.DistanceTo(_camera.UnprojectPosition(samplePoint))
+            );
+        }
+
+        return bestDistance;
     }
 
     private bool TryScreenPositionToCell(Vector2 screenPosition, out Vector2I cell)

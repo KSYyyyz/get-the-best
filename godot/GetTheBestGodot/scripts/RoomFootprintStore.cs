@@ -8,6 +8,11 @@ public partial class RoomFootprintStore : Node
     private readonly List<RoomFootprint> _rooms = [];
     private int _nextRoomId = 1;
 
+    public RoomFootprintStore()
+    {
+        SeedPresetOfficeRooms();
+    }
+
     public IReadOnlyList<RoomFootprint> GetRooms()
     {
         return _rooms;
@@ -189,6 +194,39 @@ public partial class RoomFootprintStore : Node
                 Mathf.Abs(delta.X) <= halfExtents.X && Mathf.Abs(delta.Z) <= halfExtents.Y,
             _ => false,
         };
+    }
+
+    private void SeedPresetOfficeRooms()
+    {
+        AddPresetRoom(
+            RoomBuildType.ResearchRoom,
+            new Vector2I(7, 4),
+            new Vector2I(13, 9),
+            new RoomDoorPlacement(new Vector2I(10, 9), RoomDoorSide.South)
+        );
+        AddPresetRoom(
+            RoomBuildType.MarketRoom,
+            new Vector2I(15, 4),
+            new Vector2I(19, 8),
+            new RoomDoorPlacement(new Vector2I(17, 8), RoomDoorSide.South)
+        );
+        AddPresetRoom(
+            RoomBuildType.ServerRoom,
+            new Vector2I(21, 4),
+            new Vector2I(24, 8),
+            new RoomDoorPlacement(new Vector2I(22, 8), RoomDoorSide.South)
+        );
+    }
+
+    private void AddPresetRoom(
+        RoomBuildType roomType,
+        Vector2I startCell,
+        Vector2I endCell,
+        RoomDoorPlacement doorPlacement
+    )
+    {
+        _rooms.Add(RoomFootprint.FromCells(_nextRoomId, roomType, startCell, endCell, doorPlacement));
+        _nextRoomId++;
     }
 }
 

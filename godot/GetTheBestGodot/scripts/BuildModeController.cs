@@ -304,6 +304,26 @@ public partial class BuildModeController : Node
         return _facilityPlacementStore?.FindAtCell(cell);
     }
 
+    public bool CanMoveFacility(FacilityPlacement facility, Vector2I targetCell)
+    {
+        return _facilityPlacementStore?.CanMoveFacility(facility, targetCell) ?? false;
+    }
+
+    public bool TryMoveFacility(
+        int facilityId,
+        Vector2I targetCell,
+        out FacilityPlacement? movedFacility
+    )
+    {
+        if (_facilityPlacementStore == null)
+        {
+            movedFacility = null;
+            return false;
+        }
+
+        return _facilityPlacementStore.TryMoveFacility(facilityId, targetCell, out movedFacility);
+    }
+
     public int DeleteFacilitiesInSelection(Vector2I startCell, Vector2I endCell)
     {
         return _facilityPlacementStore?.RemoveInSelection(startCell, endCell) ?? 0;

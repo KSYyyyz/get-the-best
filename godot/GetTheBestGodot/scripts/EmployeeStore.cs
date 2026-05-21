@@ -11,24 +11,30 @@ public partial class EmployeeStore : Node
             1,
             "\u6797\u5c0f\u5b89",
             "\u7a0b\u5e8f",
-            new Vector2I(15, 5),
+            new Vector2I(9, 7),
             new Color(0.30f, 0.58f, 0.95f, 1.0f)
         ),
         new(
             2,
             "\u9648\u5b50\u822a",
             "\u7b56\u5212",
-            new Vector2I(16, 5),
+            new Vector2I(10, 7),
             new Color(0.95f, 0.52f, 0.38f, 1.0f)
         ),
         new(
             3,
             "\u5468\u82e5\u6674",
             "\u5e02\u573a",
-            new Vector2I(17, 6),
+            new Vector2I(11, 7),
             new Color(0.42f, 0.78f, 0.48f, 1.0f)
         ),
     ];
+    private FacilityPlacementStore? _facilityPlacementStore;
+
+    public override void _Ready()
+    {
+        _facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>("../FacilityPlacementStore");
+    }
 
     public IReadOnlyList<EmployeeVisual> GetEmployees()
     {
@@ -76,6 +82,7 @@ public partial class EmployeeStore : Node
     public bool CanMoveEmployee(EmployeeVisual employee, Vector2I targetCell)
     {
         return IsCellInsideOffice(targetCell)
+            && _facilityPlacementStore?.FindAtCell(targetCell) == null
             && !IsCellOccupiedByOtherEmployee(employee.Id, targetCell);
     }
 

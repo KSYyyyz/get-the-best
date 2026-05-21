@@ -817,9 +817,9 @@ def test_get_the_best_v2_employee_visual_selection_baseline_exists() -> None:
     assert "GetEmployees" in employee_store
     assert "FindAtCell" in employee_store
     assert "FindInSelection" in employee_store
-    assert "new Vector2I(15, 5)" in employee_store
-    assert "new Vector2I(16, 5)" in employee_store
-    assert "new Vector2I(17, 6)" in employee_store
+    assert "new Vector2I(9, 7)" in employee_store
+    assert "new Vector2I(10, 7)" in employee_store
+    assert "new Vector2I(11, 7)" in employee_store
 
     assert "RefreshEmployees" in employee_renderer
     assert "HighlightEmployee" in employee_renderer
@@ -865,7 +865,7 @@ def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> N
     assert "UpdateEmployeeDragPreview(cell, screenPosition)" in selection
     assert "FinishEmployeeDrag(mouseEvent.Position)" in selection
     assert "CancelEmployeeDrag" in selection
-    assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" in selection
+    assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" not in selection
     assert "ShowEmployeeDragPreview(_draggedEmployee, cell, _dragEmployeeTargetLegal)" in selection
     assert "ClearEmployeeDragPreview()" in selection
     assert "TryMoveEmployee(" in selection
@@ -879,3 +879,143 @@ def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> N
     assert "_hasMousePosition" in camera
     assert "if (!_hasMousePosition || !_isMouseInsideViewport || _isMiddleRotating)" in camera
     assert "Mathf.Max(heightFit, widthFit)" not in camera
+
+
+def test_get_the_best_v2_object_selection_uses_instance_outlines_not_grid_bases() -> None:
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    facility_renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert "OutlineStroke" in employee_renderer
+    assert "AddEmployeeOutline" in employee_renderer
+    assert "HoverEmployee" in employee_renderer
+    assert "SelectionFill" not in employee_renderer
+    assert "AddSelectionRing" not in employee_renderer
+
+    assert "OutlineStroke" in facility_renderer
+    assert "AddFacilityOutline" in facility_renderer
+    assert "HoverFacility" in facility_renderer
+    assert "AddHighlight(position)" not in facility_renderer
+
+    assert "_employeeRenderer?.HoverEmployee(hoveredEmployee);" in selection
+    assert "_facilityRenderer?.HoverFacility(hoveredFacility);" in selection
+    assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" not in selection
+
+
+def test_get_the_best_v2_employee_drag_drop_clears_object_and_grid_preview() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    employee_finish_block = selection[
+        selection.index("private void FinishEmployeeDrag") : selection.index(
+            "private void CancelEmployeeDrag"
+        )
+    ]
+
+    assert "ClearObjectHoverState();" in employee_finish_block
+    assert "_employeeRenderer?.HighlightEmployee(null);" in employee_finish_block
+    assert "_placementPreviewController?.ClearPreview();" in employee_finish_block
+    assert "HighlightEmployee(movedEmployee)" not in employee_finish_block
+    assert "ShowEmployeeTooltip(movedEmployee" not in employee_finish_block
+
+
+def test_get_the_best_v2_facility_instances_support_hover_selection_and_drag_move() -> None:
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+    facility_renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert "CanMoveFacility" in facility_store
+    assert "TryMoveFacility" in facility_store
+    assert "FindAtCellExcluding" in facility_store
+    assert "facility with { Cell = targetCell }" in facility_store
+
+    assert "ShowFacilityDragPreview" in facility_renderer
+    assert "ClearFacilityDragPreview" in facility_renderer
+    assert "_dragPreviewFacilityId" in facility_renderer
+    assert "GetRenderCell(facility)" in facility_renderer
+    assert "GetRenderTint(facility)" in facility_renderer
+
+    assert "_isDraggingFacility" in selection
+    assert "TryBeginFacilityDrag(mouseEvent.Position)" in selection
+    assert "UpdateFacilityDragPreview(cell, screenPosition)" in selection
+    assert "FinishFacilityDrag(mouseEvent.Position)" in selection
+    assert "CancelFacilityDrag" in selection
+    assert "_facilityRenderer?.ClearFacilityDragPreview();" in selection
+    assert "_facilityRenderer?.HighlightFacility(null);" in selection
+
+
+def test_get_the_best_v2_object_hit_testing_uses_screen_projected_instances() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert "ObjectHitRadiusPixels" in selection
+    assert "TryScreenPositionToEmployee" in selection
+    assert "TryScreenPositionToFacility" in selection
+    assert "_camera.UnprojectPosition" in selection
+
+    employee_drag_block = selection[
+        selection.index("private bool TryBeginEmployeeDrag") : selection.index(
+            "private void UpdateEmployeeDragPreview"
+        )
+    ]
+    facility_drag_block = selection[
+        selection.index("private bool TryBeginFacilityDrag") : selection.index(
+            "private void UpdateFacilityDragPreview"
+        )
+    ]
+    select_block = selection[
+        selection.index("private void SelectObjectAtPointer") : selection.index(
+            "private void SelectEmployeeAtPointer"
+        )
+    ]
+
+    assert "TryScreenPositionToEmployee(screenPosition, out var employee)" in employee_drag_block
+    assert "TryScreenPositionToFacility(screenPosition, out var facility)" in facility_drag_block
+    assert "TryScreenPositionToEmployee(screenPosition, out var employee)" in select_block
+    assert "TryScreenPositionToFacility(screenPosition, out var facility)" in select_block
+
+
+def test_get_the_best_v2_sandbox_has_reasonable_preset_office_scene() -> None:
+    room_store = read_text(GODOT_ROOT / "scripts" / "RoomFootprintStore.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+    employee_store = read_text(GODOT_ROOT / "scripts" / "EmployeeStore.cs")
+    room_renderer = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+    facility_renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+
+    assert "SeedPresetOfficeRooms" in room_store
+    assert "RoomBuildType.ResearchRoom" in room_store
+    assert "RoomBuildType.MarketRoom" in room_store
+    assert "RoomBuildType.ServerRoom" in room_store
+    assert "RoomDoorPlacement" in room_store
+
+    assert "SeedPresetFacilities" in facility_store
+    assert "FacilityBuildType.OfficeDesk" in facility_store
+    assert "FacilityBuildType.ProductWhiteboard" in facility_store
+    assert "FacilityBuildType.ServerRack" in facility_store
+
+    assert "new Vector2I(9, 7)" in employee_store
+    assert "new Vector2I(10, 7)" in employee_store
+    assert "new Vector2I(11, 7)" in employee_store
+
+    assert (
+        '_roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");'
+        in room_renderer
+    )
+    assert (
+        "RefreshRooms();"
+        in room_renderer[
+            room_renderer.index("public override void _Ready") : room_renderer.index(
+                "public void RefreshRooms"
+            )
+        ]
+    )
+    assert (
+        '_facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>("../FacilityPlacementStore");'
+        in facility_renderer
+    )
+    assert (
+        "RefreshFacilities();"
+        in facility_renderer[
+            facility_renderer.index("public override void _Ready") : facility_renderer.index(
+                "public void RefreshFacilities"
+            )
+        ]
+    )

@@ -23,6 +23,7 @@ public partial class RoomOverlay3DRenderer : Node3D
     public override void _Ready()
     {
         _roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");
+        RefreshRooms();
     }
 
     public void RefreshRooms()
