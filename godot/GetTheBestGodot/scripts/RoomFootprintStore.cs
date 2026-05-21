@@ -121,37 +121,6 @@ public partial class RoomFootprintStore : Node
         return false;
     }
 
-    public bool RemoveDoorOwnerNearCell(Vector2I cell, out RoomFootprint? room)
-    {
-        for (var index = _rooms.Count - 1; index >= 0; index--)
-        {
-            room = _rooms[index];
-            if (room.DoorPlacement == null)
-            {
-                continue;
-            }
-
-            var outsideCell = GetDoorOutsideCell(room.DoorPlacement);
-            var isNearDoor =
-                Mathf.Abs(outsideCell.X - cell.X) <= 2 && Mathf.Abs(outsideCell.Y - cell.Y) <= 2;
-            if (!isNearDoor)
-            {
-                continue;
-            }
-
-            room.RemoveCell(room.DoorPlacement.Cell);
-            if (room.IsEmpty)
-            {
-                _rooms.RemoveAt(index);
-            }
-
-            return true;
-        }
-
-        room = null;
-        return false;
-    }
-
     public bool RemoveDoorOwnerAtWorldPosition(Vector3 worldPosition, out RoomFootprint? room)
     {
         for (var index = _rooms.Count - 1; index >= 0; index--)

@@ -569,7 +569,6 @@ def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete(
     assert "DoorPlacement" in room_store
     assert "ClearDoorIfRemoved" in room_store
     assert "RemoveDoorOwnerAtAdjacentCell" in room_store
-    assert "RemoveDoorOwnerNearCell" in room_store
     assert "GetDoorOutsideCell" in room_store
     assert "RemoveDoorOwnerAtWorldPosition" in room_store
     assert "IsWorldPositionOnDoor" in room_store
@@ -592,9 +591,6 @@ def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete(
     assert "TryDeleteRoomAtCell(_dragCurrentCell" in selection
     assert "TryDeleteRoomDoorAtWorldPosition(worldPosition" in selection
     assert "RemoveDoorOwnerAtAdjacentCell(cell" in read_text(
-        GODOT_ROOT / "scripts" / "BuildModeController.cs"
-    )
-    assert "RemoveDoorOwnerNearCell(cell" in read_text(
         GODOT_ROOT / "scripts" / "BuildModeController.cs"
     )
     assert "TryDeleteRoomDoorAtWorldPosition" in read_text(
@@ -626,3 +622,21 @@ def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -
 
     assert "CornerPostColor" in boundary
     assert "AddCornerPost" in boundary
+
+
+def test_get_the_best_v2_interaction_right_click_and_door_delete_are_precise() -> None:
+    camera = read_text(GODOT_ROOT / "scripts" / "OfficeCamera3DController.cs")
+    build_mode = read_text(GODOT_ROOT / "scripts" / "BuildModeController.cs")
+    room_store = read_text(GODOT_ROOT / "scripts" / "RoomFootprintStore.cs")
+
+    assert "mouseEvent.ButtonIndex == MouseButton.Middle" in camera
+    assert "MouseButton.Middle or MouseButton.Right" not in camera
+
+    assert "RemoveDoorOwnerAtAdjacentCell(cell" in build_mode
+    assert "RemoveDoorOwnerNearCell" not in build_mode
+    assert "RemoveDoorOwnerAtWorldPosition" in build_mode
+
+    assert "RemoveDoorOwnerAtAdjacentCell" in room_store
+    assert "RemoveDoorOwnerAtWorldPosition" in room_store
+    assert "RemoveDoorOwnerNearCell" not in room_store
+    assert "Mathf.Abs(outsideCell.X - cell.X) <= 2" not in room_store

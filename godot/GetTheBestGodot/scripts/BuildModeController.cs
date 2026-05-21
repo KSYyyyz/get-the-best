@@ -303,7 +303,7 @@ public partial class BuildModeController : Node
             return true;
         }
 
-        return _roomFootprintStore.RemoveDoorOwnerNearCell(cell, out room);
+        return false;
     }
 
     public bool TryDeleteRoomDoorAtWorldPosition(Vector3 worldPosition, out RoomFootprint? room)

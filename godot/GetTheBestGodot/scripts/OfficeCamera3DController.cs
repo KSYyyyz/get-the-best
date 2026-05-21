@@ -88,7 +88,7 @@ public partial class OfficeCamera3DController : Camera3D
             return;
         }
 
-        if (mouseEvent.ButtonIndex is MouseButton.Middle or MouseButton.Right)
+        if (mouseEvent.ButtonIndex == MouseButton.Middle)
         {
             _isDragging = mouseEvent.Pressed;
             return;
