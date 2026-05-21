@@ -647,11 +647,20 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "GridSize = 10.0f" in config
     assert "new Vector2(Columns * GridSize, Rows * GridSize)" in config
 
-    assert "MiddlePitchSensitivity = 0.18f" in camera
-    assert "MinPitchDegrees = 10.0f" in camera
-    assert "MaxPitchDegrees = DefaultPitchDegrees" in camera
-    assert "AdjustPitchFromMiddleDrag" in camera
-    assert "_isPitchDragging" in camera
+    assert "CameraPitchDegrees = 58.0f" in camera
+    assert "MiddleRotateSensitivity = 0.22f" in camera
+    assert "EdgePanMarginPixels = 28.0f" in camera
+    assert "EdgePanSpeed = 52.0f" in camera
+    assert "AdjustYawFromMiddleDrag" in camera
+    assert "PanCameraByMouseDelta" in camera
+    assert "PanCameraByDirection" in camera
+    assert "GetEdgePanDirection" in camera
+    assert "UpdateLastMousePosition" in camera
+    assert "_lastMousePosition" in camera
+    assert "_isMiddleRotating" in camera
+    assert "_isRightPanning" in camera
+    assert "AdjustPitchFromMiddleDrag" not in camera
+    assert "_isPitchDragging" not in camera
     assert "ApplyStableCameraBasis(lookDirection)" in camera
     assert "Basis.LookingAt(lookDirection, Vector3.Up)" in camera
     assert "RotationDegrees = new Vector3(-_pitchDegrees, -YawDegrees, 0.0f)" not in camera
@@ -678,7 +687,11 @@ def test_get_the_best_v2_interaction_right_click_and_door_delete_are_precise() -
     room_store = read_text(GODOT_ROOT / "scripts" / "RoomFootprintStore.cs")
 
     assert "mouseEvent.ButtonIndex == MouseButton.Middle" in camera
-    assert "MouseButton.Middle or MouseButton.Right" not in camera
+    assert "mouseEvent.ButtonIndex == MouseButton.Right" in camera
+    assert "_isRightPanning = mouseEvent.Pressed" in camera
+    assert "CancelInteraction();" in read_text(
+        GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs"
+    )
 
     assert "RemoveDoorOwnerAtAdjacentCell(cell" in build_mode
     assert "RemoveDoorOwnerNearCell" not in build_mode
