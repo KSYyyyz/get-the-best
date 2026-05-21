@@ -407,7 +407,6 @@ def test_get_the_best_v2_0_17_kenney_character_floor_and_wall_assets_are_registe
         "kenney_blocky_characters_texture_b": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-b.png",
         "kenney_blocky_characters_texture_c": "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png",
         "kenney_prototype_textures_floor_light_02": "res://assets/third_party_placeholder_assets/kenney_prototype_textures/floor_light_texture_02.png",
-        "kenney_prototype_textures_wall_dark_03": "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png",
     }
 
     for asset_id, imported_path in expected_assets.items():
@@ -475,7 +474,7 @@ def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
     assert "OfficeBoundary3DRenderer.cs" in scripts
     assert "AddWall" in scripts["OfficeBoundary3DRenderer.cs"]
     assert (
-        "WallHeight = OfficeWorld3DConfig.GridSize * 0.82f"
+        "WallHeight = OfficeWorld3DConfig.GridSize * 1.16f"
         in scripts["OfficeBoundary3DRenderer.cs"]
     )
     assert (
@@ -619,8 +618,8 @@ def test_get_the_best_v2_room_door_replaces_old_sign_plate_and_clears_on_delete(
     assert "RoomDoorGeometry.GetSize(doorPlacement.Side)" in room_renderer
     assert "RoomDoorGeometry.GetPosition(doorPlacement)" in placement_preview
     assert "RoomDoorGeometry.GetSize(doorPlacement.Side)" in placement_preview
-    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f" in door_geometry
-    assert "DoorY = RoomBoundaryHeight + DoorHeight / 2.0f" in door_geometry
+    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.92f" in door_geometry
+    assert "DoorY = DoorHeight / 2.0f" in door_geometry
     assert "RoomSignPlateFill" not in room_renderer
     assert "AddRoomSignPlate" not in room_renderer
     assert "DeleteSingleCellAtPointer(screenPosition)" in selection
@@ -661,8 +660,7 @@ def test_get_the_best_v2_0_7_camera_composition_and_rotation_baseline_exists() -
     assert "GridLineThickness" not in grid
     assert "AddLine" not in grid
 
-    assert "WallTexturePath" in boundary
-    assert "GD.Load<Texture2D>(WallTexturePath)" in boundary
+    assert "BuildingWallScenePath" in boundary
     assert "CornerPostColor" in boundary
     assert "AddCornerPost" in boundary
 
@@ -710,13 +708,13 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "BuildFloorTiles" in grid
     assert "TileInset = OfficeWorld3DConfig.GridSize * 0.035f" in grid
     assert "CreateTileMaterial" in grid
-    assert "DoorLength = OfficeWorld3DConfig.GridSize * 0.62f" in door
-    assert "DoorThickness = OfficeWorld3DConfig.GridSize * 0.12f" in door
-    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f" in door
+    assert "DoorLength = OfficeWorld3DConfig.GridSize * 0.72f" in door
+    assert "DoorThickness = OfficeWorld3DConfig.GridSize * 0.11f" in door
+    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.92f" in door
 
     assert "CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f" in facility
     assert "OutlineShellScale = 1.10f" in facility
-    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in room_renderer
+    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 1.16f" in room_renderer
     assert "RoomWallThickness = OfficeWorld3DConfig.GridSize * 0.10f" in room_renderer
 
 
@@ -796,13 +794,13 @@ def test_get_the_best_v2_facilities_and_rooms_use_procedural_3d_models() -> None
     assert "BoxMesh" in facility
     assert "CylinderMesh" in facility
 
-    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in room
+    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 1.16f" in room
     assert "AddRoomWall" in room
     assert "AddDoorFrame" in room
     assert "WallTrimColor" in room
     assert "RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f" not in room
 
-    assert "WallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in boundary
+    assert "WallHeight = OfficeWorld3DConfig.GridSize * 1.16f" in boundary
 
 
 def test_get_the_best_v2_facility_placement_supports_r_rotation() -> None:
@@ -1005,9 +1003,11 @@ def test_get_the_best_v2_floor_and_wall_use_kenney_texture_resources() -> None:
     texture_dir = (
         GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "kenney_prototype_textures"
     )
+    building_dir = GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "kenney_building_kit"
     assert (texture_dir / "floor_light_texture_02.png").exists()
-    assert (texture_dir / "wall_dark_texture_03.png").exists()
     assert (texture_dir / "License.txt").exists()
+    assert (building_dir / "wall.glb").exists()
+    assert (building_dir / "License.txt").exists()
 
     assert "FloorTileTexturePath" in grid
     assert (
@@ -1021,18 +1021,82 @@ def test_get_the_best_v2_floor_and_wall_use_kenney_texture_resources() -> None:
         in floor
     )
     assert "AlbedoTexture = GD.Load<Texture2D>(FloorBaseTexturePath)" in floor
-    assert "WallTexturePath" in room
-    assert "WallTexturePath" in boundary
+    assert "BuildingWallScenePath" in room
+    assert "BuildingWallScenePath" in boundary
+    assert "wall_dark_texture_03.png" not in room
+    assert "wall_dark_texture_03.png" not in boundary
+
+
+def test_get_the_best_v2_0_18_drag_preview_is_smoothed_and_hit_radius_is_tight() -> None:
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    facility_renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    assert "SmoothMoveDurationSeconds" in employee_renderer
+    assert "_lastEmployeePositions" in employee_renderer
+    assert "CreateTween()" in employee_renderer
     assert (
-        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png"
-        in room
+        'TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)'
+        in employee_renderer
     )
+
+    assert "SmoothMoveDurationSeconds" in facility_renderer
+    assert "_lastFacilityPositions" in facility_renderer
+    assert "CreateTween()" in facility_renderer
     assert (
-        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png"
-        in boundary
+        'TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)'
+        in facility_renderer
     )
-    assert "AlbedoTexture = GD.Load<Texture2D>(WallTexturePath)" in room
-    assert "AlbedoTexture = GD.Load<Texture2D>(WallTexturePath)" in boundary
+    assert 'modelRoot.Name = $"Facility_{facility.Id}"' in facility_renderer
+    assert "RemoveChild(renderedFacility);" in facility_renderer
+
+    assert "ObjectHitRadiusPixels" not in selection
+    assert "EmployeeHitRadiusPixels = 28.0f" in selection
+    assert "FacilityHitRadiusPixels = 34.0f" in selection
+    assert "distance > EmployeeHitRadiusPixels" in selection
+    assert "distance > FacilityHitRadiusPixels" in selection
+
+
+def test_get_the_best_v2_0_18_walls_and_doors_use_building_kit_assets() -> None:
+    asset_index_path = GODOT_ROOT / "assets" / "third_party_placeholder_assets" / "asset-index.json"
+    asset_index = json.loads(read_text(asset_index_path))
+    assets = {asset["asset_id"]: asset for asset in asset_index["assets"]}
+    room_renderer = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+    boundary_renderer = read_text(GODOT_ROOT / "scripts" / "OfficeBoundary3DRenderer.cs")
+    door_geometry = read_text(GODOT_ROOT / "scripts" / "RoomDoorGeometry.cs")
+
+    expected_assets = {
+        "kenney_building_kit_wall": "res://assets/third_party_placeholder_assets/kenney_building_kit/wall.glb",
+        "kenney_building_kit_door_rotate_square_a": "res://assets/third_party_placeholder_assets/kenney_building_kit/door-rotate-square-a.glb",
+        "kenney_building_kit_colormap": "res://assets/third_party_placeholder_assets/kenney_building_kit/Textures/colormap.png",
+    }
+    for asset_id, imported_path in expected_assets.items():
+        assert asset_id in assets
+        asset = assets[asset_id]
+        assert asset["source_site"] == "Kenney"
+        assert asset["license"] == "CC0-1.0"
+        assert asset["commercial_use_allowed"] is True
+        assert asset["attribution_required"] is False
+        assert asset["imported_path"] == imported_path
+        assert (GODOT_ROOT / imported_path.replace("res://", "")).exists()
+
+    assert "BuildingWallScenePath" in room_renderer
+    assert "BuildingDoorScenePath" in room_renderer
+    assert "BuildingKitColormapPath" in room_renderer
+    assert "AddBuildingDoorModel(doorPlacement)" in room_renderer
+    assert "GD.Load<PackedScene>(BuildingDoorScenePath)" in room_renderer
+    assert "CreateBuildingDoorMaterial" in room_renderer
+    assert "WallTexturePath" not in room_renderer
+    assert "wall_dark_texture_03.png" not in room_renderer
+    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 1.16f" in room_renderer
+
+    assert "BuildingWallScenePath" in boundary_renderer
+    assert "WallTexturePath" not in boundary_renderer
+    assert "wall_dark_texture_03.png" not in boundary_renderer
+    assert "WallHeight = OfficeWorld3DConfig.GridSize * 1.16f" in boundary_renderer
+
+    assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.92f" in door_geometry
+    assert "DoorY = DoorHeight / 2.0f" in door_geometry
 
 
 def test_get_the_best_v2_instance_drag_uses_click_pickup_and_click_drop() -> None:
@@ -1106,7 +1170,9 @@ def test_get_the_best_v2_facility_instances_support_hover_selection_and_drag_mov
 def test_get_the_best_v2_object_hit_testing_uses_screen_projected_instances() -> None:
     selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
 
-    assert "ObjectHitRadiusPixels" in selection
+    assert "EmployeeHitRadiusPixels = 28.0f" in selection
+    assert "FacilityHitRadiusPixels = 34.0f" in selection
+    assert "ObjectHitRadiusPixels" not in selection
     assert "TryScreenPositionToEmployee" in selection
     assert "TryScreenPositionToFacility" in selection
     assert "_camera.UnprojectPosition" in selection

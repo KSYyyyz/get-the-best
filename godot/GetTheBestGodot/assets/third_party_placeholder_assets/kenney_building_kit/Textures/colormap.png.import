@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d1y5l3r0nk8d8"
-path="res://.godot/imported/wall_dark_texture_03.png-9eda5716c0677fa5d3706643b5540f5d.ctex"
+uid="uid://baq7a1cykw1yd"
+path="res://.godot/imported/colormap.png-9b3aa1955a1c618a74033025cf8430dd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png"
-dest_files=["res://.godot/imported/wall_dark_texture_03.png-9eda5716c0677fa5d3706643b5540f5d.ctex"]
+source_file="res://assets/third_party_placeholder_assets/kenney_building_kit/Textures/colormap.png"
+dest_files=["res://.godot/imported/colormap.png-9b3aa1955a1c618a74033025cf8430dd.ctex"]
 
 [params]
 

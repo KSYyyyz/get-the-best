@@ -142,18 +142,46 @@
       "removal_plan": "Remove after final office floor material is imported and tests are updated."
     },
     {
-      "asset_id": "kenney_prototype_textures_wall_dark_03",
-      "name": "Prototype Textures dark texture 03 wall tile",
-      "source_url": "https://kenney.nl/assets/prototype-textures",
+      "asset_id": "kenney_building_kit_wall",
+      "name": "Building Kit wall GLB model",
+      "source_url": "https://kenney.nl/assets/building-kit",
       "source_site": "Kenney",
       "author": "Kenney",
       "license": "CC0-1.0",
       "commercial_use_allowed": true,
       "attribution_required": false,
-      "current_usage": "V2-0.17 office wall texture",
-      "replacement_target": "Replace with final Get The Best office wall material.",
-      "imported_path": "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png",
-      "removal_plan": "Remove after final office wall material is imported and tests are updated."
+      "current_usage": "V2-0.18 office and room wall model reference",
+      "replacement_target": "Replace with final Get The Best office wall art.",
+      "imported_path": "res://assets/third_party_placeholder_assets/kenney_building_kit/wall.glb",
+      "removal_plan": "Remove after final office wall model set is imported and tests are updated."
+    },
+    {
+      "asset_id": "kenney_building_kit_door_rotate_square_a",
+      "name": "Building Kit square rotating door GLB model",
+      "source_url": "https://kenney.nl/assets/building-kit",
+      "source_site": "Kenney",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "commercial_use_allowed": true,
+      "attribution_required": false,
+      "current_usage": "V2-0.18 room door model reference",
+      "replacement_target": "Replace with final Get The Best office door art.",
+      "imported_path": "res://assets/third_party_placeholder_assets/kenney_building_kit/door-rotate-square-a.glb",
+      "removal_plan": "Remove after final office door model set is imported and tests are updated."
+    },
+    {
+      "asset_id": "kenney_building_kit_colormap",
+      "name": "Building Kit shared model colormap",
+      "source_url": "https://kenney.nl/assets/building-kit",
+      "source_site": "Kenney",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "commercial_use_allowed": true,
+      "attribution_required": false,
+      "current_usage": "V2-0.18 shared material texture for wall and door GLB models",
+      "replacement_target": "Replace with final Get The Best office wall and door material.",
+      "imported_path": "res://assets/third_party_placeholder_assets/kenney_building_kit/Textures/colormap.png",
+      "removal_plan": "Remove after final office wall and door model set is imported and tests are updated."
     }
   ]
 }

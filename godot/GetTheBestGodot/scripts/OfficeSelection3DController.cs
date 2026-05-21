@@ -5,7 +5,8 @@ namespace GetTheBestGodot;
 public partial class OfficeSelection3DController : Node
 {
     private const float TooltipOffset = 6.0f;
-    private const float ObjectHitRadiusPixels = 72.0f;
+    private const float EmployeeHitRadiusPixels = 28.0f;
+    private const float FacilityHitRadiusPixels = 34.0f;
 
     private Camera3D? _camera;
     private PanelContainer? _floatingTooltip;
@@ -999,7 +1000,7 @@ public partial class OfficeSelection3DController : Node
                     OfficeWorld3DConfig.GridSize * 1.15f,
                 ]
             );
-            if (distance >= bestDistance || distance > ObjectHitRadiusPixels)
+            if (distance >= bestDistance || distance > EmployeeHitRadiusPixels)
             {
                 continue;
             }
@@ -1040,7 +1041,7 @@ public partial class OfficeSelection3DController : Node
                         OfficeWorld3DConfig.GridSize * 0.85f,
                     ]
                 );
-                if (distance >= bestDistance || distance > ObjectHitRadiusPixels)
+                if (distance >= bestDistance || distance > FacilityHitRadiusPixels)
                 {
                     continue;
                 }

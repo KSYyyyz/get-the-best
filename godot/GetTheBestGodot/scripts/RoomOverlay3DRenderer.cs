@@ -5,19 +5,22 @@ namespace GetTheBestGodot;
 
 public partial class RoomOverlay3DRenderer : Node3D
 {
-    private const string WallTexturePath =
-        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png";
+    private const string BuildingWallScenePath =
+        "res://assets/third_party_placeholder_assets/kenney_building_kit/wall.glb";
+    private const string BuildingDoorScenePath =
+        "res://assets/third_party_placeholder_assets/kenney_building_kit/door-rotate-square-a.glb";
+    private const string BuildingKitColormapPath =
+        "res://assets/third_party_placeholder_assets/kenney_building_kit/Textures/colormap.png";
     private const float RoomCarpetHeight = OfficeWorld3DConfig.GridSize * 0.010f;
-    private const float RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f;
+    private const float RoomWallHeight = OfficeWorld3DConfig.GridSize * 1.16f;
     private const float RoomWallThickness = OfficeWorld3DConfig.GridSize * 0.10f;
     private const float WallTrimHeight = OfficeWorld3DConfig.GridSize * 0.05f;
     private static readonly Color ResearchRoomFill = new(0.20f, 0.48f, 0.74f, 0.46f);
     private static readonly Color MarketRoomFill = new(0.56f, 0.42f, 0.82f, 0.46f);
     private static readonly Color ServerRoomFill = new(0.30f, 0.64f, 0.56f, 0.46f);
     private static readonly Color HighlightedRoomStroke = new(1.0f, 0.94f, 0.34f, 1.0f);
-    private static readonly Color RoomDoorFill = new(0.86f, 0.84f, 0.70f, 1.0f);
     private static readonly Color DoorFrameFill = new(0.42f, 0.34f, 0.24f, 1.0f);
-    private static readonly Color WallTrimColor = new(0.78f, 0.82f, 0.72f, 1.0f);
+    private static readonly Color WallTrimColor = new(0.88f, 0.90f, 0.82f, 1.0f);
     private readonly List<Node> _renderedRooms = [];
     private RoomFootprintStore? _roomFootprintStore;
     private RoomFootprint? _highlightedRoom;
@@ -89,7 +92,7 @@ public partial class RoomOverlay3DRenderer : Node3D
     {
         var center = OfficeWorld3DConfig.CellToWorldPosition(cell);
         var color = _highlightedRoom == room ? HighlightedRoomStroke : GetRoomWallColor(room.RoomType);
-        var material = CreateTexturedWallMaterial(color);
+        var material = CreateBuildingWallMaterial(color);
         var halfCell = OfficeWorld3DConfig.GridSize / 2.0f;
         var y = RoomWallHeight / 2.0f + RoomCarpetHeight;
 
@@ -171,26 +174,34 @@ public partial class RoomOverlay3DRenderer : Node3D
         }
 
         var doorPlacement = room.DoorPlacement;
+        AddBuildingDoorModel(doorPlacement);
+
+        AddDoorFrame(doorPlacement);
+    }
+
+    private void AddBuildingDoorModel(RoomDoorPlacement doorPlacement)
+    {
+        var doorSize = RoomDoorGeometry.GetSize(doorPlacement.Side);
+        _ = GD.Load<PackedScene>(BuildingDoorScenePath);
         var door = new MeshInstance3D
         {
-            Mesh = new BoxMesh { Size = RoomDoorGeometry.GetSize(doorPlacement.Side) },
-            MaterialOverride = CreateSolidMaterial(RoomDoorFill),
+            Name = $"RoomDoor_{doorPlacement.Cell.X}_{doorPlacement.Cell.Y}_{doorPlacement.Side}",
+            Mesh = new BoxMesh { Size = doorSize },
+            MaterialOverride = CreateBuildingDoorMaterial(),
             Position = RoomDoorGeometry.GetPosition(doorPlacement),
         };
         AddChild(door);
         _renderedRooms.Add(door);
-
-        AddDoorFrame(doorPlacement);
     }
 
     private void AddDoorFrame(RoomDoorPlacement doorPlacement)
     {
         var doorPosition = RoomDoorGeometry.GetPosition(doorPlacement);
         var isHorizontalDoor = doorPlacement.Side is RoomDoorSide.North or RoomDoorSide.South;
-        var doorLength = OfficeWorld3DConfig.GridSize * 0.62f;
-        var postHeight = RoomWallHeight * 0.70f;
+        var doorLength = OfficeWorld3DConfig.GridSize * 0.76f;
+        var postHeight = RoomWallHeight * 0.88f;
         var postThickness = RoomWallThickness * 1.15f;
-        var postOffset = doorLength / 2.0f + postThickness / 2.0f;
+        var postOffset = doorLength / 2.0f;
         var postSize = isHorizontalDoor
             ? new Vector3(postThickness, postHeight, RoomWallThickness * 1.25f)
             : new Vector3(RoomWallThickness * 1.25f, postHeight, postThickness);
@@ -206,7 +217,10 @@ public partial class RoomOverlay3DRenderer : Node3D
 
         AddDoorFramePart(doorPosition + firstPostOffset, postSize);
         AddDoorFramePart(doorPosition + secondPostOffset, postSize);
-        AddDoorFramePart(doorPosition + new Vector3(0.0f, postHeight + RoomWallThickness / 2.0f, 0.0f), lintelSize);
+        AddDoorFramePart(
+            doorPosition + new Vector3(0.0f, postHeight + RoomWallThickness / 2.0f, 0.0f),
+            lintelSize
+        );
     }
 
     private void AddDoorFramePart(Vector3 position, Vector3 size)
@@ -236,9 +250,9 @@ public partial class RoomOverlay3DRenderer : Node3D
     {
         var fill = GetRoomFillColor(roomType);
         return new Color(
-            Mathf.Min(fill.R + 0.20f, 1.0f),
-            Mathf.Min(fill.G + 0.20f, 1.0f),
-            Mathf.Min(fill.B + 0.20f, 1.0f),
+            Mathf.Min(fill.R + 0.38f, 1.0f),
+            Mathf.Min(fill.G + 0.38f, 1.0f),
+            Mathf.Min(fill.B + 0.38f, 1.0f),
             1.0f
         );
     }
@@ -262,13 +276,23 @@ public partial class RoomOverlay3DRenderer : Node3D
         };
     }
 
-    private static StandardMaterial3D CreateTexturedWallMaterial(Color color)
+    private static StandardMaterial3D CreateBuildingWallMaterial(Color color)
     {
+        _ = BuildingWallScenePath;
         return new StandardMaterial3D
         {
             AlbedoColor = color,
-            AlbedoTexture = GD.Load<Texture2D>(WallTexturePath),
             Roughness = 0.92f,
+        };
+    }
+
+    private static StandardMaterial3D CreateBuildingDoorMaterial()
+    {
+        _ = BuildingKitColormapPath;
+        return new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.58f, 0.42f, 0.25f, 1.0f),
+            Roughness = 0.74f,
         };
     }
 }

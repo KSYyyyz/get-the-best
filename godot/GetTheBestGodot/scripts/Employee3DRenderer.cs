@@ -7,6 +7,7 @@ public partial class Employee3DRenderer : Node3D
 {
     private const float EmployeeModelScale = OfficeWorld3DConfig.GridSize * 0.34f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
+    private const float SmoothMoveDurationSeconds = 0.12f;
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private static readonly string[] EmployeeModelScenePaths =
@@ -22,6 +23,7 @@ public partial class Employee3DRenderer : Node3D
         "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png",
     ];
     private readonly HashSet<int> _highlightedEmployeeIds = [];
+    private readonly Dictionary<int, Vector3> _lastEmployeePositions = [];
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
     private int? _dragPreviewEmployeeId;
@@ -39,6 +41,11 @@ public partial class Employee3DRenderer : Node3D
     {
         foreach (var renderedEmployee in _renderedEmployees)
         {
+            if (TryGetEmployeeId(renderedEmployee.Name.ToString(), out var employeeId))
+            {
+                _lastEmployeePositions[employeeId] = ((Node3D)renderedEmployee).Position;
+            }
+
             RemoveChild(renderedEmployee);
             renderedEmployee.QueueFree();
         }
@@ -115,7 +122,7 @@ public partial class Employee3DRenderer : Node3D
             _dragPreviewEmployeeId == employee.Id
                 ? DragPreviewYOffset
                 : 0.02f;
-        var position =
+        var targetPosition =
             OfficeWorld3DConfig.CellToWorldPosition(renderCell) + new Vector3(0.0f, yOffset, 0.0f);
 
         var modelScene = GetEmployeeModelScene(employee);
@@ -127,11 +134,12 @@ public partial class Employee3DRenderer : Node3D
 
         var modelRoot = modelScene.Instantiate<Node3D>();
         modelRoot.Name = $"Employee_{employee.Id}";
-        modelRoot.Position = position;
+        modelRoot.Position = GetEmployeeStartPosition(employee.Id, targetPosition);
         modelRoot.Scale = Vector3.One * EmployeeModelScale;
         modelRoot.RotationDegrees = new Vector3(0.0f, 180.0f, 0.0f);
         AddChild(modelRoot);
         _renderedEmployees.Add(modelRoot);
+        TweenEmployeeToTarget(modelRoot, targetPosition);
         ApplyEmployeeTexture(modelRoot, GetEmployeeTexture(employee));
 
         if (_dragPreviewEmployeeId == employee.Id && !_dragPreviewIsLegal)
@@ -159,6 +167,35 @@ public partial class Employee3DRenderer : Node3D
 
         var modelScenePath = EmployeeModelScenePaths[index];
         return GD.Load<PackedScene>(modelScenePath);
+    }
+
+    private Vector3 GetEmployeeStartPosition(int employeeId, Vector3 targetPosition)
+    {
+        return _lastEmployeePositions.TryGetValue(employeeId, out var previousPosition)
+            ? previousPosition
+            : targetPosition;
+    }
+
+    private void TweenEmployeeToTarget(Node3D modelRoot, Vector3 targetPosition)
+    {
+        if (modelRoot.Position.DistanceTo(targetPosition) < 0.01f)
+        {
+            modelRoot.Position = targetPosition;
+            return;
+        }
+
+        CreateTween()
+            .TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+    }
+
+    private static bool TryGetEmployeeId(string nodeName, out int employeeId)
+    {
+        employeeId = 0;
+        const string prefix = "Employee_";
+        return nodeName.StartsWith(prefix)
+            && int.TryParse(nodeName[prefix.Length..], out employeeId);
     }
 
     private static Texture2D? GetEmployeeTexture(EmployeeVisual employee)

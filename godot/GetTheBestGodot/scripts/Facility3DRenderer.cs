@@ -8,6 +8,7 @@ public partial class Facility3DRenderer : Node3D
     private const float CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f;
     private const float OutlineShellScale = 1.10f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.16f;
+    private const float SmoothMoveDurationSeconds = 0.12f;
     private static readonly Color DeskFill = new(0.72f, 0.50f, 0.28f, 1.0f);
     private static readonly Color DeskDarkFill = new(0.38f, 0.24f, 0.14f, 1.0f);
     private static readonly Color ChairFill = new(0.80f, 0.58f, 0.22f, 1.0f);
@@ -19,6 +20,7 @@ public partial class Facility3DRenderer : Node3D
     private static readonly Color StatusLightFill = new(0.38f, 0.90f, 0.52f, 1.0f);
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
+    private readonly Dictionary<int, Vector3> _lastFacilityPositions = [];
     private readonly List<Node> _renderedFacilities = [];
     private FacilityPlacementStore? _facilityPlacementStore;
     private FacilityPlacement? _highlightedFacility;
@@ -37,6 +39,12 @@ public partial class Facility3DRenderer : Node3D
     {
         foreach (var renderedFacility in _renderedFacilities)
         {
+            if (TryGetFacilityId(renderedFacility.Name.ToString(), out var facilityId))
+            {
+                _lastFacilityPositions[facilityId] = ((Node3D)renderedFacility).Position;
+            }
+
+            RemoveChild(renderedFacility);
             renderedFacility.QueueFree();
         }
         _renderedFacilities.Clear();
@@ -95,16 +103,18 @@ public partial class Facility3DRenderer : Node3D
             _dragPreviewFacilityId == facility.Id
                 ? DragPreviewYOffset
                 : 0.0f;
-        var position =
+        var targetPosition =
             OfficeWorld3DConfig.CellToWorldPosition(renderCell) + new Vector3(0.0f, yOffset, 0.0f);
         var renderTint = GetRenderTint(facility);
         var modelRoot = new Node3D
         {
-            Position = position,
+            Position = GetFacilityStartPosition(facility.Id, targetPosition),
             RotationDegrees = new Vector3(0.0f, GetFacingYawDegrees(facility.Facing), 0.0f),
         };
+        modelRoot.Name = $"Facility_{facility.Id}";
         AddChild(modelRoot);
         _renderedFacilities.Add(modelRoot);
+        TweenFacilityToTarget(modelRoot, targetPosition);
 
         if (
             _highlightedFacility?.Id == facility.Id
@@ -132,6 +142,35 @@ public partial class Facility3DRenderer : Node3D
     private Vector2I GetRenderCell(FacilityPlacement facility)
     {
         return _dragPreviewFacilityId == facility.Id ? _dragPreviewCell : facility.Cell;
+    }
+
+    private Vector3 GetFacilityStartPosition(int facilityId, Vector3 targetPosition)
+    {
+        return _lastFacilityPositions.TryGetValue(facilityId, out var previousPosition)
+            ? previousPosition
+            : targetPosition;
+    }
+
+    private void TweenFacilityToTarget(Node3D modelRoot, Vector3 targetPosition)
+    {
+        if (modelRoot.Position.DistanceTo(targetPosition) < 0.01f)
+        {
+            modelRoot.Position = targetPosition;
+            return;
+        }
+
+        CreateTween()
+            .TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+    }
+
+    private static bool TryGetFacilityId(string nodeName, out int facilityId)
+    {
+        facilityId = 0;
+        const string prefix = "Facility_";
+        return nodeName.StartsWith(prefix)
+            && int.TryParse(nodeName[prefix.Length..], out facilityId);
     }
 
     private Color? GetRenderTint(FacilityPlacement facility)

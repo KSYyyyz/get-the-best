@@ -4,13 +4,13 @@ namespace GetTheBestGodot;
 
 public partial class OfficeBoundary3DRenderer : Node3D
 {
-    private const string WallTexturePath =
-        "res://assets/third_party_placeholder_assets/kenney_prototype_textures/wall_dark_texture_03.png";
-    private const float WallHeight = OfficeWorld3DConfig.GridSize * 0.82f;
+    private const string BuildingWallScenePath =
+        "res://assets/third_party_placeholder_assets/kenney_building_kit/wall.glb";
+    private const float WallHeight = OfficeWorld3DConfig.GridSize * 1.16f;
     private const float WallThickness = OfficeWorld3DConfig.GridSize * 0.10f;
-    private static readonly Color WallColor = new(0.48f, 0.50f, 0.45f, 1.0f);
-    private static readonly Color WallTrimColor = new(0.62f, 0.64f, 0.58f, 1.0f);
-    private static readonly Color CornerPostColor = new(0.70f, 0.72f, 0.66f, 1.0f);
+    private static readonly Color WallColor = new(0.74f, 0.78f, 0.70f, 1.0f);
+    private static readonly Color WallTrimColor = new(0.88f, 0.90f, 0.82f, 1.0f);
+    private static readonly Color CornerPostColor = new(0.82f, 0.84f, 0.76f, 1.0f);
 
     public override void _Ready()
     {
@@ -85,10 +85,10 @@ public partial class OfficeBoundary3DRenderer : Node3D
 
     private static StandardMaterial3D CreateMaterial(Color color)
     {
+        _ = BuildingWallScenePath;
         return new StandardMaterial3D
         {
             AlbedoColor = color,
-            AlbedoTexture = GD.Load<Texture2D>(WallTexturePath),
             Roughness = 0.95f,
         };
     }
