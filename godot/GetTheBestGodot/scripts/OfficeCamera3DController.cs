@@ -11,7 +11,7 @@ public partial class OfficeCamera3DController : Camera3D
     private const float ZoomStepFactor = 1.14f;
     private const float RotationSpeedDegrees = 90.0f;
     private const float DefaultPitchDegrees = 58.0f;
-    private const float MinPitchDegrees = 30.0f;
+    private const float MinPitchDegrees = 10.0f;
     private const float MaxPitchDegrees = DefaultPitchDegrees;
     private const float MiddlePitchSensitivity = 0.18f;
     private const float CameraDistance = 170.0f;
@@ -145,7 +145,12 @@ public partial class OfficeCamera3DController : Camera3D
         ).Normalized();
 
         Position = _focus - lookDirection * CameraDistance;
-        RotationDegrees = new Vector3(-_pitchDegrees, -YawDegrees, 0.0f);
+        ApplyStableCameraBasis(lookDirection);
+    }
+
+    private void ApplyStableCameraBasis(Vector3 lookDirection)
+    {
+        GlobalTransform = new Transform3D(Basis.LookingAt(lookDirection, Vector3.Up), Position);
     }
 
     private Vector3 GetPlanarForward()

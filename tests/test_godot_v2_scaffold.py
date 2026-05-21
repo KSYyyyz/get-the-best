@@ -648,12 +648,13 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "new Vector2(Columns * GridSize, Rows * GridSize)" in config
 
     assert "MiddlePitchSensitivity = 0.18f" in camera
-    assert "MinPitchDegrees = 30.0f" in camera
+    assert "MinPitchDegrees = 10.0f" in camera
     assert "MaxPitchDegrees = DefaultPitchDegrees" in camera
     assert "AdjustPitchFromMiddleDrag" in camera
     assert "_isPitchDragging" in camera
-    assert "RotationDegrees = new Vector3(-_pitchDegrees, -YawDegrees, 0.0f)" in camera
-    assert "LookAt(_focus, Vector3.Up)" not in camera
+    assert "ApplyStableCameraBasis(lookDirection)" in camera
+    assert "Basis.LookingAt(lookDirection, Vector3.Up)" in camera
+    assert "RotationDegrees = new Vector3(-_pitchDegrees, -YawDegrees, 0.0f)" not in camera
     assert "_focus += -GetPlanarRight() * motionEvent.Relative.X" not in camera
 
     assert "MajorGridColor" not in grid
