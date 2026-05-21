@@ -794,3 +794,44 @@ def test_get_the_best_v2_facility_placement_supports_r_rotation() -> None:
     assert "ShowFacilityFacingMarker" in preview
     assert "_facilityFacingPreviewMesh" in preview
     assert "GetFacingYawDegrees(facility.Facing)" in renderer
+
+
+def test_get_the_best_v2_employee_visual_selection_baseline_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    scripts = {
+        path.name: read_text(path)
+        for path in (GODOT_ROOT / "scripts").glob("*.cs")
+        if path.is_file()
+    }
+
+    assert "EmployeeStore" in scene_text
+    assert "Employee3DRenderer" in scene_text
+    assert "EmployeeStore.cs" in scripts
+    assert "Employee3DRenderer.cs" in scripts
+
+    employee_store = scripts["EmployeeStore.cs"]
+    employee_renderer = scripts["Employee3DRenderer.cs"]
+    selection = scripts["OfficeSelection3DController.cs"]
+
+    assert "EmployeeVisual" in employee_store
+    assert "GetEmployees" in employee_store
+    assert "FindAtCell" in employee_store
+    assert "FindInSelection" in employee_store
+    assert "new Vector2I(15, 5)" in employee_store
+    assert "new Vector2I(16, 5)" in employee_store
+    assert "new Vector2I(17, 6)" in employee_store
+
+    assert "RefreshEmployees" in employee_renderer
+    assert "HighlightEmployee" in employee_renderer
+    assert "HighlightEmployees" in employee_renderer
+    assert "AddEmployeeModel" in employee_renderer
+    assert "SphereMesh" in employee_renderer
+    assert "CylinderMesh" in employee_renderer
+
+    assert 'GetNodeOrNull<EmployeeStore>("../EmployeeStore")' in selection
+    assert 'GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer")' in selection
+    assert "SelectEmployeeAtPointer" in selection
+    assert "SelectEmployeesInSelection" in selection
+    assert "_employeeRenderer?.HighlightEmployee(null);" in selection
+    assert "FindInSelection(_dragStartCell, _dragCurrentCell)" in selection
+    assert "ShowEmployeeTooltip" in selection

@@ -15,6 +15,8 @@
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
 [ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
+[ext_resource type="Script" uid="uid://vwi5tn4mcavf" path="res://scripts/EmployeeStore.cs" id="16_jbj1t"]
+[ext_resource type="Script" uid="uid://dihs32kp50ure" path="res://scripts/Employee3DRenderer.cs" id="17_muem4"]
 
 [node name="Main" type="Node3D" unique_id=1957351103]
 script = ExtResource("1_main")
@@ -176,3 +178,9 @@ script = ExtResource("11_ya4ey")
 
 [node name="Facility3DRenderer" type="Node3D" parent="InteractionRoot" unique_id=1352949738]
 script = ExtResource("12_muem4")
+
+[node name="EmployeeStore" type="Node" parent="InteractionRoot" unique_id=185590945]
+script = ExtResource("16_jbj1t")
+
+[node name="Employee3DRenderer" type="Node3D" parent="InteractionRoot" unique_id=1210227934]
+script = ExtResource("17_muem4")

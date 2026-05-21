@@ -13,6 +13,8 @@ public partial class OfficeSelection3DController : Node
     private BuildModeController? _buildModeController;
     private RoomOverlay3DRenderer? _roomOverlayRenderer;
     private Facility3DRenderer? _facilityRenderer;
+    private EmployeeStore? _employeeStore;
+    private Employee3DRenderer? _employeeRenderer;
     private bool _isDraggingSelection;
     private Vector2I _dragStartCell;
     private Vector2I _dragCurrentCell;
@@ -30,6 +32,8 @@ public partial class OfficeSelection3DController : Node
         _buildModeController = GetNodeOrNull<BuildModeController>("../BuildModeController");
         _roomOverlayRenderer = GetNodeOrNull<RoomOverlay3DRenderer>("../RoomOverlay3DRenderer");
         _facilityRenderer = GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer");
+        _employeeStore = GetNodeOrNull<EmployeeStore>("../EmployeeStore");
+        _employeeRenderer = GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer");
         HidePointerTooltip();
     }
 
@@ -182,6 +186,12 @@ public partial class OfficeSelection3DController : Node
         }
 
         ClearSelectedObjects();
+        if (SelectEmployeesInSelection(screenPosition))
+        {
+            _placementPreviewController?.ClearPreview();
+            return;
+        }
+
         ShowPointerSelectionRect();
         HidePointerTooltip();
     }
@@ -365,12 +375,45 @@ public partial class OfficeSelection3DController : Node
             return;
         }
 
+        if (SelectEmployeeAtPointer(cell, screenPosition))
+        {
+            return;
+        }
+
         if (SelectFacilityAtPointer(cell, screenPosition))
         {
             return;
         }
 
         SelectRoomAtPointer(cell, screenPosition);
+    }
+
+    private bool SelectEmployeeAtPointer(Vector2I cell, Vector2 screenPosition)
+    {
+        var employee = _employeeStore?.FindAtCell(cell);
+        if (employee == null)
+        {
+            return false;
+        }
+
+        ClearSelectedObjects();
+        _employeeRenderer?.HighlightEmployee(employee);
+        ShowEmployeeTooltip(employee, screenPosition);
+        return true;
+    }
+
+    private bool SelectEmployeesInSelection(Vector2 screenPosition)
+    {
+        var employees = _employeeStore?.FindInSelection(_dragStartCell, _dragCurrentCell);
+        if (employees == null || employees.Count == 0)
+        {
+            return false;
+        }
+
+        ClearSelectedObjects();
+        _employeeRenderer?.HighlightEmployees(employees);
+        ShowPointerTooltip($"\u5df2\u9009\u4e2d {employees.Count} \u540d\u5458\u5de5", screenPosition);
+        return true;
     }
 
     private bool SelectFacilityAtPointer(Vector2I cell, Vector2 screenPosition)
@@ -454,6 +497,13 @@ public partial class OfficeSelection3DController : Node
         }
 
         _placementPreviewController?.ClearPreview();
+        var hoveredEmployee = _employeeStore?.FindAtCell(cell);
+        if (hoveredEmployee != null)
+        {
+            ShowEmployeeTooltip(hoveredEmployee, screenPosition);
+            return;
+        }
+
         var hoveredFacility = _buildModeController?.FindFacilityAtCell(cell);
         if (hoveredFacility != null)
         {
@@ -570,6 +620,7 @@ public partial class OfficeSelection3DController : Node
     {
         ClearSelectedRoom();
         _facilityRenderer?.HighlightFacility(null);
+        _employeeRenderer?.HighlightEmployee(null);
     }
 
     private void ClearSelectedRoom()
@@ -590,6 +641,11 @@ public partial class OfficeSelection3DController : Node
             $"{prefix}{BuildModeController.GetFacilityTypeLabel(facility.FacilityType)}",
             screenPosition
         );
+    }
+
+    private void ShowEmployeeTooltip(EmployeeVisual employee, Vector2 screenPosition)
+    {
+        ShowPointerTooltip($"{employee.DisplayName} / {employee.RoleLabel}", screenPosition);
     }
 
     private bool TryScreenPositionToCell(Vector2 screenPosition, out Vector2I cell)
