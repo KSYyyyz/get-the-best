@@ -54,16 +54,24 @@ public partial class Facility3DRenderer : Node3D
     private void AddFacilityModel(FacilityPlacement facility)
     {
         var position = OfficeWorld3DConfig.CellToWorldPosition(facility.Cell);
+        var modelRoot = new Node3D
+        {
+            Position = position,
+            RotationDegrees = new Vector3(0.0f, GetFacingYawDegrees(facility.Facing), 0.0f),
+        };
+        AddChild(modelRoot);
+        _renderedFacilities.Add(modelRoot);
+
         switch (facility.FacilityType)
         {
             case FacilityBuildType.ProductWhiteboard:
-                AddProductWhiteboardModel(position);
+                AddProductWhiteboardModel(modelRoot);
                 break;
             case FacilityBuildType.ServerRack:
-                AddServerRackModel(position);
+                AddServerRackModel(modelRoot);
                 break;
             default:
-                AddDeskModel(position);
+                AddDeskModel(modelRoot);
                 break;
         }
 
@@ -73,9 +81,10 @@ public partial class Facility3DRenderer : Node3D
         }
     }
 
-    private void AddDeskModel(Vector3 position)
+    private void AddDeskModel(Node3D parent)
     {
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -85,9 +94,10 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             DeskFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.35f, -CellInnerSize * 0.05f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.35f, -CellInnerSize * 0.05f)
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -97,15 +107,16 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             DeskDarkFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.22f, -CellInnerSize * 0.32f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.22f, -CellInnerSize * 0.32f)
         );
 
-        AddDeskLeg(position, -0.32f, -0.25f);
-        AddDeskLeg(position, 0.32f, -0.25f);
-        AddDeskLeg(position, -0.32f, 0.21f);
-        AddDeskLeg(position, 0.32f, 0.21f);
+        AddDeskLeg(parent, -0.32f, -0.25f);
+        AddDeskLeg(parent, 0.32f, -0.25f);
+        AddDeskLeg(parent, -0.32f, 0.21f);
+        AddDeskLeg(parent, 0.32f, 0.21f);
 
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -115,9 +126,10 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             ScreenFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.52f, -CellInnerSize * 0.11f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.52f, -CellInnerSize * 0.11f)
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -127,10 +139,11 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             ScreenFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.40f, -CellInnerSize * 0.03f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.40f, -CellInnerSize * 0.03f)
         );
 
         AddMeshPart(
+            parent,
             new CylinderMesh
             {
                 TopRadius = CellInnerSize * 0.18f,
@@ -139,9 +152,10 @@ public partial class Facility3DRenderer : Node3D
                 RadialSegments = 18,
             },
             ChairFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.24f, CellInnerSize * 0.32f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.24f, CellInnerSize * 0.32f)
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -151,13 +165,14 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             ChairFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.42f, CellInnerSize * 0.50f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.42f, CellInnerSize * 0.50f)
         );
     }
 
-    private void AddDeskLeg(Vector3 position, float xRatio, float zRatio)
+    private void AddDeskLeg(Node3D parent, float xRatio, float zRatio)
     {
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -167,13 +182,18 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             DeskDarkFill,
-            position + new Vector3(CellInnerSize * xRatio, OfficeWorld3DConfig.GridSize * 0.18f, CellInnerSize * zRatio)
+            new Vector3(
+                CellInnerSize * xRatio,
+                OfficeWorld3DConfig.GridSize * 0.18f,
+                CellInnerSize * zRatio
+            )
         );
     }
 
-    private void AddProductWhiteboardModel(Vector3 position)
+    private void AddProductWhiteboardModel(Node3D parent)
     {
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -183,9 +203,10 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             WhiteboardFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.54f, -CellInnerSize * 0.22f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.54f, -CellInnerSize * 0.22f)
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -195,9 +216,10 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             WhiteboardFrameFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.54f, -CellInnerSize * 0.27f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.54f, -CellInnerSize * 0.27f)
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -207,9 +229,10 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             WhiteboardFrameFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.20f, -CellInnerSize * 0.08f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.20f, -CellInnerSize * 0.08f)
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -219,9 +242,14 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             new Color(0.96f, 0.72f, 0.18f, 1.0f),
-            position + new Vector3(-CellInnerSize * 0.22f, OfficeWorld3DConfig.GridSize * 0.58f, -CellInnerSize * 0.31f)
+            new Vector3(
+                -CellInnerSize * 0.22f,
+                OfficeWorld3DConfig.GridSize * 0.58f,
+                -CellInnerSize * 0.31f
+            )
         );
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -231,13 +259,18 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             new Color(0.50f, 0.78f, 0.96f, 1.0f),
-            position + new Vector3(CellInnerSize * 0.12f, OfficeWorld3DConfig.GridSize * 0.45f, -CellInnerSize * 0.31f)
+            new Vector3(
+                CellInnerSize * 0.12f,
+                OfficeWorld3DConfig.GridSize * 0.45f,
+                -CellInnerSize * 0.31f
+            )
         );
     }
 
-    private void AddServerRackModel(Vector3 position)
+    private void AddServerRackModel(Node3D parent)
     {
         AddMeshPart(
+            parent,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -247,12 +280,13 @@ public partial class Facility3DRenderer : Node3D
                 ),
             },
             ServerRackFill,
-            position + new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.48f, 0.0f)
+            new Vector3(0.0f, OfficeWorld3DConfig.GridSize * 0.48f, 0.0f)
         );
 
         for (var index = 0; index < 4; index++)
         {
             AddMeshPart(
+                parent,
                 new BoxMesh
                 {
                     Size = new Vector3(
@@ -262,14 +296,14 @@ public partial class Facility3DRenderer : Node3D
                     ),
                 },
                 ServerPanelFill,
-                position
-                    + new Vector3(
-                        0.0f,
-                        OfficeWorld3DConfig.GridSize * (0.22f + index * 0.16f),
-                        -CellInnerSize * 0.30f
-                    )
+                new Vector3(
+                    0.0f,
+                    OfficeWorld3DConfig.GridSize * (0.22f + index * 0.16f),
+                    -CellInnerSize * 0.30f
+                )
             );
             AddMeshPart(
+                parent,
                 new CylinderMesh
                 {
                     TopRadius = CellInnerSize * 0.035f,
@@ -278,12 +312,11 @@ public partial class Facility3DRenderer : Node3D
                     RadialSegments = 12,
                 },
                 StatusLightFill,
-                position
-                    + new Vector3(
-                        CellInnerSize * 0.21f,
-                        OfficeWorld3DConfig.GridSize * (0.22f + index * 0.16f),
-                        -CellInnerSize * 0.33f
-                    ),
+                new Vector3(
+                    CellInnerSize * 0.21f,
+                    OfficeWorld3DConfig.GridSize * (0.22f + index * 0.16f),
+                    -CellInnerSize * 0.33f
+                ),
                 new Vector3(90.0f, 0.0f, 0.0f)
             );
         }
@@ -292,6 +325,7 @@ public partial class Facility3DRenderer : Node3D
     private void AddHighlight(Vector3 position)
     {
         AddMeshPart(
+            this,
             new BoxMesh
             {
                 Size = new Vector3(
@@ -305,7 +339,13 @@ public partial class Facility3DRenderer : Node3D
         );
     }
 
-    private void AddMeshPart(Mesh mesh, Color color, Vector3 position, Vector3? rotationDegrees = null)
+    private void AddMeshPart(
+        Node parent,
+        Mesh mesh,
+        Color color,
+        Vector3 position,
+        Vector3? rotationDegrees = null
+    )
     {
         var part = new MeshInstance3D
         {
@@ -319,8 +359,22 @@ public partial class Facility3DRenderer : Node3D
             part.RotationDegrees = rotationDegrees.Value;
         }
 
-        AddChild(part);
-        _renderedFacilities.Add(part);
+        parent.AddChild(part);
+        if (ReferenceEquals(parent, this))
+        {
+            _renderedFacilities.Add(part);
+        }
+    }
+
+    private static float GetFacingYawDegrees(FacilityFacing facing)
+    {
+        return facing switch
+        {
+            FacilityFacing.North => 0.0f,
+            FacilityFacing.East => 90.0f,
+            FacilityFacing.South => 180.0f,
+            _ => 270.0f,
+        };
     }
 
     private static StandardMaterial3D CreateMaterial(Color color)

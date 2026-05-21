@@ -16,6 +16,8 @@ public partial class OfficeSelection3DController : Node
     private bool _isDraggingSelection;
     private Vector2I _dragStartCell;
     private Vector2I _dragCurrentCell;
+    private Vector2I? _lastHoveredCell;
+    private Vector2 _lastPointerScreenPosition;
 
     public override void _Ready()
     {
@@ -33,9 +35,24 @@ public partial class OfficeSelection3DController : Node
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+        if (@event is InputEventKey keyEvent && keyEvent.Pressed)
         {
-            CancelInteraction();
+            if (keyEvent.Keycode == Key.Escape)
+            {
+                CancelInteraction();
+                return;
+            }
+
+            if (keyEvent.Keycode == Key.R && _buildModeController?.IsPlaceFacilityMode() == true)
+            {
+                _buildModeController.RotateActiveFacilityFacing();
+                if (_lastHoveredCell != null)
+                {
+                    ShowFacilityPlacementPreview(_lastHoveredCell.Value, _lastPointerScreenPosition);
+                }
+                return;
+            }
+
             return;
         }
 
@@ -388,8 +405,10 @@ public partial class OfficeSelection3DController : Node
 
     private void UpdateHoverOrDragPreview(Vector2 screenPosition)
     {
+        _lastPointerScreenPosition = screenPosition;
         if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
+            _lastHoveredCell = null;
             if (_buildModeController?.IsPlaceRoomDoorMode() == true)
             {
                 RefreshPendingRoomPreview();
@@ -410,6 +429,7 @@ public partial class OfficeSelection3DController : Node
             return;
         }
 
+        _lastHoveredCell = cell;
         if (_isDraggingSelection)
         {
             _dragCurrentCell = cell;
@@ -535,7 +555,8 @@ public partial class OfficeSelection3DController : Node
         _placementPreviewController?.ShowFacilityCell(
             cell,
             canPlace,
-            FacilityDefinitionCatalog.GetDefinition(_buildModeController.GetActiveFacilityType())
+            FacilityDefinitionCatalog.GetDefinition(_buildModeController.GetActiveFacilityType()),
+            _buildModeController.GetActiveFacilityFacing()
         );
         ShowPointerTooltip(
             canPlace

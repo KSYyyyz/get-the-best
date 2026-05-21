@@ -56,7 +56,12 @@ public partial class FacilityPlacementStore : Node
         return true;
     }
 
-    public bool TryPlace(FacilityBuildType facilityType, Vector2I cell, out FacilityPlacement? facility)
+    public bool TryPlace(
+        FacilityBuildType facilityType,
+        Vector2I cell,
+        FacilityFacing facing,
+        out FacilityPlacement? facility
+    )
     {
         if (!CanPlace(facilityType, cell))
         {
@@ -64,7 +69,7 @@ public partial class FacilityPlacementStore : Node
             return false;
         }
 
-        facility = new FacilityPlacement(_nextFacilityId, facilityType, cell);
+        facility = new FacilityPlacement(_nextFacilityId, facilityType, cell, facing);
         _nextFacilityId++;
         _facilities.Add(facility);
         return true;
@@ -116,4 +121,17 @@ public enum FacilityPlacementIssue
     WrongRoomType,
 }
 
-public sealed record FacilityPlacement(int Id, FacilityBuildType FacilityType, Vector2I Cell);
+public enum FacilityFacing
+{
+    North,
+    East,
+    South,
+    West,
+}
+
+public sealed record FacilityPlacement(
+    int Id,
+    FacilityBuildType FacilityType,
+    Vector2I Cell,
+    FacilityFacing Facing
+);

@@ -772,3 +772,25 @@ def test_get_the_best_v2_facilities_and_rooms_use_procedural_3d_models() -> None
     assert "RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f" not in room
 
     assert "WallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in boundary
+
+
+def test_get_the_best_v2_facility_placement_supports_r_rotation() -> None:
+    build_mode = read_text(GODOT_ROOT / "scripts" / "BuildModeController.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    preview = read_text(GODOT_ROOT / "scripts" / "PlacementPreview3DController.cs")
+    renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+
+    assert "enum FacilityFacing" in facility_store
+    assert "FacilityFacing Facing" in facility_store
+    assert "FacilityFacing _activeFacilityFacing" in build_mode
+    assert "RotateActiveFacilityFacing" in build_mode
+    assert "GetActiveFacilityFacing" in build_mode
+    assert "TryPlace(_activeFacilityType, cell, _activeFacilityFacing" in build_mode
+    assert "Key.R" in selection
+    assert "RotateActiveFacilityFacing()" in selection
+    assert "ShowFacilityPlacementPreview(_lastHoveredCell.Value" in selection
+    assert "GetActiveFacilityFacing()" in selection
+    assert "ShowFacilityFacingMarker" in preview
+    assert "_facilityFacingPreviewMesh" in preview
+    assert "GetFacingYawDegrees(facility.Facing)" in renderer

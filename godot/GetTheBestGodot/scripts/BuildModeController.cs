@@ -42,6 +42,7 @@ public partial class BuildModeController : Node
     private FacilityPlacementStore? _facilityPlacementStore;
     private RoomBuildType _activeRoomType = RoomBuildType.ResearchRoom;
     private FacilityBuildType _activeFacilityType = FacilityBuildType.OfficeDesk;
+    private FacilityFacing _activeFacilityFacing = FacilityFacing.South;
     private BuildToolMode _activeToolMode = BuildToolMode.Pointer;
     private PendingRoomSelection? _pendingRoomSelection;
     private string _buildStatusMessage = string.Empty;
@@ -295,7 +296,7 @@ public partial class BuildModeController : Node
             return false;
         }
 
-        return _facilityPlacementStore.TryPlace(_activeFacilityType, cell, out facility);
+        return _facilityPlacementStore.TryPlace(_activeFacilityType, cell, _activeFacilityFacing, out facility);
     }
 
     public FacilityPlacement? FindFacilityAtCell(Vector2I cell)
@@ -396,6 +397,23 @@ public partial class BuildModeController : Node
     public FacilityBuildType GetActiveFacilityType()
     {
         return _activeFacilityType;
+    }
+
+    public FacilityFacing GetActiveFacilityFacing()
+    {
+        return _activeFacilityFacing;
+    }
+
+    public void RotateActiveFacilityFacing()
+    {
+        _activeFacilityFacing = _activeFacilityFacing switch
+        {
+            FacilityFacing.North => FacilityFacing.East,
+            FacilityFacing.East => FacilityFacing.South,
+            FacilityFacing.South => FacilityFacing.West,
+            _ => FacilityFacing.North,
+        };
+        ToolModeChanged?.Invoke();
     }
 
     public BuildToolMode GetActiveToolMode()
