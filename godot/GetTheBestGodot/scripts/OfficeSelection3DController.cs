@@ -16,8 +16,13 @@ public partial class OfficeSelection3DController : Node
     private EmployeeStore? _employeeStore;
     private Employee3DRenderer? _employeeRenderer;
     private bool _isDraggingSelection;
+    private bool _isDraggingEmployee;
     private Vector2I _dragStartCell;
     private Vector2I _dragCurrentCell;
+    private EmployeeVisual? _draggedEmployee;
+    private Vector2I _dragEmployeeOriginCell;
+    private Vector2I _dragEmployeeCurrentCell;
+    private bool _dragEmployeeTargetLegal;
     private Vector2I? _lastHoveredCell;
     private Vector2 _lastPointerScreenPosition;
 
@@ -102,10 +107,24 @@ public partial class OfficeSelection3DController : Node
                 return;
             }
 
+            if (
+                _buildModeController?.IsPointerMode() == true
+                && TryBeginEmployeeDrag(mouseEvent.Position)
+            )
+            {
+                return;
+            }
+
             if (ShouldBeginAreaSelection())
             {
                 BeginSelection(mouseEvent.Position);
             }
+            return;
+        }
+
+        if (_isDraggingEmployee)
+        {
+            FinishEmployeeDrag(mouseEvent.Position);
             return;
         }
 
@@ -402,6 +421,110 @@ public partial class OfficeSelection3DController : Node
         return true;
     }
 
+    private bool TryBeginEmployeeDrag(Vector2 screenPosition)
+    {
+        if (!TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            return false;
+        }
+
+        var employee = _employeeStore?.FindAtCell(cell);
+        if (employee == null)
+        {
+            return false;
+        }
+
+        _isDraggingEmployee = true;
+        _draggedEmployee = employee;
+        _dragEmployeeOriginCell = employee.Cell;
+        _dragEmployeeCurrentCell = employee.Cell;
+        _dragEmployeeTargetLegal = true;
+        ClearSelectedObjects();
+        _employeeRenderer?.HighlightEmployee(employee);
+        UpdateEmployeeDragPreview(cell, screenPosition);
+        return true;
+    }
+
+    private void UpdateEmployeeDragPreview(Vector2I cell, Vector2 screenPosition)
+    {
+        if (_draggedEmployee == null)
+        {
+            return;
+        }
+
+        _dragEmployeeCurrentCell = cell;
+        _dragEmployeeTargetLegal = _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true;
+        _placementPreviewController?.ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal);
+        ShowPointerTooltip(
+            _dragEmployeeTargetLegal ? _draggedEmployee.DisplayName : "\u4e0d\u80fd\u653e\u7f6e",
+            screenPosition
+        );
+    }
+
+    private void FinishEmployeeDrag(Vector2 screenPosition)
+    {
+        if (_draggedEmployee == null)
+        {
+            CancelEmployeeDrag();
+            return;
+        }
+
+        if (_dragEmployeeCurrentCell == _dragEmployeeOriginCell)
+        {
+            _placementPreviewController?.ClearPreview();
+            _employeeRenderer?.HighlightEmployee(_draggedEmployee);
+            ShowEmployeeTooltip(_draggedEmployee, screenPosition);
+            ResetEmployeeDragState();
+            return;
+        }
+
+        if (
+            _dragEmployeeTargetLegal
+            && _employeeStore?.TryMoveEmployee(
+                _draggedEmployee.Id,
+                _dragEmployeeCurrentCell,
+                out var movedEmployee
+            ) == true
+            && movedEmployee != null
+        )
+        {
+            _placementPreviewController?.ClearPreview();
+            _employeeRenderer?.RefreshEmployees();
+            _employeeRenderer?.HighlightEmployee(movedEmployee);
+            ShowEmployeeTooltip(movedEmployee, screenPosition);
+            ResetEmployeeDragState();
+            return;
+        }
+
+        _placementPreviewController?.ClearPreview();
+        _employeeRenderer?.RefreshEmployees();
+        _employeeRenderer?.HighlightEmployee(_draggedEmployee);
+        ShowPointerTooltip("\u8fd4\u56de\u539f\u4f4d", screenPosition);
+        ResetEmployeeDragState();
+    }
+
+    private void CancelEmployeeDrag()
+    {
+        if (_draggedEmployee != null)
+        {
+            _employeeRenderer?.RefreshEmployees();
+            _employeeRenderer?.HighlightEmployee(_draggedEmployee);
+        }
+
+        ResetEmployeeDragState();
+        _placementPreviewController?.ClearPreview();
+        HidePointerTooltip();
+    }
+
+    private void ResetEmployeeDragState()
+    {
+        _isDraggingEmployee = false;
+        _draggedEmployee = null;
+        _dragEmployeeOriginCell = Vector2I.Zero;
+        _dragEmployeeCurrentCell = Vector2I.Zero;
+        _dragEmployeeTargetLegal = false;
+    }
+
     private bool SelectEmployeesInSelection(Vector2 screenPosition)
     {
         var employees = _employeeStore?.FindInSelection(_dragStartCell, _dragCurrentCell);
@@ -452,6 +575,14 @@ public partial class OfficeSelection3DController : Node
         if (!TryScreenPositionToCell(screenPosition, out var cell))
         {
             _lastHoveredCell = null;
+            if (_isDraggingEmployee)
+            {
+                _dragEmployeeTargetLegal = false;
+                _placementPreviewController?.ClearPreview();
+                ShowPointerTooltip("\u4e0d\u80fd\u653e\u7f6e", screenPosition);
+                return;
+            }
+
             if (_buildModeController?.IsPlaceRoomDoorMode() == true)
             {
                 RefreshPendingRoomPreview();
@@ -473,6 +604,12 @@ public partial class OfficeSelection3DController : Node
         }
 
         _lastHoveredCell = cell;
+        if (_isDraggingEmployee)
+        {
+            UpdateEmployeeDragPreview(cell, screenPosition);
+            return;
+        }
+
         if (_isDraggingSelection)
         {
             _dragCurrentCell = cell;
@@ -565,6 +702,12 @@ public partial class OfficeSelection3DController : Node
 
     private void CancelInteraction()
     {
+        if (_isDraggingEmployee)
+        {
+            CancelEmployeeDrag();
+            return;
+        }
+
         CancelDragSelection();
         ClearSelectedObjects();
         _buildModeController?.CancelActiveTool();

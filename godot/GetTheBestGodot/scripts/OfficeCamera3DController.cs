@@ -8,28 +8,30 @@ public partial class OfficeCamera3DController : Camera3D
     private const float DefaultCameraSize = 112.0f;
     private const float MinCameraSize = 28.0f;
     private const float MaxCameraSize = 210.0f;
-    private const float ZoomStepFactor = 1.14f;
+    private const float ZoomStepFactor = 1.08f;
     private const float RotationSpeedDegrees = 90.0f;
     private const float CameraPitchDegrees = 42.0f;
     private const float MiddleRotateSensitivity = 0.22f;
     private const float EdgePanMarginPixels = 28.0f;
     private const float EdgePanSpeed = 84.0f;
     private const float CameraDistance = 170.0f;
+    private static readonly Vector3 DefaultFocus = new(0.0f, 0.0f, -40.0f);
     private const Key RotateLeftKey = Key.Q;
     private const Key RotateRightKey = Key.E;
     private bool _isMiddleRotating;
     private bool _isRightPanning;
     private bool _isMouseInsideViewport = true;
+    private bool _hasMousePosition;
     private Vector2 _lastMousePosition;
-    private float YawDegrees = -35.0f;
-    private Vector3 _focus = Vector3.Zero;
+    private float YawDegrees = 0.0f;
+    private Vector3 _focus = DefaultFocus;
 
     public override void _Ready()
     {
         Projection = ProjectionType.Orthogonal;
         Current = true;
-        GetViewport().SizeChanged += FitCameraSizeToViewport;
-        FitCameraSizeToViewport();
+        GetViewport().SizeChanged += ApplyDefaultCameraSize;
+        ApplyDefaultCameraSize();
         ApplyCameraPose();
     }
 
@@ -181,13 +183,9 @@ public partial class OfficeCamera3DController : Camera3D
         ApplyCameraPose();
     }
 
-    private void FitCameraSizeToViewport()
+    private void ApplyDefaultCameraSize()
     {
-        var viewportSize = GetViewport().GetVisibleRect().Size;
-        var aspect = Mathf.Max(viewportSize.X / Mathf.Max(viewportSize.Y, 1.0f), 1.0f);
-        var heightFit = OfficeWorld3DConfig.OfficeBounds.Size.Y + 8.0f;
-        var widthFit = (OfficeWorld3DConfig.OfficeBounds.Size.X + 12.0f) / aspect;
-        Size = Mathf.Min(MaxCameraSize, Mathf.Max(DefaultCameraSize, Mathf.Max(heightFit, widthFit)));
+        Size = Mathf.Min(MaxCameraSize, Mathf.Max(MinCameraSize, DefaultCameraSize));
     }
 
     private void ApplyCameraPose()
@@ -212,12 +210,13 @@ public partial class OfficeCamera3DController : Camera3D
     private void UpdateLastMousePosition(Vector2 mousePosition)
     {
         _lastMousePosition = mousePosition;
+        _hasMousePosition = true;
         _isMouseInsideViewport = IsMousePositionInsideViewport(mousePosition);
     }
 
     private Vector3 GetEdgePanDirection()
     {
-        if (!_isMouseInsideViewport || _isMiddleRotating)
+        if (!_hasMousePosition || !_isMouseInsideViewport || _isMiddleRotating)
         {
             return Vector3.Zero;
         }

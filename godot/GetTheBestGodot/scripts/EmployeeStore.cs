@@ -72,6 +72,61 @@ public partial class EmployeeStore : Node
 
         return matches;
     }
+
+    public bool CanMoveEmployee(EmployeeVisual employee, Vector2I targetCell)
+    {
+        return IsCellInsideOffice(targetCell)
+            && !IsCellOccupiedByOtherEmployee(employee.Id, targetCell);
+    }
+
+    public bool TryMoveEmployee(
+        int employeeId,
+        Vector2I targetCell,
+        out EmployeeVisual? movedEmployee
+    )
+    {
+        movedEmployee = null;
+        for (var index = 0; index < _employees.Count; index++)
+        {
+            var employee = _employees[index];
+            if (employee.Id != employeeId)
+            {
+                continue;
+            }
+
+            if (!CanMoveEmployee(employee, targetCell))
+            {
+                return false;
+            }
+
+            movedEmployee = employee with { Cell = targetCell };
+            _employees[index] = movedEmployee;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool IsCellOccupiedByOtherEmployee(int employeeId, Vector2I targetCell)
+    {
+        foreach (var employee in _employees)
+        {
+            if (employee.Id != employeeId && employee.Cell == targetCell)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsCellInsideOffice(Vector2I cell)
+    {
+        return cell.X >= 0
+            && cell.Y >= 0
+            && cell.X < OfficeWorld3DConfig.Columns
+            && cell.Y < OfficeWorld3DConfig.Rows;
+    }
 }
 
 public sealed record EmployeeVisual(

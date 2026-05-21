@@ -666,7 +666,7 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "_isRightPanning" in camera
     assert "NotificationWMMouseEnter" in camera
     assert "NotificationWMMouseExit" in camera
-    assert "if (!_isMouseInsideViewport || _isMiddleRotating)" in camera
+    assert "if (!_hasMousePosition || !_isMouseInsideViewport || _isMiddleRotating)" in camera
     assert "AdjustPitchFromMiddleDrag" not in camera
     assert "_isPitchDragging" not in camera
     assert "ApplyStableCameraBasis(lookDirection)" in camera
@@ -835,3 +835,35 @@ def test_get_the_best_v2_employee_visual_selection_baseline_exists() -> None:
     assert "_employeeRenderer?.HighlightEmployee(null);" in selection
     assert "FindInSelection(_dragStartCell, _dragCurrentCell)" in selection
     assert "ShowEmployeeTooltip" in selection
+
+
+def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    employee_store = read_text(GODOT_ROOT / "scripts" / "EmployeeStore.cs")
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    camera = read_text(GODOT_ROOT / "scripts" / "OfficeCamera3DController.cs")
+
+    assert "size = 112.0" in scene_text
+
+    assert "CanMoveEmployee" in employee_store
+    assert "TryMoveEmployee" in employee_store
+    assert "IsCellInsideOffice" in employee_store
+    assert "employee with { Cell = targetCell }" in employee_store
+
+    assert "_isDraggingEmployee" in selection
+    assert "TryBeginEmployeeDrag(mouseEvent.Position)" in selection
+    assert "UpdateEmployeeDragPreview(cell, screenPosition)" in selection
+    assert "FinishEmployeeDrag(mouseEvent.Position)" in selection
+    assert "CancelEmployeeDrag" in selection
+    assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" in selection
+    assert "TryMoveEmployee(" in selection
+    assert "_dragEmployeeCurrentCell" in selection
+
+    assert "DefaultCameraSize = 112.0f" in camera
+    assert "ZoomStepFactor = 1.08f" in camera
+    assert "YawDegrees = 0.0f" in camera
+    assert "DefaultFocus = new(0.0f, 0.0f, -40.0f)" in camera
+    assert "ApplyDefaultCameraSize" in camera
+    assert "_hasMousePosition" in camera
+    assert "if (!_hasMousePosition || !_isMouseInsideViewport || _isMiddleRotating)" in camera
+    assert "Mathf.Max(heightFit, widthFit)" not in camera
