@@ -642,23 +642,27 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
 
     assert "SourcePixelWidth = 6400" in config
     assert "SourcePixelHeight = 4000" in config
-    assert "Columns = 16" in config
-    assert "Rows = 10" in config
+    assert "Columns = 32" in config
+    assert "Rows = 20" in config
     assert "GridSize = 10.0f" in config
     assert "new Vector2(Columns * GridSize, Rows * GridSize)" in config
 
     assert "CameraPitchDegrees = 42.0f" in camera
     assert "MiddleRotateSensitivity = 0.22f" in camera
     assert "EdgePanMarginPixels = 28.0f" in camera
-    assert "EdgePanSpeed = 52.0f" in camera
+    assert "EdgePanSpeed = 84.0f" in camera
     assert "AdjustYawFromMiddleDrag" in camera
     assert "PanCameraByMouseDelta" in camera
     assert "PanCameraByDirection" in camera
     assert "GetEdgePanDirection" in camera
     assert "UpdateLastMousePosition" in camera
     assert "_lastMousePosition" in camera
+    assert "_isMouseInsideViewport" in camera
     assert "_isMiddleRotating" in camera
     assert "_isRightPanning" in camera
+    assert "NotificationWMMouseEnter" in camera
+    assert "NotificationWMMouseExit" in camera
+    assert "if (!_isMouseInsideViewport || _isMiddleRotating)" in camera
     assert "AdjustPitchFromMiddleDrag" not in camera
     assert "_isPitchDragging" not in camera
     assert "ApplyStableCameraBasis(lookDirection)" in camera

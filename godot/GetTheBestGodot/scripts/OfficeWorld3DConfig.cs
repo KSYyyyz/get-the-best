@@ -6,8 +6,8 @@ public static class OfficeWorld3DConfig
 {
     public const int SourcePixelWidth = 6400;
     public const int SourcePixelHeight = 4000;
-    public const int Columns = 16;
-    public const int Rows = 10;
+    public const int Columns = 32;
+    public const int Rows = 20;
     public const float GridSize = 10.0f;
     public const float FloorY = 0.0f;
 

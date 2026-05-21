@@ -13,12 +13,13 @@ public partial class OfficeCamera3DController : Camera3D
     private const float CameraPitchDegrees = 42.0f;
     private const float MiddleRotateSensitivity = 0.22f;
     private const float EdgePanMarginPixels = 28.0f;
-    private const float EdgePanSpeed = 52.0f;
+    private const float EdgePanSpeed = 84.0f;
     private const float CameraDistance = 170.0f;
     private const Key RotateLeftKey = Key.Q;
     private const Key RotateRightKey = Key.E;
     private bool _isMiddleRotating;
     private bool _isRightPanning;
+    private bool _isMouseInsideViewport = true;
     private Vector2 _lastMousePosition;
     private float YawDegrees = -35.0f;
     private Vector3 _focus = Vector3.Zero;
@@ -82,6 +83,20 @@ public partial class OfficeCamera3DController : Camera3D
                 edgePanDirection.Normalized(),
                 EdgePanSpeed * (float)delta * (Size / DefaultCameraSize)
             );
+        }
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMMouseEnter)
+        {
+            _isMouseInsideViewport = true;
+        }
+        else if (what == NotificationWMMouseExit)
+        {
+            _isMouseInsideViewport = false;
+            _isMiddleRotating = false;
+            _isRightPanning = false;
         }
     }
 
@@ -197,13 +212,24 @@ public partial class OfficeCamera3DController : Camera3D
     private void UpdateLastMousePosition(Vector2 mousePosition)
     {
         _lastMousePosition = mousePosition;
+        _isMouseInsideViewport = IsMousePositionInsideViewport(mousePosition);
     }
 
     private Vector3 GetEdgePanDirection()
     {
+        if (!_isMouseInsideViewport || _isMiddleRotating)
+        {
+            return Vector3.Zero;
+        }
+
         var viewportSize = GetViewport().GetVisibleRect().Size;
         var mousePosition = _lastMousePosition;
         var direction = Vector3.Zero;
+
+        if (!IsMousePositionInsideViewport(mousePosition))
+        {
+            return Vector3.Zero;
+        }
 
         if (mousePosition.X <= EdgePanMarginPixels)
         {
@@ -224,6 +250,15 @@ public partial class OfficeCamera3DController : Camera3D
         }
 
         return direction;
+    }
+
+    private bool IsMousePositionInsideViewport(Vector2 mousePosition)
+    {
+        var viewportSize = GetViewport().GetVisibleRect().Size;
+        return mousePosition.X >= 0.0f
+            && mousePosition.Y >= 0.0f
+            && mousePosition.X <= viewportSize.X
+            && mousePosition.Y <= viewportSize.Y;
     }
 
     private Vector3 GetPlanarForward()
