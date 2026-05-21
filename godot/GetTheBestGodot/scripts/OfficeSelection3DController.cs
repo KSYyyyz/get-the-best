@@ -455,6 +455,7 @@ public partial class OfficeSelection3DController : Node
         _dragEmployeeCurrentCell = cell;
         _dragEmployeeTargetLegal = _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true;
         _placementPreviewController?.ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal);
+        _employeeRenderer?.ShowEmployeeDragPreview(_draggedEmployee, cell, _dragEmployeeTargetLegal);
         ShowPointerTooltip(
             _dragEmployeeTargetLegal ? _draggedEmployee.DisplayName : "\u4e0d\u80fd\u653e\u7f6e",
             screenPosition
@@ -471,6 +472,7 @@ public partial class OfficeSelection3DController : Node
 
         if (_dragEmployeeCurrentCell == _dragEmployeeOriginCell)
         {
+            _employeeRenderer?.ClearEmployeeDragPreview();
             _placementPreviewController?.ClearPreview();
             _employeeRenderer?.HighlightEmployee(_draggedEmployee);
             ShowEmployeeTooltip(_draggedEmployee, screenPosition);
@@ -488,6 +490,7 @@ public partial class OfficeSelection3DController : Node
             && movedEmployee != null
         )
         {
+            _employeeRenderer?.ClearEmployeeDragPreview();
             _placementPreviewController?.ClearPreview();
             _employeeRenderer?.RefreshEmployees();
             _employeeRenderer?.HighlightEmployee(movedEmployee);
@@ -496,6 +499,7 @@ public partial class OfficeSelection3DController : Node
             return;
         }
 
+        _employeeRenderer?.ClearEmployeeDragPreview();
         _placementPreviewController?.ClearPreview();
         _employeeRenderer?.RefreshEmployees();
         _employeeRenderer?.HighlightEmployee(_draggedEmployee);
@@ -507,6 +511,7 @@ public partial class OfficeSelection3DController : Node
     {
         if (_draggedEmployee != null)
         {
+            _employeeRenderer?.ClearEmployeeDragPreview();
             _employeeRenderer?.RefreshEmployees();
             _employeeRenderer?.HighlightEmployee(_draggedEmployee);
         }

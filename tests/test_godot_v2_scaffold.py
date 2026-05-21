@@ -840,6 +840,7 @@ def test_get_the_best_v2_employee_visual_selection_baseline_exists() -> None:
 def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> None:
     scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
     employee_store = read_text(GODOT_ROOT / "scripts" / "EmployeeStore.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
     selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
     camera = read_text(GODOT_ROOT / "scripts" / "OfficeCamera3DController.cs")
 
@@ -850,12 +851,23 @@ def test_get_the_best_v2_employee_drag_and_default_camera_baseline_exists() -> N
     assert "IsCellInsideOffice" in employee_store
     assert "employee with { Cell = targetCell }" in employee_store
 
+    assert "ShowEmployeeDragPreview" in employee_renderer
+    assert "ClearEmployeeDragPreview" in employee_renderer
+    assert "_dragPreviewEmployeeId" in employee_renderer
+    assert "_dragPreviewCell" in employee_renderer
+    assert "_dragPreviewIsLegal" in employee_renderer
+    assert "GetRenderCell(employee)" in employee_renderer
+    assert "GetRenderAccentColor(employee)" in employee_renderer
+    assert "DragPreviewYOffset" in employee_renderer
+
     assert "_isDraggingEmployee" in selection
     assert "TryBeginEmployeeDrag(mouseEvent.Position)" in selection
     assert "UpdateEmployeeDragPreview(cell, screenPosition)" in selection
     assert "FinishEmployeeDrag(mouseEvent.Position)" in selection
     assert "CancelEmployeeDrag" in selection
     assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" in selection
+    assert "ShowEmployeeDragPreview(_draggedEmployee, cell, _dragEmployeeTargetLegal)" in selection
+    assert "ClearEmployeeDragPreview()" in selection
     assert "TryMoveEmployee(" in selection
     assert "_dragEmployeeCurrentCell" in selection
 

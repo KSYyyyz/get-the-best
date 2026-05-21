@@ -9,11 +9,16 @@ public partial class Employee3DRenderer : Node3D
     private const float BodyRadius = OfficeWorld3DConfig.GridSize * 0.28f;
     private const float HeadRadius = OfficeWorld3DConfig.GridSize * 0.22f;
     private const float SelectionSize = OfficeWorld3DConfig.GridSize * 0.72f;
+    private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
     private static readonly Color HeadFill = new(0.90f, 0.76f, 0.60f, 1.0f);
     private static readonly Color LegFill = new(0.16f, 0.18f, 0.22f, 1.0f);
     private static readonly Color SelectionFill = new(1.0f, 0.95f, 0.30f, 1.0f);
+    private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly HashSet<int> _highlightedEmployeeIds = [];
     private readonly List<Node> _renderedEmployees = [];
+    private int? _dragPreviewEmployeeId;
+    private Vector2I _dragPreviewCell;
+    private bool _dragPreviewIsLegal = true;
     private EmployeeStore? _employeeStore;
 
     public override void _Ready()
@@ -63,11 +68,40 @@ public partial class Employee3DRenderer : Node3D
         RefreshEmployees();
     }
 
+    public void ShowEmployeeDragPreview(
+        EmployeeVisual employee,
+        Vector2I targetCell,
+        bool isLegal
+    )
+    {
+        _dragPreviewEmployeeId = employee.Id;
+        _dragPreviewCell = targetCell;
+        _dragPreviewIsLegal = isLegal;
+        _highlightedEmployeeIds.Clear();
+        _highlightedEmployeeIds.Add(employee.Id);
+        RefreshEmployees();
+    }
+
+    public void ClearEmployeeDragPreview()
+    {
+        if (_dragPreviewEmployeeId == null)
+        {
+            return;
+        }
+
+        _dragPreviewEmployeeId = null;
+        RefreshEmployees();
+    }
+
     private void AddEmployeeModel(EmployeeVisual employee)
     {
+        var renderCell = GetRenderCell(employee);
+        var yOffset =
+            _dragPreviewEmployeeId == employee.Id
+                ? DragPreviewYOffset
+                : 0.02f;
         var position =
-            OfficeWorld3DConfig.CellToWorldPosition(employee.Cell)
-            + new Vector3(0.0f, 0.02f, 0.0f);
+            OfficeWorld3DConfig.CellToWorldPosition(renderCell) + new Vector3(0.0f, yOffset, 0.0f);
         var modelRoot = new Node3D { Position = position };
         AddChild(modelRoot);
         _renderedEmployees.Add(modelRoot);
@@ -81,7 +115,7 @@ public partial class Employee3DRenderer : Node3D
                 Height = BodyHeight,
                 RadialSegments = 18,
             },
-            employee.AccentColor,
+            GetRenderAccentColor(employee),
             new Vector3(0.0f, BodyHeight / 2.0f, 0.0f)
         );
         AddMeshPart(
@@ -121,6 +155,21 @@ public partial class Employee3DRenderer : Node3D
         {
             AddSelectionRing(position);
         }
+    }
+
+    private Vector2I GetRenderCell(EmployeeVisual employee)
+    {
+        return _dragPreviewEmployeeId == employee.Id ? _dragPreviewCell : employee.Cell;
+    }
+
+    private Color GetRenderAccentColor(EmployeeVisual employee)
+    {
+        if (_dragPreviewEmployeeId != employee.Id)
+        {
+            return employee.AccentColor;
+        }
+
+        return _dragPreviewIsLegal ? employee.AccentColor : IllegalDragFill;
     }
 
     private void AddSelectionRing(Vector3 position)
