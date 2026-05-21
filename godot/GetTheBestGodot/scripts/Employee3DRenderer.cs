@@ -8,13 +8,11 @@ public partial class Employee3DRenderer : Node3D
     private const float BodyHeight = OfficeWorld3DConfig.GridSize * 0.95f;
     private const float BodyRadius = OfficeWorld3DConfig.GridSize * 0.28f;
     private const float HeadRadius = OfficeWorld3DConfig.GridSize * 0.22f;
-    private const float OutlineThickness = OfficeWorld3DConfig.GridSize * 0.055f;
-    private const float OutlineHeight = OfficeWorld3DConfig.GridSize * 1.08f;
-    private const float OutlineRadius = OfficeWorld3DConfig.GridSize * 0.38f;
+    private const float OutlineShellScale = 1.14f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
     private static readonly Color HeadFill = new(0.90f, 0.76f, 0.60f, 1.0f);
     private static readonly Color LegFill = new(0.16f, 0.18f, 0.22f, 1.0f);
-    private static readonly Color OutlineStroke = new(1.0f, 0.95f, 0.30f, 1.0f);
+    private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly HashSet<int> _highlightedEmployeeIds = [];
     private readonly List<Node> _renderedEmployees = [];
@@ -115,6 +113,15 @@ public partial class Employee3DRenderer : Node3D
         AddChild(modelRoot);
         _renderedEmployees.Add(modelRoot);
 
+        if (
+            _highlightedEmployeeIds.Contains(employee.Id)
+            || _hoveredEmployeeId == employee.Id
+            || _dragPreviewEmployeeId == employee.Id
+        )
+        {
+            AddEmployeeOutlineShell(modelRoot, GetRenderOutlineColor(employee));
+        }
+
         AddMeshPart(
             modelRoot,
             new CylinderMesh
@@ -159,15 +166,6 @@ public partial class Employee3DRenderer : Node3D
             LegFill,
             new Vector3(BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f)
         );
-
-        if (_highlightedEmployeeIds.Contains(employee.Id))
-        {
-            AddEmployeeOutline(modelRoot, OutlineStroke);
-        }
-        else if (_hoveredEmployeeId == employee.Id || _dragPreviewEmployeeId == employee.Id)
-        {
-            AddEmployeeOutline(modelRoot, OutlineStroke);
-        }
     }
 
     private Vector2I GetRenderCell(EmployeeVisual employee)
@@ -185,63 +183,85 @@ public partial class Employee3DRenderer : Node3D
         return _dragPreviewIsLegal ? employee.AccentColor : IllegalDragFill;
     }
 
-    private void AddEmployeeOutline(Node3D parent, Color color)
+    private Color GetRenderOutlineColor(EmployeeVisual employee)
     {
-        AddOutlinePost(parent, color, -OutlineRadius, -OutlineRadius);
-        AddOutlinePost(parent, color, OutlineRadius, -OutlineRadius);
-        AddOutlinePost(parent, color, -OutlineRadius, OutlineRadius);
-        AddOutlinePost(parent, color, OutlineRadius, OutlineRadius);
+        return _dragPreviewEmployeeId == employee.Id && !_dragPreviewIsLegal
+            ? IllegalDragFill
+            : OutlineStroke;
+    }
+
+    private void AddEmployeeOutlineShell(Node3D parent, Color color)
+    {
+        var shellRoot = new Node3D
+        {
+            Scale = new Vector3(OutlineShellScale, OutlineShellScale, OutlineShellScale),
+        };
+        parent.AddChild(shellRoot);
+
         AddMeshPart(
-            parent,
-            new BoxMesh
+            shellRoot,
+            new CylinderMesh
             {
-                Size = new Vector3(
-                    OutlineRadius * 2.0f + OutlineThickness,
-                    OutlineThickness,
-                    OutlineThickness
-                ),
+                TopRadius = BodyRadius,
+                BottomRadius = BodyRadius * 1.10f,
+                Height = BodyHeight,
+                RadialSegments = 18,
             },
             color,
-            new Vector3(0.0f, OutlineHeight, -OutlineRadius)
+            new Vector3(0.0f, BodyHeight / 2.0f, 0.0f),
+            useOutlineMaterial: true
         );
         AddMeshPart(
-            parent,
+            shellRoot,
+            new SphereMesh { Radius = HeadRadius, Height = HeadRadius * 2.0f },
+            color,
+            new Vector3(0.0f, BodyHeight + HeadRadius * 0.95f, 0.0f),
+            useOutlineMaterial: true
+        );
+        AddMeshPart(
+            shellRoot,
             new BoxMesh
             {
                 Size = new Vector3(
-                    OutlineRadius * 2.0f + OutlineThickness,
-                    OutlineThickness,
-                    OutlineThickness
+                    BodyRadius * 0.95f,
+                    OfficeWorld3DConfig.GridSize * 0.22f,
+                    BodyRadius * 0.80f
                 ),
             },
             color,
-            new Vector3(0.0f, OutlineHeight, OutlineRadius)
+            new Vector3(-BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f),
+            useOutlineMaterial: true
+        );
+        AddMeshPart(
+            shellRoot,
+            new BoxMesh
+            {
+                Size = new Vector3(
+                    BodyRadius * 0.95f,
+                    OfficeWorld3DConfig.GridSize * 0.22f,
+                    BodyRadius * 0.80f
+                ),
+            },
+            color,
+            new Vector3(BodyRadius * 0.42f, OfficeWorld3DConfig.GridSize * 0.09f, 0.0f),
+            useOutlineMaterial: true
         );
     }
 
-    private void AddOutlinePost(Node3D parent, Color color, float x, float z)
-    {
-        AddMeshPart(
-            parent,
-            new BoxMesh
-            {
-                Size = new Vector3(
-                    OutlineThickness,
-                    OutlineHeight,
-                    OutlineThickness
-                ),
-            },
-            color,
-            new Vector3(x, OutlineHeight / 2.0f, z)
-        );
-    }
-
-    private void AddMeshPart(Node parent, Mesh mesh, Color color, Vector3 position)
+    private void AddMeshPart(
+        Node parent,
+        Mesh mesh,
+        Color color,
+        Vector3 position,
+        bool useOutlineMaterial = false
+    )
     {
         var part = new MeshInstance3D
         {
             Mesh = mesh,
-            MaterialOverride = CreateMaterial(color),
+            MaterialOverride = useOutlineMaterial
+                ? CreateOutlineMaterial(color)
+                : CreateMaterial(color),
             Position = position,
         };
         parent.AddChild(part);
@@ -257,6 +277,21 @@ public partial class Employee3DRenderer : Node3D
         {
             AlbedoColor = color,
             Roughness = 0.88f,
+        };
+    }
+
+    private static StandardMaterial3D CreateOutlineMaterial(Color color)
+    {
+        return new StandardMaterial3D
+        {
+            AlbedoColor = color,
+            EmissionEnabled = true,
+            Emission = color,
+            EmissionEnergyMultiplier = 0.75f,
+            Grow = true,
+            GrowAmount = 0.025f,
+            CullMode = BaseMaterial3D.CullModeEnum.Front,
+            Roughness = 0.55f,
         };
     }
 }

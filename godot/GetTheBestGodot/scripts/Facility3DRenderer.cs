@@ -6,8 +6,7 @@ namespace GetTheBestGodot;
 public partial class Facility3DRenderer : Node3D
 {
     private const float CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f;
-    private const float HighlightStrokeSize = OfficeWorld3DConfig.GridSize * 0.86f;
-    private const float OutlineThickness = OfficeWorld3DConfig.GridSize * 0.055f;
+    private const float OutlineShellScale = 1.10f;
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.16f;
     private static readonly Color DeskFill = new(0.72f, 0.50f, 0.28f, 1.0f);
     private static readonly Color DeskDarkFill = new(0.38f, 0.24f, 0.14f, 1.0f);
@@ -18,7 +17,7 @@ public partial class Facility3DRenderer : Node3D
     private static readonly Color ServerRackFill = new(0.18f, 0.26f, 0.36f, 1.0f);
     private static readonly Color ServerPanelFill = new(0.34f, 0.46f, 0.70f, 1.0f);
     private static readonly Color StatusLightFill = new(0.38f, 0.90f, 0.52f, 1.0f);
-    private static readonly Color OutlineStroke = new(1.0f, 0.95f, 0.42f, 1.0f);
+    private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly List<Node> _renderedFacilities = [];
     private FacilityPlacementStore? _facilityPlacementStore;
@@ -107,6 +106,15 @@ public partial class Facility3DRenderer : Node3D
         AddChild(modelRoot);
         _renderedFacilities.Add(modelRoot);
 
+        if (
+            _highlightedFacility?.Id == facility.Id
+            || _hoveredFacilityId == facility.Id
+            || _dragPreviewFacilityId == facility.Id
+        )
+        {
+            AddFacilityOutlineShell(modelRoot, facility.FacilityType, GetRenderOutlineColor(facility));
+        }
+
         switch (facility.FacilityType)
         {
             case FacilityBuildType.ProductWhiteboard:
@@ -118,15 +126,6 @@ public partial class Facility3DRenderer : Node3D
             default:
                 AddDeskModel(modelRoot, renderTint);
                 break;
-        }
-
-        if (
-            _highlightedFacility?.Id == facility.Id
-            || _hoveredFacilityId == facility.Id
-            || _dragPreviewFacilityId == facility.Id
-        )
-        {
-            AddFacilityOutline(modelRoot, OutlineStroke);
         }
     }
 
@@ -143,6 +142,13 @@ public partial class Facility3DRenderer : Node3D
         }
 
         return IllegalDragFill;
+    }
+
+    private Color GetRenderOutlineColor(FacilityPlacement facility)
+    {
+        return _dragPreviewFacilityId == facility.Id && !_dragPreviewIsLegal
+            ? IllegalDragFill
+            : OutlineStroke;
     }
 
     private void AddDeskModel(Node3D parent, Color? tint)
@@ -386,46 +392,28 @@ public partial class Facility3DRenderer : Node3D
         }
     }
 
-    private void AddFacilityOutline(Node3D parent, Color color)
+    private void AddFacilityOutlineShell(Node3D parent, FacilityBuildType facilityType, Color color)
     {
-        var topY = OfficeWorld3DConfig.GridSize * 0.96f;
-        var side = HighlightStrokeSize / 2.0f;
-        AddMeshPart(
-            parent,
-            new BoxMesh
-            {
-                Size = new Vector3(HighlightStrokeSize, OutlineThickness, OutlineThickness),
-            },
-            color,
-            new Vector3(0.0f, topY, -side)
-        );
-        AddMeshPart(
-            parent,
-            new BoxMesh
-            {
-                Size = new Vector3(HighlightStrokeSize, OutlineThickness, OutlineThickness),
-            },
-            color,
-            new Vector3(0.0f, topY, side)
-        );
-        AddMeshPart(
-            parent,
-            new BoxMesh
-            {
-                Size = new Vector3(OutlineThickness, OutlineThickness, HighlightStrokeSize),
-            },
-            color,
-            new Vector3(-side, topY, 0.0f)
-        );
-        AddMeshPart(
-            parent,
-            new BoxMesh
-            {
-                Size = new Vector3(OutlineThickness, OutlineThickness, HighlightStrokeSize),
-            },
-            color,
-            new Vector3(side, topY, 0.0f)
-        );
+        var shellRoot = new Node3D
+        {
+            Scale = new Vector3(OutlineShellScale, OutlineShellScale, OutlineShellScale),
+        };
+        parent.AddChild(shellRoot);
+
+        switch (facilityType)
+        {
+            case FacilityBuildType.ProductWhiteboard:
+                AddProductWhiteboardModel(shellRoot, color);
+                break;
+            case FacilityBuildType.ServerRack:
+                AddServerRackModel(shellRoot, color);
+                break;
+            default:
+                AddDeskModel(shellRoot, color);
+                break;
+        }
+
+        ApplyOutlineMaterial(shellRoot, color);
     }
 
     private void AddMeshPart(
@@ -473,5 +461,33 @@ public partial class Facility3DRenderer : Node3D
             AlbedoColor = color,
             Roughness = 0.86f,
         };
+    }
+
+    private static StandardMaterial3D CreateOutlineMaterial(Color color)
+    {
+        return new StandardMaterial3D
+        {
+            AlbedoColor = color,
+            EmissionEnabled = true,
+            Emission = color,
+            EmissionEnergyMultiplier = 0.75f,
+            Grow = true,
+            GrowAmount = 0.025f,
+            CullMode = BaseMaterial3D.CullModeEnum.Front,
+            Roughness = 0.55f,
+        };
+    }
+
+    private static void ApplyOutlineMaterial(Node node, Color color)
+    {
+        foreach (var child in node.GetChildren())
+        {
+            if (child is MeshInstance3D mesh)
+            {
+                mesh.MaterialOverride = CreateOutlineMaterial(color);
+            }
+
+            ApplyOutlineMaterial(child, color);
+        }
     }
 }

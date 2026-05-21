@@ -64,6 +64,7 @@
 - `docs/get_the_best_v2_0_8_acceptance_report.md`
 - `docs/get_the_best_v2_0_9_scale_camera_acceptance_report.md`
 - `docs/get_the_best_v2_0_15_object_outline_and_preset_office_acceptance_report.md`
+- `docs/get_the_best_v2_0_16_instance_outline_pickup_drag_acceptance_report.md`
 
 ## 5. 第一原则
 

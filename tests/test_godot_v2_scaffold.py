@@ -684,7 +684,7 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
     assert "DoorHeight = OfficeWorld3DConfig.GridSize * 0.08f" in door
 
     assert "CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f" in facility
-    assert "HighlightStrokeSize = OfficeWorld3DConfig.GridSize * 0.86f" in facility
+    assert "OutlineShellScale = 1.10f" in facility
     assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in room_renderer
     assert "RoomWallThickness = OfficeWorld3DConfig.GridSize * 0.10f" in room_renderer
 
@@ -887,19 +887,54 @@ def test_get_the_best_v2_object_selection_uses_instance_outlines_not_grid_bases(
     selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
 
     assert "OutlineStroke" in employee_renderer
-    assert "AddEmployeeOutline" in employee_renderer
+    assert "AddEmployeeOutlineShell" in employee_renderer
+    assert "CreateOutlineMaterial" in employee_renderer
+    assert "CullMode = BaseMaterial3D.CullModeEnum.Front" in employee_renderer
     assert "HoverEmployee" in employee_renderer
     assert "SelectionFill" not in employee_renderer
     assert "AddSelectionRing" not in employee_renderer
+    assert "AddOutlinePost" not in employee_renderer
+    assert "OutlineHeight" not in employee_renderer
+    assert "OutlineRadius" not in employee_renderer
 
     assert "OutlineStroke" in facility_renderer
-    assert "AddFacilityOutline" in facility_renderer
+    assert "AddFacilityOutlineShell" in facility_renderer
+    assert "CreateOutlineMaterial" in facility_renderer
+    assert "CullMode = BaseMaterial3D.CullModeEnum.Front" in facility_renderer
     assert "HoverFacility" in facility_renderer
     assert "AddHighlight(position)" not in facility_renderer
+    assert "HighlightStrokeSize" not in facility_renderer
 
     assert "_employeeRenderer?.HoverEmployee(hoveredEmployee);" in selection
     assert "_facilityRenderer?.HoverFacility(hoveredFacility);" in selection
     assert "ShowSelectionRect(cell, cell, _dragEmployeeTargetLegal)" not in selection
+
+
+def test_get_the_best_v2_instance_drag_uses_click_pickup_and_click_drop() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+
+    left_click_block = selection[
+        selection.index("if (mouseEvent.ButtonIndex != MouseButton.Left)") : selection.index(
+            "private void BeginSelection"
+        )
+    ]
+    pressed_block = left_click_block[
+        left_click_block.index("if (mouseEvent.Pressed)") : left_click_block.index(
+            "if (_isDraggingEmployee || _isDraggingFacility)"
+        )
+    ]
+
+    assert "FinishEmployeeDrag(mouseEvent.Position);" in pressed_block
+    assert "FinishFacilityDrag(mouseEvent.Position);" in pressed_block
+    assert "TryBeginEmployeeDrag(mouseEvent.Position)" in pressed_block
+    assert "TryBeginFacilityDrag(mouseEvent.Position)" in pressed_block
+
+    release_block = left_click_block[
+        left_click_block.index("if (_isDraggingEmployee || _isDraggingFacility)") :
+    ]
+    assert "FinishEmployeeDrag(mouseEvent.Position);" not in release_block
+    assert "FinishFacilityDrag(mouseEvent.Position);" not in release_block
+    assert '"\\u70b9\\u51fb\\u653e\\u4e0b"' in selection
 
 
 def test_get_the_best_v2_employee_drag_drop_clears_object_and_grid_preview() -> None:

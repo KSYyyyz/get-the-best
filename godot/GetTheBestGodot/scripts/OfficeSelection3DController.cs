@@ -101,6 +101,18 @@ public partial class OfficeSelection3DController : Node
 
         if (mouseEvent.Pressed)
         {
+            if (_isDraggingEmployee)
+            {
+                FinishEmployeeDrag(mouseEvent.Position);
+                return;
+            }
+
+            if (_isDraggingFacility)
+            {
+                FinishFacilityDrag(mouseEvent.Position);
+                return;
+            }
+
             if (_buildModeController?.IsPlaceFacilityMode() == true)
             {
                 FinishFacilityPlacement(mouseEvent.Position);
@@ -136,15 +148,8 @@ public partial class OfficeSelection3DController : Node
             return;
         }
 
-        if (_isDraggingEmployee)
+        if (_isDraggingEmployee || _isDraggingFacility)
         {
-            FinishEmployeeDrag(mouseEvent.Position);
-            return;
-        }
-
-        if (_isDraggingFacility)
-        {
-            FinishFacilityDrag(mouseEvent.Position);
             return;
         }
 
@@ -471,7 +476,7 @@ public partial class OfficeSelection3DController : Node
         _dragEmployeeTargetLegal = _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true;
         _employeeRenderer?.ShowEmployeeDragPreview(_draggedEmployee, cell, _dragEmployeeTargetLegal);
         ShowPointerTooltip(
-            _dragEmployeeTargetLegal ? _draggedEmployee.DisplayName : "\u4e0d\u80fd\u653e\u7f6e",
+            _dragEmployeeTargetLegal ? "\u70b9\u51fb\u653e\u4e0b" : "\u4e0d\u80fd\u653e\u7f6e",
             screenPosition
         );
     }
@@ -482,6 +487,15 @@ public partial class OfficeSelection3DController : Node
         {
             CancelEmployeeDrag();
             return;
+        }
+
+        if (TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            UpdateEmployeeDragPreview(cell, screenPosition);
+        }
+        else
+        {
+            _dragEmployeeTargetLegal = false;
         }
 
         if (_dragEmployeeCurrentCell == _dragEmployeeOriginCell)
@@ -565,7 +579,7 @@ public partial class OfficeSelection3DController : Node
         );
         ShowPointerTooltip(
             _dragFacilityTargetLegal
-                ? BuildModeController.GetFacilityTypeLabel(_draggedFacility.FacilityType)
+                ? "\u70b9\u51fb\u653e\u4e0b"
                 : "\u4e0d\u80fd\u653e\u7f6e",
             screenPosition
         );
@@ -577,6 +591,15 @@ public partial class OfficeSelection3DController : Node
         {
             CancelFacilityDrag();
             return;
+        }
+
+        if (TryScreenPositionToCell(screenPosition, out var cell))
+        {
+            UpdateFacilityDragPreview(cell, screenPosition);
+        }
+        else
+        {
+            _dragFacilityTargetLegal = false;
         }
 
         if (_dragFacilityCurrentCell == _dragFacilityOriginCell)
