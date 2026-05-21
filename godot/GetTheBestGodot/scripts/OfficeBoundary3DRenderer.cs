@@ -4,8 +4,8 @@ namespace GetTheBestGodot;
 
 public partial class OfficeBoundary3DRenderer : Node3D
 {
-    private const float WallHeight = OfficeWorld3DConfig.GridSize * 0.22f;
-    private const float WallThickness = OfficeWorld3DConfig.GridSize * 0.06f;
+    private const float WallHeight = OfficeWorld3DConfig.GridSize * 0.82f;
+    private const float WallThickness = OfficeWorld3DConfig.GridSize * 0.10f;
     private static readonly Color WallColor = new(0.48f, 0.50f, 0.45f, 1.0f);
     private static readonly Color WallTrimColor = new(0.62f, 0.64f, 0.58f, 1.0f);
     private static readonly Color CornerPostColor = new(0.70f, 0.72f, 0.66f, 1.0f);

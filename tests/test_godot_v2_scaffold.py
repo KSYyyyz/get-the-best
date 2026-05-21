@@ -340,7 +340,7 @@ def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
     assert "ServerRack" in scripts["FacilityPlacementStore.cs"]
 
     assert "HighlightFacility" in scripts["Facility3DRenderer.cs"]
-    assert "GetFacilityFillColor" in scripts["Facility3DRenderer.cs"]
+    assert "AddFacilityModel" in scripts["Facility3DRenderer.cs"]
     assert "RefreshFacilities" in scripts["Facility3DRenderer.cs"]
     assert "ShowFacilityCell" in scripts["PlacementPreview3DController.cs"]
     assert "FinishFacilityPlacement" in scripts["OfficeSelection3DController.cs"]
@@ -394,7 +394,7 @@ def test_get_the_best_v2_0_4_facility_art_placeholders_are_registered() -> None:
         assert imported_path.exists()
 
 
-def test_get_the_best_v2_0_4_facility_definitions_and_texture_rendering_exist() -> None:
+def test_get_the_best_v2_0_4_facility_definitions_and_model_rendering_exist() -> None:
     scripts = {
         path.name: read_text(path)
         for path in (GODOT_ROOT / "scripts").glob("*.cs")
@@ -426,11 +426,14 @@ def test_get_the_best_v2_0_4_facility_definitions_and_texture_rendering_exist() 
     assert "FacilityBuildType.ServerRack" in catalog
     assert "RoomBuildType.ServerRoom" in catalog
 
-    assert "Texture2D" in renderer
-    assert "ResourceLoader.Load<Texture2D>" in renderer
-    assert "GetFacilityTexture" in renderer
-    assert "Sprite3D" in renderer
-    assert "GetFacilityFillColor" in renderer
+    assert "Texture2D" not in renderer
+    assert "ResourceLoader.Load<Texture2D>" not in renderer
+    assert "GetFacilityTexture" not in renderer
+    assert "Sprite3D" not in renderer
+    assert "AddFacilityModel" in renderer
+    assert "AddDeskModel" in renderer
+    assert "AddProductWhiteboardModel" in renderer
+    assert "AddServerRackModel" in renderer
 
 
 def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
@@ -445,27 +448,28 @@ def test_get_the_best_v2_0_6_office_space_has_2_5d_depth_cues() -> None:
     assert "OfficeBoundary3DRenderer.cs" in scripts
     assert "AddWall" in scripts["OfficeBoundary3DRenderer.cs"]
     assert (
-        "WallHeight = OfficeWorld3DConfig.GridSize * 0.22f"
+        "WallHeight = OfficeWorld3DConfig.GridSize * 0.82f"
         in scripts["OfficeBoundary3DRenderer.cs"]
     )
     assert (
-        "WallThickness = OfficeWorld3DConfig.GridSize * 0.06f"
+        "WallThickness = OfficeWorld3DConfig.GridSize * 0.10f"
         in scripts["OfficeBoundary3DRenderer.cs"]
     )
     assert "OfficeWorld3DConfig.OfficeBounds" in scripts["OfficeBoundary3DRenderer.cs"]
 
     room_renderer = scripts["RoomOverlay3DRenderer.cs"]
     assert "RoomCarpetHeight" in room_renderer
-    assert "RoomBoundaryHeight" in room_renderer
-    assert "AddRoomCellBoundary" in room_renderer
+    assert "RoomWallHeight" in room_renderer
+    assert "AddRoomCellWalls" in room_renderer
+    assert "AddRoomWall" in room_renderer
     assert "AddRoomDoor" in room_renderer
     assert "HighlightedRoomStroke" in room_renderer
 
     facility_renderer = scripts["Facility3DRenderer.cs"]
-    assert "AddFacilityVolume" in facility_renderer
-    assert "AddFacilitySpriteBillboard" in facility_renderer
-    assert "GetFacilityVolumeSize" in facility_renderer
-    assert "GetFacilitySpriteHeight" in facility_renderer
+    assert "AddFacilityModel" in facility_renderer
+    assert "AddDeskModel" in facility_renderer
+    assert "AddProductWhiteboardModel" in facility_renderer
+    assert "AddServerRackModel" in facility_renderer
     assert "new BoxMesh" in facility_renderer
 
 
@@ -487,7 +491,7 @@ def test_get_the_best_v2_room_overlay_renders_actual_cells_after_single_cell_del
 
     assert "foreach (var cell in room.Cells)" in renderer
     assert "AddRoomCellCarpet(room, cell)" in renderer
-    assert "AddRoomCellBoundary(room, cell)" in renderer
+    assert "AddRoomCellWalls(room, cell)" in renderer
     assert "HasNeighbor(room, cell + Vector2I.Left)" in renderer
     assert "HasNeighbor(room, cell + Vector2I.Right)" in renderer
     assert "HasNeighbor(room, cell + Vector2I.Up)" in renderer
@@ -681,8 +685,8 @@ def test_get_the_best_v2_0_9_large_build_cells_and_middle_pitch_baseline_exists(
 
     assert "CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f" in facility
     assert "HighlightStrokeSize = OfficeWorld3DConfig.GridSize * 0.86f" in facility
-    assert "RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f" in room_renderer
-    assert "RoomBoundaryThickness = OfficeWorld3DConfig.GridSize * 0.08f" in room_renderer
+    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in room_renderer
+    assert "RoomWallThickness = OfficeWorld3DConfig.GridSize * 0.10f" in room_renderer
 
 
 def test_get_the_best_v2_interaction_right_click_and_door_delete_are_precise() -> None:
@@ -746,3 +750,25 @@ def test_get_the_best_v2_0_8_facility_feedback_and_single_sell_baseline_exists()
             )
         ]
     )
+
+
+def test_get_the_best_v2_facilities_and_rooms_use_procedural_3d_models() -> None:
+    facility = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+    room = read_text(GODOT_ROOT / "scripts" / "RoomOverlay3DRenderer.cs")
+    boundary = read_text(GODOT_ROOT / "scripts" / "OfficeBoundary3DRenderer.cs")
+
+    assert "Sprite3D" not in facility
+    assert "AddDeskModel" in facility
+    assert "AddProductWhiteboardModel" in facility
+    assert "AddServerRackModel" in facility
+    assert "AddMeshPart" in facility
+    assert "BoxMesh" in facility
+    assert "CylinderMesh" in facility
+
+    assert "RoomWallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in room
+    assert "AddRoomWall" in room
+    assert "AddDoorFrame" in room
+    assert "WallTrimColor" in room
+    assert "RoomBoundaryHeight = OfficeWorld3DConfig.GridSize * 0.03f" not in room
+
+    assert "WallHeight = OfficeWorld3DConfig.GridSize * 0.82f" in boundary
