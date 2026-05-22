@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://dejpmawofhx7o" path="res://scripts/BuildConfirmationHudController.cs" id="8_jbj1t"]
 [ext_resource type="Script" uid="uid://b4we7xo0xi02h" path="res://scripts/OfficeSelection3DController.cs" id="8_jkv2x"]
 [ext_resource type="Script" uid="uid://cj4wk6r5docf6" path="res://scripts/RoomFootprintStore.cs" id="8_tipki"]
+[ext_resource type="Script" uid="uid://bcwbjkvrjrvi8" path="res://scripts/BusinessFeedbackHudController.cs" id="9_gqmmt"]
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
 [ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
@@ -157,6 +158,44 @@ text = "?????:????"
 [node name="ConfirmBuildButton" type="Button" parent="HudRoot/BuildConfirmPanel/ConfirmRows" unique_id=1582401931]
 layout_mode = 2
 text = "?"
+
+[node name="BusinessFeedbackPanel" type="PanelContainer" parent="HudRoot" unique_id=1600944576]
+offset_left = 16.0
+offset_top = 58.0
+offset_right = 876.0
+offset_bottom = 116.0
+mouse_filter = 2
+script = ExtResource("9_gqmmt")
+
+[node name="BusinessRows" type="VBoxContainer" parent="HudRoot/BusinessFeedbackPanel" unique_id=620253689]
+layout_mode = 2
+
+[node name="BusinessMetricsRow" type="HBoxContainer" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=295315650]
+layout_mode = 2
+
+[node name="CashValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1071210556]
+layout_mode = 2
+text = "Cash --"
+
+[node name="ProjectProgressValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1217786988]
+layout_mode = 2
+text = "MVP --"
+
+[node name="UsersValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1887565508]
+layout_mode = 2
+text = "Users --"
+
+[node name="RevenueValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=641896543]
+layout_mode = 2
+text = "MRR --"
+
+[node name="OutcomeValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=554333262]
+layout_mode = 2
+text = "Stage --"
+
+[node name="LastEventValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=268370248]
+layout_mode = 2
+text = "Waiting for Core tick"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

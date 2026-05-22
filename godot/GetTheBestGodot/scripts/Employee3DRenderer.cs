@@ -26,7 +26,9 @@ public partial class Employee3DRenderer : Node3D
         "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png",
     ];
     private readonly HashSet<int> _highlightedEmployeeIds = [];
+    private readonly HashSet<int> _workingEmployeeIds = [];
     private readonly Dictionary<int, string> _employeeActivityLabels = [];
+    private readonly Dictionary<int, Vector2I> _employeeFacingTargets = [];
     private readonly Dictionary<int, Vector3> _lastEmployeePositions = [];
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
@@ -134,6 +136,25 @@ public partial class Employee3DRenderer : Node3D
         RefreshEmployees();
     }
 
+    public void SetEmployeeWorkState(int employeeId, bool isWorking, Vector2I? facingCell = null)
+    {
+        if (isWorking)
+        {
+            _workingEmployeeIds.Add(employeeId);
+            if (facingCell != null)
+            {
+                _employeeFacingTargets[employeeId] = facingCell.Value;
+            }
+        }
+        else
+        {
+            _workingEmployeeIds.Remove(employeeId);
+            _employeeFacingTargets.Remove(employeeId);
+        }
+
+        RefreshEmployees();
+    }
+
     public void PlayEmployeePathMove(
         EmployeeVisual employee,
         IReadOnlyList<Vector2I> path,
@@ -185,7 +206,7 @@ public partial class Employee3DRenderer : Node3D
         modelRoot.Name = $"Employee_{employee.Id}";
         modelRoot.Position = GetEmployeeStartPosition(employee.Id, targetPosition);
         modelRoot.Scale = Vector3.One * EmployeeModelScale;
-        modelRoot.RotationDegrees = new Vector3(0.0f, 180.0f, 0.0f);
+        modelRoot.RotationDegrees = new Vector3(0.0f, GetEmployeeFacingYawDegrees(employee), 0.0f);
         AddChild(modelRoot);
         _renderedEmployees.Add(modelRoot);
         TweenEmployeeToTarget(modelRoot, targetPosition);
@@ -207,6 +228,10 @@ public partial class Employee3DRenderer : Node3D
         }
 
         AddEmployeeActivityBadge(modelRoot, employee);
+        if (_workingEmployeeIds.Contains(employee.Id))
+        {
+            PlayEmployeeWorkAnimation(modelRoot);
+        }
     }
 
     private static PackedScene? GetEmployeeModelScene(EmployeeVisual employee)
@@ -286,6 +311,41 @@ public partial class Employee3DRenderer : Node3D
         return _dragPreviewEmployeeId == employee.Id && !_dragPreviewIsLegal
             ? IllegalDragFill
             : OutlineStroke;
+    }
+
+    private float GetEmployeeFacingYawDegrees(EmployeeVisual employee)
+    {
+        if (!_employeeFacingTargets.TryGetValue(employee.Id, out var targetCell))
+        {
+            return 180.0f;
+        }
+
+        var delta = targetCell - employee.Cell;
+        if (Mathf.Abs(delta.X) > Mathf.Abs(delta.Y))
+        {
+            return delta.X > 0 ? 90.0f : 270.0f;
+        }
+
+        return delta.Y < 0 ? 0.0f : 180.0f;
+    }
+
+    private void PlayEmployeeWorkAnimation(Node3D modelRoot)
+    {
+        var basePosition = modelRoot.Position;
+        var tween = CreateTween().SetLoops();
+        tween
+            .TweenProperty(
+                modelRoot,
+                "position",
+                basePosition + new Vector3(0.0f, 0.10f, 0.0f),
+                0.38f
+            )
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+        tween
+            .TweenProperty(modelRoot, "position", basePosition, 0.38f)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
     }
 
     private void AddEmployeeActivityBadge(Node3D modelRoot, EmployeeVisual employee)

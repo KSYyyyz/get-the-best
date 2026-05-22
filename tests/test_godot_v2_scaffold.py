@@ -822,7 +822,7 @@ def test_get_the_best_v2_facility_placement_supports_r_rotation() -> None:
     assert "GetActiveFacilityFacing()" in selection
     assert "ShowFacilityFacingMarker" in preview
     assert "_facilityFacingPreviewMesh" in preview
-    assert "GetFacingYawDegrees(facility.Facing)" in renderer
+    assert "GetFacingYawDegrees(GetRenderFacing(facility))" in renderer
 
 
 def test_get_the_best_v2_employee_visual_selection_baseline_exists() -> None:
@@ -1151,7 +1151,7 @@ def test_get_the_best_v2_facility_instances_support_hover_selection_and_drag_mov
     assert "CanMoveFacility" in facility_store
     assert "TryMoveFacility" in facility_store
     assert "FindAtCellExcluding" in facility_store
-    assert "facility with { Cell = targetCell }" in facility_store
+    assert "Cell = targetCell" in facility_store
 
     assert "ShowFacilityDragPreview" in facility_renderer
     assert "ClearFacilityDragPreview" in facility_renderer
@@ -1446,3 +1446,76 @@ def test_get_the_best_v2_0_26_godot_uses_unified_core_simulation_tick() -> None:
     assert "ApplyCoreSimulationStates(" in employee_autonomy
     assert "PlanEmployeeIntents(" not in employee_autonomy
     assert "AdvanceEmployeeLifecycle(" not in employee_autonomy
+
+
+def test_get_the_best_v2_0_27_business_feedback_hud_consumes_core_totals() -> None:
+    main_scene = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    hud = read_text(GODOT_ROOT / "scripts" / "BusinessFeedbackHudController.cs")
+
+    assert "BusinessFeedbackHudController.cs" in main_scene
+    assert 'name="BusinessFeedbackPanel"' in main_scene
+    assert 'name="CashValueLabel"' in main_scene
+    assert 'name="ProjectProgressValueLabel"' in main_scene
+    assert 'name="UsersValueLabel"' in main_scene
+    assert 'name="RevenueValueLabel"' in main_scene
+    assert 'name="OutcomeValueLabel"' in main_scene
+    assert 'name="LastEventValueLabel"' in main_scene
+
+    assert "CoreCompanySimulationTotals" in bridge
+    assert "CompanyTotals: MapCompanyTotals(result.NextSnapshot.Company)" in bridge
+    assert "CurrentCash" in bridge
+    assert "CurrentProjectProgress" in bridge
+    assert "ProjectRequiredProgress" in bridge
+    assert "CurrentActiveUsers" in bridge
+    assert "CurrentMonthlyRecurringRevenue" in bridge
+    assert "ProductStage" in bridge
+
+    assert "BusinessFeedbackHudController? _businessFeedbackHud" in employee_autonomy
+    assert (
+        'GetNodeOrNull<BusinessFeedbackHudController>("../../HudRoot/BusinessFeedbackPanel")'
+        in employee_autonomy
+    )
+    assert "_businessFeedbackHud.ApplySimulationResult(simulationResult)" in employee_autonomy
+
+    assert "ApplySimulationResult(CoreOfficeSimulationResult result)" in hud
+    assert "result.CompanyTotals.CurrentCash" in hud
+    assert "result.CompanyTotals.CurrentProjectProgress" in hud
+    assert "result.CompanyTotals.CurrentActiveUsers" in hud
+    assert "result.CompanyTotals.CurrentMonthlyRecurringRevenue" in hud
+    assert "result.CompanyTotals.ProductStage" in hud
+
+
+def test_get_the_best_v2_0_28_facility_preview_rotation_and_work_feedback() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    facility_renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    hud = read_text(GODOT_ROOT / "scripts" / "BusinessFeedbackHudController.cs")
+
+    assert "_facilityRenderer?.ShowFacilityPlacementPreview(" in selection
+    assert "_facilityRenderer?.ClearFacilityPlacementPreview()" in selection
+    assert "RotateDraggedFacilityFacing(" in selection
+    assert "_buildModeController?.TryMoveFacility(" in selection
+    assert "_draggedFacility.Facing" in selection
+
+    assert "ShowFacilityPlacementPreview(" in facility_renderer
+    assert "ClearFacilityPlacementPreview()" in facility_renderer
+    assert "_placementPreviewFacility" in facility_renderer
+    assert "GetRenderFacing(" in facility_renderer
+
+    assert "FacilityFacing facing" in facility_store
+    assert "FindById(int facilityId)" in facility_store
+
+    assert "SetEmployeeWorkState(" in employee_renderer
+    assert "_workingEmployeeIds" in employee_renderer
+    assert "PlayEmployeeWorkAnimation(" in employee_renderer
+    assert "GetEmployeeFacingYawDegrees(" in employee_renderer
+
+    assert "lifecycleState.EmployeeId" in employee_autonomy
+    assert "isWorking: true" in employee_autonomy
+    assert "SetEmployeeWorkState(employeeId, isWorking: false" in employee_autonomy
+
+    assert "FormatBusinessTickSummary(result)" in hud

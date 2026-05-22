@@ -6,6 +6,7 @@ public partial class MainController : Node3D
 {
     private Label? _statusLabel;
     private Control? _topStatusBar;
+    private Control? _businessFeedbackPanel;
     private Control? _buildModePanel;
     private Control? _buildConfirmPanel;
     private Control? _floatingTooltip;
@@ -14,6 +15,7 @@ public partial class MainController : Node3D
     public override void _Ready()
     {
         _topStatusBar = GetNodeOrNull<Control>("HudRoot/TopStatusBar");
+        _businessFeedbackPanel = GetNodeOrNull<Control>("HudRoot/BusinessFeedbackPanel");
         _buildModePanel = GetNodeOrNull<Control>("HudRoot/BuildModePanel");
         _buildConfirmPanel = GetNodeOrNull<Control>("HudRoot/BuildConfirmPanel");
         _floatingTooltip = GetNodeOrNull<Control>("HudRoot/FloatingTooltip");
@@ -70,6 +72,15 @@ public partial class MainController : Node3D
             _buildModePanel.Size = new Vector2(width, 180.0f);
         }
 
+        if (_businessFeedbackPanel != null)
+        {
+            _businessFeedbackPanel.Position = new Vector2(16.0f, 58.0f);
+            _businessFeedbackPanel.Size = new Vector2(
+                Mathf.Clamp(viewportSize.X * 0.54f, 560.0f, 860.0f),
+                58.0f
+            );
+        }
+
         if (_buildConfirmPanel != null)
         {
             _buildConfirmPanel.Position = new Vector2(viewportSize.X / 2.0f - 160.0f, 12.0f);
@@ -100,7 +111,7 @@ public partial class MainController : Node3D
 
     private static void RemoveHudChrome(Control control)
     {
-        if (control.Name == "BuildConfirmPanel")
+        if (control.Name == "BuildConfirmPanel" || control.Name == "BusinessFeedbackPanel")
         {
             return;
         }

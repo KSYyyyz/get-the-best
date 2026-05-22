@@ -246,6 +246,12 @@ public sealed record SimulationResultFieldContract(
     string GodotConsumption
 );
 
+public sealed record CompanyTotalContract(
+    string FieldName,
+    string Meaning,
+    string GodotConsumption
+);
+
 public sealed record SimulationEventSemanticContract(
     SimulationEventKind Kind,
     SimulationEventLifetime Lifetime,

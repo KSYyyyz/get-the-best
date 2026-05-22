@@ -20,6 +20,7 @@ public partial class Facility3DRenderer : Node3D
     private static readonly Color StatusLightFill = new(0.38f, 0.90f, 0.52f, 1.0f);
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color InUseStroke = new(0.42f, 1.0f, 0.62f, 1.0f);
+    private static readonly Color PlacementPreviewFill = new(0.64f, 0.95f, 0.72f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly Dictionary<int, Vector3> _lastFacilityPositions = [];
     private readonly HashSet<int> _usingFacilityIds = [];
@@ -28,6 +29,9 @@ public partial class Facility3DRenderer : Node3D
     private FacilityPlacement? _highlightedFacility;
     private int? _hoveredFacilityId;
     private int? _dragPreviewFacilityId;
+    private FacilityFacing _dragPreviewFacing;
+    private FacilityPlacement? _placementPreviewFacility;
+    private bool _placementPreviewIsLegal = true;
     private Vector2I _dragPreviewCell;
     private bool _dragPreviewIsLegal = true;
 
@@ -60,6 +64,11 @@ public partial class Facility3DRenderer : Node3D
         {
             AddFacilityModel(facility);
         }
+
+        if (_placementPreviewFacility != null)
+        {
+            AddFacilityModel(_placementPreviewFacility);
+        }
     }
 
     public void HighlightFacility(FacilityPlacement? facility)
@@ -81,9 +90,33 @@ public partial class Facility3DRenderer : Node3D
     )
     {
         _dragPreviewFacilityId = facility.Id;
+        _dragPreviewFacing = facility.Facing;
         _dragPreviewCell = targetCell;
         _dragPreviewIsLegal = isLegal;
         _highlightedFacility = facility;
+        RefreshFacilities();
+    }
+
+    public void ShowFacilityPlacementPreview(
+        FacilityBuildType facilityType,
+        Vector2I targetCell,
+        FacilityFacing facing,
+        bool isLegal
+    )
+    {
+        _placementPreviewFacility = new FacilityPlacement(-1000, facilityType, targetCell, facing);
+        _placementPreviewIsLegal = isLegal;
+        RefreshFacilities();
+    }
+
+    public void ClearFacilityPlacementPreview()
+    {
+        if (_placementPreviewFacility == null)
+        {
+            return;
+        }
+
+        _placementPreviewFacility = null;
         RefreshFacilities();
     }
 
@@ -125,7 +158,7 @@ public partial class Facility3DRenderer : Node3D
         var modelRoot = new Node3D
         {
             Position = GetFacilityStartPosition(facility.Id, targetPosition),
-            RotationDegrees = new Vector3(0.0f, GetFacingYawDegrees(facility.Facing), 0.0f),
+            RotationDegrees = new Vector3(0.0f, GetFacingYawDegrees(GetRenderFacing(facility)), 0.0f),
         };
         modelRoot.Name = $"Facility_{facility.Id}";
         AddChild(modelRoot);
@@ -136,6 +169,7 @@ public partial class Facility3DRenderer : Node3D
             _highlightedFacility?.Id == facility.Id
             || _hoveredFacilityId == facility.Id
             || _dragPreviewFacilityId == facility.Id
+            || _placementPreviewFacility?.Id == facility.Id
             || _usingFacilityIds.Contains(facility.Id)
         )
         {
@@ -159,6 +193,11 @@ public partial class Facility3DRenderer : Node3D
     private Vector2I GetRenderCell(FacilityPlacement facility)
     {
         return _dragPreviewFacilityId == facility.Id ? _dragPreviewCell : facility.Cell;
+    }
+
+    private FacilityFacing GetRenderFacing(FacilityPlacement facility)
+    {
+        return _dragPreviewFacilityId == facility.Id ? _dragPreviewFacing : facility.Facing;
     }
 
     private Vector3 GetFacilityStartPosition(int facilityId, Vector3 targetPosition)
@@ -192,6 +231,11 @@ public partial class Facility3DRenderer : Node3D
 
     private Color? GetRenderTint(FacilityPlacement facility)
     {
+        if (_placementPreviewFacility?.Id == facility.Id)
+        {
+            return _placementPreviewIsLegal ? PlacementPreviewFill : IllegalDragFill;
+        }
+
         if (_dragPreviewFacilityId != facility.Id || _dragPreviewIsLegal)
         {
             return null;
@@ -202,8 +246,11 @@ public partial class Facility3DRenderer : Node3D
 
     private Color GetRenderOutlineColor(FacilityPlacement facility)
     {
-        return _dragPreviewFacilityId == facility.Id && !_dragPreviewIsLegal
+        return (_dragPreviewFacilityId == facility.Id && !_dragPreviewIsLegal)
+                || (_placementPreviewFacility?.Id == facility.Id && !_placementPreviewIsLegal)
             ? IllegalDragFill
+            : _placementPreviewFacility?.Id == facility.Id
+                ? PlacementPreviewFill
             : _usingFacilityIds.Contains(facility.Id)
                 ? InUseStroke
             : OutlineStroke;

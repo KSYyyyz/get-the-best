@@ -26,6 +26,28 @@ public static class SimulationFrontendContract
         ),
     ];
 
+    public static IReadOnlyList<CompanyTotalContract> CompanyTotals { get; } =
+    [
+        new CompanyTotalContract("CurrentCash", "current company cash", "business feedback HUD"),
+        new CompanyTotalContract(
+            "CurrentProjectProgress",
+            "current MVP progress",
+            "business feedback HUD"
+        ),
+        new CompanyTotalContract(
+            "ProjectRequiredProgress",
+            "required MVP progress",
+            "business feedback HUD"
+        ),
+        new CompanyTotalContract("CurrentActiveUsers", "current active users", "business feedback HUD"),
+        new CompanyTotalContract(
+            "CurrentMonthlyRecurringRevenue",
+            "current monthly recurring revenue",
+            "business feedback HUD"
+        ),
+        new CompanyTotalContract("ProductStage", "current product stage", "business feedback HUD"),
+    ];
+
     public static IReadOnlyList<SimulationEventSemanticContract> EventSemantics { get; } =
     [
         new SimulationEventSemanticContract(

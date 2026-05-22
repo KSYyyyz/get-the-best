@@ -41,6 +41,7 @@ public partial class EmployeeAutonomyController : Node
     private RoomFootprintStore? _roomFootprintStore;
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
+    private BusinessFeedbackHudController? _businessFeedbackHud;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
     private float _coreSimulationTimer = CoreSimulationTickSeconds;
     private int _nextEmployeeIndex;
@@ -55,6 +56,7 @@ public partial class EmployeeAutonomyController : Node
         _roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         _v2CoreBridge = GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge");
+        _businessFeedbackHud = GetNodeOrNull<BusinessFeedbackHudController>("../../HudRoot/BusinessFeedbackPanel");
         InitializeEmployeeStates();
     }
 
@@ -368,6 +370,11 @@ public partial class EmployeeAutonomyController : Node
             return;
         }
 
+        if (_businessFeedbackHud != null)
+        {
+            _businessFeedbackHud.ApplySimulationResult(simulationResult);
+        }
+
         var activeFacilityIds = new HashSet<int>();
         foreach (var facilityState in simulationResult.FacilityStates)
         {
@@ -390,6 +397,14 @@ public partial class EmployeeAutonomyController : Node
                     lifecycleState.EmployeeId,
                     EmployeeActivityKind.UsingFacility,
                     facilityId: lifecycleState.FacilityId
+                );
+                var facility = lifecycleState.FacilityId == null
+                    ? null
+                    : _facilityPlacementStore?.FindById(lifecycleState.FacilityId.Value);
+                _employeeRenderer?.SetEmployeeWorkState(
+                    lifecycleState.EmployeeId,
+                    isWorking: true,
+                    facility?.Cell
                 );
             }
             else if (lifecycleState.ActivityKind == StartupSim.Core.EmployeeActivityKind.Idle)
@@ -429,6 +444,7 @@ public partial class EmployeeAutonomyController : Node
     private void ClearEmployeeActivity(int employeeId)
     {
         SetEmployeeActivity(employeeId, EmployeeActivityKind.Idle);
+        _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: false);
     }
 
     private static string? GetActivityLabel(EmployeeActivityKind activityKind)

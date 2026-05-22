@@ -71,6 +71,12 @@ public partial class OfficeSelection3DController : Node
                 return;
             }
 
+            if (keyEvent.Keycode == Key.R && _isDraggingFacility)
+            {
+                RotateDraggedFacilityFacing(_lastPointerScreenPosition);
+                return;
+            }
+
             return;
         }
 
@@ -275,6 +281,7 @@ public partial class OfficeSelection3DController : Node
         if (_buildModeController?.TryPlaceFacility(cell, out var facility) == true && facility != null)
         {
             _placementPreviewController?.ClearPreview();
+            _facilityRenderer?.ClearFacilityPlacementPreview();
             _facilityRenderer?.RefreshFacilities();
             ClearSelectedRoom();
             _facilityRenderer?.HighlightFacility(facility);
@@ -624,6 +631,7 @@ public partial class OfficeSelection3DController : Node
             && _buildModeController?.TryMoveFacility(
                 _draggedFacility.Id,
                 _dragFacilityCurrentCell,
+                _draggedFacility.Facing,
                 out var movedFacility
             ) == true
             && movedFacility != null
@@ -768,6 +776,7 @@ public partial class OfficeSelection3DController : Node
             if (!_isDraggingSelection)
             {
                 _placementPreviewController?.ClearPreview();
+                _facilityRenderer?.ClearFacilityPlacementPreview();
                 ClearObjectHoverState();
                 HidePointerTooltip();
             }
@@ -811,6 +820,7 @@ public partial class OfficeSelection3DController : Node
         }
 
         _placementPreviewController?.ClearPreview();
+        _facilityRenderer?.ClearFacilityPlacementPreview();
         if (TryScreenPositionToEmployee(screenPosition, out var hoveredEmployee) && hoveredEmployee != null)
         {
             _employeeRenderer?.HoverEmployee(hoveredEmployee);
@@ -897,6 +907,7 @@ public partial class OfficeSelection3DController : Node
 
         CancelDragSelection();
         ClearSelectedObjects();
+        _facilityRenderer?.ClearFacilityPlacementPreview();
         _buildModeController?.CancelActiveTool();
     }
 
@@ -938,12 +949,43 @@ public partial class OfficeSelection3DController : Node
             FacilityDefinitionCatalog.GetDefinition(_buildModeController.GetActiveFacilityType()),
             _buildModeController.GetActiveFacilityFacing()
         );
+        _facilityRenderer?.ShowFacilityPlacementPreview(
+            _buildModeController.GetActiveFacilityType(),
+            cell,
+            _buildModeController.GetActiveFacilityFacing(),
+            canPlace
+        );
         ShowPointerTooltip(
             canPlace
                 ? _buildModeController.GetActiveFacilityTypeLabel()
                 : _buildModeController.GetFacilityPlacementFailureMessage(cell),
             screenPosition
         );
+    }
+
+    private void RotateDraggedFacilityFacing(Vector2 screenPosition)
+    {
+        if (_draggedFacility == null)
+        {
+            return;
+        }
+
+        _draggedFacility = _draggedFacility with
+        {
+            Facing = GetNextFacilityFacing(_draggedFacility.Facing),
+        };
+        UpdateFacilityDragPreview(_dragFacilityCurrentCell, screenPosition);
+    }
+
+    private static FacilityFacing GetNextFacilityFacing(FacilityFacing facing)
+    {
+        return facing switch
+        {
+            FacilityFacing.North => FacilityFacing.East,
+            FacilityFacing.East => FacilityFacing.South,
+            FacilityFacing.South => FacilityFacing.West,
+            _ => FacilityFacing.North,
+        };
     }
 
     private void ClearSelectedObjects()

@@ -97,6 +97,26 @@ public partial class FacilityPlacementStore : Node
         out FacilityPlacement? movedFacility
     )
     {
+        return TryMoveFacility(facilityId, targetCell, facing: null, out movedFacility);
+    }
+
+    public bool TryMoveFacility(
+        int facilityId,
+        Vector2I targetCell,
+        FacilityFacing facing,
+        out FacilityPlacement? movedFacility
+    )
+    {
+        return TryMoveFacility(facilityId, targetCell, (FacilityFacing?)facing, out movedFacility);
+    }
+
+    private bool TryMoveFacility(
+        int facilityId,
+        Vector2I targetCell,
+        FacilityFacing? facing,
+        out FacilityPlacement? movedFacility
+    )
+    {
         movedFacility = null;
         for (var index = 0; index < _facilities.Count; index++)
         {
@@ -111,12 +131,29 @@ public partial class FacilityPlacementStore : Node
                 return false;
             }
 
-            movedFacility = facility with { Cell = targetCell };
+            movedFacility = facility with
+            {
+                Cell = targetCell,
+                Facing = facing ?? facility.Facing,
+            };
             _facilities[index] = movedFacility;
             return true;
         }
 
         return false;
+    }
+
+    public FacilityPlacement? FindById(int facilityId)
+    {
+        foreach (var facility in _facilities)
+        {
+            if (facility.Id == facilityId)
+            {
+                return facility;
+            }
+        }
+
+        return null;
     }
 
     public bool TryPlace(
