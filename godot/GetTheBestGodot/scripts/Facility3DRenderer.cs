@@ -19,8 +19,10 @@ public partial class Facility3DRenderer : Node3D
     private static readonly Color ServerPanelFill = new(0.34f, 0.46f, 0.70f, 1.0f);
     private static readonly Color StatusLightFill = new(0.38f, 0.90f, 0.52f, 1.0f);
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
+    private static readonly Color InUseStroke = new(0.42f, 1.0f, 0.62f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private readonly Dictionary<int, Vector3> _lastFacilityPositions = [];
+    private readonly HashSet<int> _usingFacilityIds = [];
     private readonly List<Node> _renderedFacilities = [];
     private FacilityPlacementStore? _facilityPlacementStore;
     private FacilityPlacement? _highlightedFacility;
@@ -96,6 +98,20 @@ public partial class Facility3DRenderer : Node3D
         RefreshFacilities();
     }
 
+    public void SetFacilityUseState(int facilityId, bool isInUse)
+    {
+        if (isInUse)
+        {
+            _usingFacilityIds.Add(facilityId);
+        }
+        else
+        {
+            _usingFacilityIds.Remove(facilityId);
+        }
+
+        RefreshFacilities();
+    }
+
     private void AddFacilityModel(FacilityPlacement facility)
     {
         var renderCell = GetRenderCell(facility);
@@ -120,6 +136,7 @@ public partial class Facility3DRenderer : Node3D
             _highlightedFacility?.Id == facility.Id
             || _hoveredFacilityId == facility.Id
             || _dragPreviewFacilityId == facility.Id
+            || _usingFacilityIds.Contains(facility.Id)
         )
         {
             AddFacilityOutlineShell(modelRoot, facility.FacilityType, GetRenderOutlineColor(facility));
@@ -187,6 +204,8 @@ public partial class Facility3DRenderer : Node3D
     {
         return _dragPreviewFacilityId == facility.Id && !_dragPreviewIsLegal
             ? IllegalDragFill
+            : _usingFacilityIds.Contains(facility.Id)
+                ? InUseStroke
             : OutlineStroke;
     }
 

@@ -69,6 +69,7 @@
 - `docs/get_the_best_v2_0_18_smooth_drag_precise_hit_wall_door_acceptance_report.md`
 - `docs/get_the_best_v2_0_19_office_navigation_acceptance_report.md`
 - `docs/get_the_best_v2_0_20_employee_autonomy_acceptance_report.md`
+- `docs/get_the_best_v2_0_21_employee_facility_use_acceptance_report.md`
 
 ## 5. 第一原则
 

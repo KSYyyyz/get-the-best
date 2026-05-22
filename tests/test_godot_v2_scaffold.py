@@ -1322,3 +1322,34 @@ def test_get_the_best_v2_0_20_employee_autonomy_moves_on_navigation_path() -> No
     assert "IReadOnlyList<Vector2I> path" in employee_renderer
     assert "TweenEmployeePathStep" in employee_renderer
     assert "tween.Finished +=" in employee_renderer
+
+
+def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    facility_renderer = read_text(GODOT_ROOT / "scripts" / "Facility3DRenderer.cs")
+
+    assert "FacilityPlacementStore? _facilityPlacementStore" in employee_autonomy
+    assert "Facility3DRenderer? _facilityRenderer" in employee_autonomy
+    assert "UseFacilityDurationSeconds" in employee_autonomy
+    assert "FacilityInteractionTarget" in employee_autonomy
+    assert "WalkingToFacility" in employee_autonomy
+    assert "UsingFacility" in employee_autonomy
+    assert "TryStartFacilityUseBehavior" in employee_autonomy
+    assert "FindFacilityUseTarget" in employee_autonomy
+    assert "GetDesiredFacilityTypes(employee)" in employee_autonomy
+    assert "GetFacilityInteractionCells(facility)" in employee_autonomy
+    assert "_officeNavigationStore.FindPath(employee.Cell, standCell)" in employee_autonomy
+    assert (
+        "_employeeRenderer?.PlayEmployeePathMove(employee, target.Path, () =>" in employee_autonomy
+    )
+    assert "FinishFacilityArrival(employee.Id, target)" in employee_autonomy
+    assert (
+        "_facilityRenderer?.SetFacilityUseState(target.Facility.Id, isInUse: true)"
+        in employee_autonomy
+    )
+    assert "_facilityRenderer?.SetFacilityUseState(facilityId, isInUse: false)" in employee_autonomy
+    assert "completedEmployeeIds" in employee_autonomy
+
+    assert "_usingFacilityIds" in facility_renderer
+    assert "SetFacilityUseState(int facilityId, bool isInUse)" in facility_renderer
+    assert "_usingFacilityIds.Contains(facility.Id)" in facility_renderer

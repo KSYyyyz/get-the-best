@@ -6,6 +6,7 @@ namespace GetTheBestGodot;
 public partial class EmployeeAutonomyController : Node
 {
     private const float AutonomousMoveIntervalSeconds = 2.4f;
+    private const float UseFacilityDurationSeconds = 3.2f;
     private const int MaxAutonomousPathCells = 4;
     private static readonly Vector2I[] CandidateTargetOffsets =
     [
@@ -22,10 +23,21 @@ public partial class EmployeeAutonomyController : Node
         new(-1, -1),
         new(1, -1),
     ];
+    private static readonly Vector2I[] FacilityInteractionOffsets =
+    [
+        Vector2I.Down,
+        Vector2I.Up,
+        Vector2I.Left,
+        Vector2I.Right,
+    ];
 
     private readonly Dictionary<int, EmployeeAutonomyState> _employeeStates = [];
+    private readonly Dictionary<int, float> _facilityUseTimers = [];
+    private readonly HashSet<int> _reservedFacilityIds = [];
     private EmployeeStore? _employeeStore;
     private Employee3DRenderer? _employeeRenderer;
+    private FacilityPlacementStore? _facilityPlacementStore;
+    private Facility3DRenderer? _facilityRenderer;
     private OfficeNavigationStore? _officeNavigationStore;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
     private int _nextEmployeeIndex;
@@ -35,12 +47,15 @@ public partial class EmployeeAutonomyController : Node
     {
         _employeeStore = GetNodeOrNull<EmployeeStore>("../EmployeeStore");
         _employeeRenderer = GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer");
+        _facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>("../FacilityPlacementStore");
+        _facilityRenderer = GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer");
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         InitializeEmployeeStates();
     }
 
     public override void _Process(double delta)
     {
+        UpdateFacilityUseTimers((float)delta);
         if (_isEmployeeMoveInProgress)
         {
             return;
@@ -68,7 +83,8 @@ public partial class EmployeeAutonomyController : Node
             _employeeStates[employee.Id] = new EmployeeAutonomyState(
                 employee.Id,
                 EmployeeActivityKind.Idle,
-                TargetCell: null
+                TargetCell: null,
+                FacilityId: null
             );
         }
     }
@@ -90,6 +106,16 @@ public partial class EmployeeAutonomyController : Node
         {
             var employee = employees[_nextEmployeeIndex % employees.Count];
             _nextEmployeeIndex = (_nextEmployeeIndex + 1) % employees.Count;
+            if (!IsEmployeeIdle(employee.Id))
+            {
+                continue;
+            }
+
+            if (TryStartFacilityUseBehavior(employee))
+            {
+                return true;
+            }
+
             if (!FindAutonomousTarget(employee, out var targetCell, out var path))
             {
                 continue;
@@ -99,7 +125,8 @@ public partial class EmployeeAutonomyController : Node
             _employeeStates[employee.Id] = new EmployeeAutonomyState(
                 employee.Id,
                 EmployeeActivityKind.WalkingToTarget,
-                targetCell
+                targetCell,
+                FacilityId: null
             );
             _employeeRenderer?.PlayEmployeePathMove(employee, path, () =>
                 FinishAutonomousMove(employee.Id, targetCell)
@@ -108,6 +135,33 @@ public partial class EmployeeAutonomyController : Node
         }
 
         return false;
+    }
+
+    private bool IsEmployeeIdle(int employeeId)
+    {
+        return !_employeeStates.TryGetValue(employeeId, out var state)
+            || state.ActivityKind == EmployeeActivityKind.Idle;
+    }
+
+    private bool TryStartFacilityUseBehavior(EmployeeVisual employee)
+    {
+        if (!FindFacilityUseTarget(employee, out var target))
+        {
+            return false;
+        }
+
+        _reservedFacilityIds.Add(target.Facility.Id);
+        _isEmployeeMoveInProgress = true;
+        _employeeStates[employee.Id] = new EmployeeAutonomyState(
+            employee.Id,
+            EmployeeActivityKind.WalkingToFacility,
+            target.StandCell,
+            target.Facility.Id
+        );
+        _employeeRenderer?.PlayEmployeePathMove(employee, target.Path, () =>
+            FinishFacilityArrival(employee.Id, target)
+        );
+        return true;
     }
 
     private bool FindAutonomousTarget(
@@ -156,9 +210,182 @@ public partial class EmployeeAutonomyController : Node
         _employeeStates[employeeId] = new EmployeeAutonomyState(
             employeeId,
             EmployeeActivityKind.Idle,
-            TargetCell: null
+            TargetCell: null,
+            FacilityId: null
         );
         _isEmployeeMoveInProgress = false;
+    }
+
+    private bool FindFacilityUseTarget(
+        EmployeeVisual employee,
+        out FacilityInteractionTarget target
+    )
+    {
+        target = FacilityInteractionTarget.Empty;
+        if (
+            _employeeStore == null
+            || _facilityPlacementStore == null
+            || _officeNavigationStore == null
+        )
+        {
+            return false;
+        }
+
+        var desiredFacilityTypes = GetDesiredFacilityTypes(employee);
+        foreach (var facility in _facilityPlacementStore.GetFacilities())
+        {
+            if (
+                !IsDesiredFacilityType(desiredFacilityTypes, facility.FacilityType)
+                || _reservedFacilityIds.Contains(facility.Id)
+            )
+            {
+                continue;
+            }
+
+            foreach (var standCell in GetFacilityInteractionCells(facility))
+            {
+                if (!_employeeStore.CanMoveEmployee(employee, standCell))
+                {
+                    continue;
+                }
+
+                var path = _officeNavigationStore.FindPath(employee.Cell, standCell);
+                if (path.Count <= 1)
+                {
+                    continue;
+                }
+
+                target = new FacilityInteractionTarget(facility, standCell, path);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IReadOnlyList<FacilityBuildType> GetDesiredFacilityTypes(EmployeeVisual employee)
+    {
+        return employee.RoleLabel switch
+        {
+            "\u7a0b\u5e8f" => [FacilityBuildType.OfficeDesk],
+            "\u7b56\u5212" => [FacilityBuildType.ProductWhiteboard],
+            "\u5e02\u573a" => [FacilityBuildType.ProductWhiteboard],
+            _ => [FacilityBuildType.OfficeDesk],
+        };
+    }
+
+    private static bool IsDesiredFacilityType(
+        IReadOnlyList<FacilityBuildType> desiredFacilityTypes,
+        FacilityBuildType facilityType
+    )
+    {
+        foreach (var desiredFacilityType in desiredFacilityTypes)
+        {
+            if (desiredFacilityType == facilityType)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<Vector2I> GetFacilityInteractionCells(FacilityPlacement facility)
+    {
+        foreach (var offset in FacilityInteractionOffsets)
+        {
+            yield return facility.Cell + offset;
+        }
+    }
+
+    private void FinishFacilityArrival(int employeeId, FacilityInteractionTarget target)
+    {
+        if (_employeeStore?.TryMoveEmployee(employeeId, target.StandCell, out var movedEmployee) == true)
+        {
+            _ = movedEmployee;
+            _employeeRenderer?.RefreshEmployees();
+            _facilityUseTimers[target.Facility.Id] = UseFacilityDurationSeconds;
+            _facilityRenderer?.SetFacilityUseState(target.Facility.Id, isInUse: true);
+            _employeeStates[employeeId] = new EmployeeAutonomyState(
+                employeeId,
+                EmployeeActivityKind.UsingFacility,
+                target.StandCell,
+                target.Facility.Id
+            );
+        }
+        else
+        {
+            _reservedFacilityIds.Remove(target.Facility.Id);
+            _employeeStates[employeeId] = new EmployeeAutonomyState(
+                employeeId,
+                EmployeeActivityKind.Idle,
+                TargetCell: null,
+                FacilityId: null
+            );
+        }
+
+        _isEmployeeMoveInProgress = false;
+    }
+
+    private void UpdateFacilityUseTimers(float delta)
+    {
+        if (_facilityUseTimers.Count == 0)
+        {
+            return;
+        }
+
+        var completedFacilityIds = new List<int>();
+        var activeFacilityTimers = new Dictionary<int, float>();
+        foreach (var (facilityId, remainingSeconds) in _facilityUseTimers)
+        {
+            var nextRemainingSeconds = remainingSeconds - delta;
+            if (nextRemainingSeconds <= 0.0f)
+            {
+                completedFacilityIds.Add(facilityId);
+            }
+            else
+            {
+                activeFacilityTimers[facilityId] = nextRemainingSeconds;
+            }
+        }
+
+        foreach (var (facilityId, remainingSeconds) in activeFacilityTimers)
+        {
+            _facilityUseTimers[facilityId] = remainingSeconds;
+        }
+
+        foreach (var facilityId in completedFacilityIds)
+        {
+            _facilityUseTimers.Remove(facilityId);
+            _reservedFacilityIds.Remove(facilityId);
+            _facilityRenderer?.SetFacilityUseState(facilityId, isInUse: false);
+            ClearEmployeeFacilityState(facilityId);
+        }
+    }
+
+    private void ClearEmployeeFacilityState(int facilityId)
+    {
+        var completedEmployeeIds = new List<int>();
+        foreach (var (employeeId, state) in _employeeStates)
+        {
+            if (state.FacilityId != facilityId)
+            {
+                continue;
+            }
+
+            completedEmployeeIds.Add(employeeId);
+        }
+
+        foreach (var employeeId in completedEmployeeIds)
+        {
+            var state = _employeeStates[employeeId];
+            _employeeStates[employeeId] = state with
+            {
+                ActivityKind = EmployeeActivityKind.Idle,
+                TargetCell = null,
+                FacilityId = null,
+            };
+        }
     }
 }
 
@@ -166,10 +393,23 @@ public enum EmployeeActivityKind
 {
     Idle,
     WalkingToTarget,
+    WalkingToFacility,
+    UsingFacility,
 }
 
 public sealed record EmployeeAutonomyState(
     int EmployeeId,
     EmployeeActivityKind ActivityKind,
-    Vector2I? TargetCell
+    Vector2I? TargetCell,
+    int? FacilityId
 );
+
+public sealed record FacilityInteractionTarget(
+    FacilityPlacement Facility,
+    Vector2I StandCell,
+    IReadOnlyList<Vector2I> Path
+)
+{
+    public static readonly FacilityInteractionTarget Empty =
+        new(new FacilityPlacement(0, FacilityBuildType.OfficeDesk, Vector2I.Zero, FacilityFacing.South), Vector2I.Zero, []);
+}
