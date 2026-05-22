@@ -16,3 +16,6 @@ obj/
 # Python 本地缓存
 __pycache__/
 .pytest_cache/
+
+# 本地 Git worktree 容器
+.worktrees/

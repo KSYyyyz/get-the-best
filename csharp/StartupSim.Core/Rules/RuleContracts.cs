@@ -43,6 +43,15 @@ public enum EmployeeIntentKind
     Work,
 }
 
+public enum EmployeeActionCandidateKind
+{
+    WorkAtDesk,
+    UseWhiteboard,
+    MaintainServer,
+    Rest,
+    Idle,
+}
+
 public enum ProductStage
 {
     Prototype,
@@ -105,7 +114,10 @@ public sealed record EmployeeState(
     string? RoomId,
     GridCell? Cell,
     string? ActiveFacilityId = null,
-    int RemainingActivityTicks = 0
+    int RemainingActivityTicks = 0,
+    double NeedRest = 0,
+    double NeedFood = 0,
+    double NeedToilet = 0
 );
 
 public sealed record FacilityState(
@@ -153,7 +165,35 @@ public sealed record OfficeRuleSnapshot(
 
 public sealed record IntentTarget(string? FacilityId = null, string? RoomId = null, GridCell? TargetCell = null);
 
-public sealed record EmployeeIntent(string EmployeeId, EmployeeIntentKind Kind, IntentTarget Target);
+public sealed record EmployeeActionCandidate(
+    EmployeeActionCandidateKind Kind,
+    double Score,
+    string? FacilityId,
+    string? RoomId,
+    IReadOnlyList<string> Reasons,
+    IReadOnlyList<string> RejectionReasons
+);
+
+public sealed record EmployeeDecisionExplanation(
+    string EmployeeId,
+    EmployeeActionCandidateKind SelectedAction,
+    double SelectedScore,
+    IReadOnlyList<EmployeeActionCandidate> Candidates,
+    IReadOnlyList<string> Reasons
+);
+
+public sealed record EmployeeBehaviorPlan(
+    IReadOnlyList<EmployeeIntent> Intents,
+    IReadOnlyList<EmployeeDecisionExplanation> Explanations
+);
+
+public sealed record EmployeeIntent(
+    string EmployeeId,
+    EmployeeIntentKind Kind,
+    IntentTarget Target,
+    EmployeeActionCandidateKind? SourceAction = null,
+    EmployeeDecisionExplanation? Explanation = null
+);
 
 public sealed record EmployeeTickDelta(
     string EmployeeId,

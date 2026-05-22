@@ -167,6 +167,49 @@ internal static class TestSnapshots
         };
     }
 
+    public static OfficeRuleSnapshot EngineerWithOnlyFullDesk()
+    {
+        var snapshot = SingleEngineerWithTwoFacilities();
+        return snapshot with
+        {
+            Facilities =
+            [
+                snapshot.Facilities[0] with { OccupiedByEmployeeIds = ["existing-engineer"] },
+            ],
+            Rooms =
+            [
+                snapshot.Rooms[0] with { FacilityIds = ["desk-1"] },
+            ],
+        };
+    }
+
+    public static OfficeRuleSnapshot MixedIntentAndUsingDesk()
+    {
+        var snapshot = FirstLoopEngineerUsingDesk(projectProgress: 25);
+        return snapshot with
+        {
+            Employees =
+            [
+                snapshot.Employees[0],
+                snapshot.Employees[0] with
+                {
+                    Id = "employee-2",
+                    DisplayName = "\u9648\u5b50\u822a",
+                    CurrentActivity = EmployeeActivityKind.Idle,
+                    ActiveFacilityId = null,
+                    RemainingActivityTicks = 0,
+                    Cell = new GridCell(10, 7),
+                },
+            ],
+            Facilities =
+            [
+                snapshot.Facilities[0],
+                snapshot.Facilities[1],
+                snapshot.Facilities[2],
+            ],
+        };
+    }
+
     public static OfficeRuleSnapshot HighFatigueEngineerWithRestSeat()
     {
         var snapshot = SingleEngineerWithTwoFacilities();
