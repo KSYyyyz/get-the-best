@@ -38,7 +38,8 @@ public sealed class OfficeSimulationEngine
 
     public SimulationTickResult Advance(OfficeRuleSnapshot snapshot)
     {
-        var intents = _behaviorEngine.PlanIntents(snapshot);
+        var behaviorPlan = _behaviorEngine.PlanDecisions(snapshot);
+        var intents = behaviorPlan.Intents;
         var lifecycleSnapshot = _lifecycleEngine.Advance(snapshot, intents);
         var businessEngine = new FirstLoopBusinessEngine(
             new FirstLoopBusinessTickOptions(_options.TickHours, _options.IsMonthEnd),
@@ -110,7 +111,7 @@ public sealed class OfficeSimulationEngine
                 new SimulationPresentationEvent(
                     SimulationEventKind.IntentPlanned,
                     intent.EmployeeId,
-                    intent.Kind.ToString()
+                    BuildIntentMessage(intent)
                 )
             );
         }
@@ -127,7 +128,7 @@ public sealed class OfficeSimulationEngine
                     new SimulationPresentationEvent(
                         SimulationEventKind.ActivityChanged,
                         employee.Id,
-                        employee.CurrentActivity.ToString()
+                        BuildActivityMessage(employee)
                     )
                 );
             }
@@ -150,7 +151,7 @@ public sealed class OfficeSimulationEngine
                 new SimulationPresentationEvent(
                     SimulationEventKind.MetricChanged,
                     next.Company.ActiveProject.Id,
-                    next.Company.ActiveProject.Progress.ToString("0.####")
+                    $"指标变化：MVP 总进度 {next.Company.ActiveProject.Progress:0.####}"
                 )
             );
         }
@@ -178,5 +179,34 @@ public sealed class OfficeSimulationEngine
         }
 
         return events;
+    }
+
+    private static string BuildIntentMessage(EmployeeIntent intent)
+    {
+        var reason = intent.Explanation?.Reasons.FirstOrDefault() ?? "等待下一次 AI tick";
+        var action = intent.SourceAction?.ToString() ?? intent.Kind.ToString();
+        return intent.Kind switch
+        {
+            EmployeeIntentKind.MoveToFacility =>
+                $"前往设施：{intent.Target.FacilityId ?? "none"}；原因摘要：{reason}",
+            EmployeeIntentKind.Rest =>
+                $"前往设施：{intent.Target.FacilityId ?? "none"}；原因摘要：{reason}",
+            EmployeeIntentKind.Work =>
+                $"正在使用：{intent.Target.FacilityId ?? "active"}；原因摘要：{reason}",
+            EmployeeIntentKind.Idle => $"待机：{action}；原因摘要：{reason}",
+            _ => $"{action}；原因摘要：{reason}",
+        };
+    }
+
+    private static string BuildActivityMessage(EmployeeState employee)
+    {
+        return employee.CurrentActivity switch
+        {
+            EmployeeActivityKind.UseFacility or EmployeeActivityKind.Work =>
+                $"正在使用：{employee.ActiveFacilityId ?? "active"}",
+            EmployeeActivityKind.MoveToFacility => $"前往设施：{employee.ActiveFacilityId ?? "unknown"}",
+            EmployeeActivityKind.Rest => $"正在休息：{employee.ActiveFacilityId ?? "rest"}",
+            _ => employee.CurrentActivity.ToString(),
+        };
     }
 }

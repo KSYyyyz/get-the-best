@@ -1,6 +1,7 @@
 using StartupSim.Core.Tests;
 
 EmployeeBehaviorTickTests.Run();
+EmployeeUtilityBehaviorTests.Run();
 StateReducerTests.Run();
 BridgeContractTests.Run();
 LifecycleTests.Run();

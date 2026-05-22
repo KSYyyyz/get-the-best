@@ -54,6 +54,11 @@ public sealed class EmployeeLifecycleEngine
             return AdvanceUsingEmployee(employee, occupancy, reservedFacilityIds);
         }
 
+        if (employee.CurrentActivity == EmployeeActivityKind.Rest)
+        {
+            return AdvanceRestingEmployee(employee, occupancy, reservedFacilityIds);
+        }
+
         if (employee.CurrentActivity == EmployeeActivityKind.MoveToFacility)
         {
             return AdvanceMovingEmployee(employee, snapshot, occupancy, reservedFacilityIds);
@@ -64,12 +69,61 @@ public sealed class EmployeeLifecycleEngine
             return employee;
         }
 
-        return intent.Kind == EmployeeIntentKind.MoveToFacility
-            ? TryStartFacilityMove(employee, intent, snapshot, reservedFacilityIds)
-            : employee;
+        return intent.Kind switch
+        {
+            EmployeeIntentKind.MoveToFacility => TryStartFacilityMove(
+                employee,
+                intent,
+                snapshot,
+                reservedFacilityIds
+            ),
+            EmployeeIntentKind.Rest => TryStartRest(
+                employee,
+                intent,
+                snapshot,
+                occupancy,
+                reservedFacilityIds,
+                _useDurationTicks
+            ),
+            _ => employee,
+        };
     }
 
     private EmployeeState AdvanceUsingEmployee(
+        EmployeeState employee,
+        Dictionary<string, List<string>> occupancy,
+        HashSet<string> reservedFacilityIds
+    )
+    {
+        if (employee.ActiveFacilityId == null)
+        {
+            return employee with
+            {
+                CurrentActivity = EmployeeActivityKind.Idle,
+                RemainingActivityTicks = 0,
+            };
+        }
+
+        if (employee.RemainingActivityTicks > 1)
+        {
+            return employee with { RemainingActivityTicks = employee.RemainingActivityTicks - 1 };
+        }
+
+        if (occupancy.TryGetValue(employee.ActiveFacilityId, out var occupants))
+        {
+            occupants.Remove(employee.Id);
+        }
+
+        reservedFacilityIds.Remove(employee.ActiveFacilityId);
+        return employee with
+        {
+            CurrentActivity = EmployeeActivityKind.Idle,
+            ActiveFacilityId = null,
+            RemainingActivityTicks = 0,
+        };
+    }
+
+    private EmployeeState AdvanceRestingEmployee(
         EmployeeState employee,
         Dictionary<string, List<string>> occupancy,
         HashSet<string> reservedFacilityIds
@@ -180,6 +234,41 @@ public sealed class EmployeeLifecycleEngine
         };
     }
 
+    private static EmployeeState TryStartRest(
+        EmployeeState employee,
+        EmployeeIntent intent,
+        OfficeRuleSnapshot snapshot,
+        Dictionary<string, List<string>> occupancy,
+        HashSet<string> reservedFacilityIds,
+        int restDurationTicks
+    )
+    {
+        var facilityId = intent.Target.FacilityId;
+        if (facilityId == null || reservedFacilityIds.Contains(facilityId))
+        {
+            return employee;
+        }
+
+        var facility = snapshot.Facilities.FirstOrDefault(facility => facility.Id == facilityId);
+        if (facility == null || !facility.HasAvailableCapacity)
+        {
+            return employee;
+        }
+
+        if (!occupancy[facility.Id].Contains(employee.Id))
+        {
+            occupancy[facility.Id].Add(employee.Id);
+        }
+
+        reservedFacilityIds.Add(facilityId);
+        return employee with
+        {
+            CurrentActivity = EmployeeActivityKind.Rest,
+            ActiveFacilityId = facilityId,
+            RemainingActivityTicks = restDurationTicks,
+        };
+    }
+
     private static HashSet<string> BuildInitialReservations(OfficeRuleSnapshot snapshot)
     {
         var reservedFacilityIds = snapshot.Facilities
@@ -192,7 +281,9 @@ public sealed class EmployeeLifecycleEngine
             if (
                 employee.ActiveFacilityId != null
                 && employee.CurrentActivity
-                    is EmployeeActivityKind.MoveToFacility or EmployeeActivityKind.UseFacility
+                    is EmployeeActivityKind.MoveToFacility
+                        or EmployeeActivityKind.UseFacility
+                        or EmployeeActivityKind.Rest
             )
             {
                 reservedFacilityIds.Add(employee.ActiveFacilityId);
