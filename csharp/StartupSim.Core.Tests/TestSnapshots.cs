@@ -256,6 +256,29 @@ internal static class TestSnapshots
         };
     }
 
+    public static OfficeRuleSnapshot FirstLoopEngineerMovingToDesk(double projectProgress = 10)
+    {
+        var snapshot = FirstLoopEngineerUsingDesk(projectProgress);
+        return snapshot with
+        {
+            Employees =
+            [
+                snapshot.Employees[0] with
+                {
+                    CurrentActivity = EmployeeActivityKind.MoveToFacility,
+                    ActiveFacilityId = "desk-1",
+                    RemainingActivityTicks = 1,
+                },
+            ],
+            Facilities =
+            [
+                snapshot.Facilities[0] with { OccupiedByEmployeeIds = [] },
+                snapshot.Facilities[1],
+                snapshot.Facilities[2],
+            ],
+        };
+    }
+
     public static OfficeRuleSnapshot FirstLoopMarketingUsingWhiteboard(
         double projectProgress = 100,
         double requiredProgress = 100,

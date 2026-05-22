@@ -1,6 +1,6 @@
 # 《壮志凌云 / Get The Best》经营算法执行索引
 
-状态：Algorithm A0.24 第一局经营闭环核心
+状态：Algorithm A0.25 Core Tick 编排器
 日期：2026-05-22
 适用范围：C# Core 经营规则、算法契约、算法测试、算法验收文档
 
@@ -11,13 +11,21 @@
 
 ## 当前基线
 
-- `docs/get_the_best_algorithm_a0_24_baseline.md`
+- `docs/get_the_best_algorithm_a0_25_baseline.md`
 
 ## 历史基线
 
+- `docs/get_the_best_algorithm_a0_24_baseline.md`
 - `docs/get_the_best_algorithm_a0_23_baseline.md`
 
-## A0.24 本轮验收文档
+## A0.25 本轮验收文档
+
+- `docs/get_the_best_algorithm_a0_25_1_tick_orchestration_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_25_2_frontend_contract_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_25_3_phase_outcome_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_25_4_determinism_acceptance_report.md`
+
+## A0.24 验收文档
 
 - `docs/get_the_best_algorithm_a0_24_1_mvp_stage_acceptance_report.md`
 - `docs/get_the_best_algorithm_a0_24_2_sales_first_users_acceptance_report.md`

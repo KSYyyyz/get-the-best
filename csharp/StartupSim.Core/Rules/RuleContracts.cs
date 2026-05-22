@@ -50,6 +50,25 @@ public enum ProductStage
     Launched,
 }
 
+public enum PhaseOutcomeKind
+{
+    InProgress,
+    MvpCompleted,
+    FirstUsersAcquired,
+    RevenuePositive,
+    FailedCashDepleted,
+}
+
+public enum SimulationEventKind
+{
+    IntentPlanned,
+    ActivityChanged,
+    FacilityUpdated,
+    MetricChanged,
+    MonthlyReportReady,
+    PhaseOutcomeReached,
+}
+
 public sealed record GridCell(int X, int Y);
 
 public sealed record EmployeeState(
@@ -172,3 +191,29 @@ public sealed record FirstLoopBusinessTickOptions(double TickHours, bool IsMonth
 {
     public static FirstLoopBusinessTickOptions Default { get; } = new(TickHours: 1.0);
 }
+
+public sealed record SimulationTickOptions(double TickHours, bool IsMonthEnd = false)
+{
+    public static SimulationTickOptions Default { get; } = new(TickHours: 1.0);
+}
+
+public sealed record PhaseOutcome(
+    PhaseOutcomeKind Kind,
+    IReadOnlyList<string> Reasons
+)
+{
+    public static PhaseOutcome InProgress { get; } = new(PhaseOutcomeKind.InProgress, []);
+}
+
+public sealed record SimulationPresentationEvent(
+    SimulationEventKind Kind,
+    string SubjectId,
+    string Message
+);
+
+public sealed record SimulationTickResult(
+    TickResult Tick,
+    OfficeRuleSnapshot NextSnapshot,
+    PhaseOutcome Outcome,
+    IReadOnlyList<SimulationPresentationEvent> PresentationEvents
+);
