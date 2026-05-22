@@ -8,6 +8,7 @@ public static class SimulationFrontendContractTests
     {
         SimulationTickResultKeepsStableFrontendFields();
         GodotFactSourcesAreDocumentedInCoreContract();
+        CompanyTotalsAreDocumentedForHudConsumption();
         EverySimulationEventKindHasPlayableSemantics();
         TickCadenceMatchesV026BridgeRecommendation();
         OfficeSimulationEngineAcceptsFrontendTickOptions();
@@ -33,6 +34,18 @@ public static class SimulationFrontendContractTests
         Assert.Equal("员工位置/活动状态、设施占用的表现事实", fields["NextSnapshot"].GodotConsumption);
         Assert.Equal("经营阶段胜利或失败结果", fields["Outcome"].GodotConsumption);
         Assert.Equal("可播放提示和一次性表现事件", fields["PresentationEvents"].GodotConsumption);
+    }
+
+    private static void CompanyTotalsAreDocumentedForHudConsumption()
+    {
+        var totals = SimulationFrontendContract.CompanyTotals.ToDictionary(total => total.FieldName);
+
+        Assert.Equal("当前总现金", totals["CurrentCash"].Meaning);
+        Assert.Equal("当前 MVP 总进度", totals["CurrentProjectProgress"].Meaning);
+        Assert.Equal("MVP 所需总进度", totals["ProjectRequiredProgress"].Meaning);
+        Assert.Equal("当前活跃用户", totals["CurrentActiveUsers"].Meaning);
+        Assert.Equal("当前月经常收入", totals["CurrentMonthlyRecurringRevenue"].Meaning);
+        Assert.Equal("当前产品阶段", totals["ProductStage"].Meaning);
     }
 
     private static void EverySimulationEventKindHasPlayableSemantics()

@@ -25,6 +25,7 @@
 - `docs/get_the_best_algorithm_a0_26_2_presentation_event_contract_acceptance_report.md`
 - `docs/get_the_best_algorithm_a0_26_3_tick_cadence_acceptance_report.md`
 - `docs/get_the_best_algorithm_a0_26_4_v2_0_26_minimum_bridge_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_26_5_company_totals_bridge_acceptance_report.md`
 
 ## A0.25 验收文档
 

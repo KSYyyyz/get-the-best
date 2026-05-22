@@ -1446,3 +1446,16 @@ def test_get_the_best_v2_0_26_godot_uses_unified_core_simulation_tick() -> None:
     assert "ApplyCoreSimulationStates(" in employee_autonomy
     assert "PlanEmployeeIntents(" not in employee_autonomy
     assert "AdvanceEmployeeLifecycle(" not in employee_autonomy
+
+
+def test_get_the_best_v2_0_26_bridge_exposes_company_totals_for_hud() -> None:
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+
+    assert "CoreCompanySimulationTotals" in bridge
+    assert "CompanyTotals: MapCompanyTotals(result.NextSnapshot.Company)" in bridge
+    assert "CurrentCash" in bridge
+    assert "CurrentProjectProgress" in bridge
+    assert "ProjectRequiredProgress" in bridge
+    assert "CurrentActiveUsers" in bridge
+    assert "CurrentMonthlyRecurringRevenue" in bridge
+    assert "ProductStage" in bridge

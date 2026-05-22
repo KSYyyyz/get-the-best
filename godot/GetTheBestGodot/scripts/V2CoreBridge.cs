@@ -165,6 +165,7 @@ public partial class V2CoreBridge : Node
             EmployeeStates: result.NextSnapshot.Employees.Select(MapLifecycleState).ToArray(),
             FacilityStates: result.NextSnapshot.Facilities.Select(MapFacilityState).ToArray(),
             PresentationEvents: result.PresentationEvents.Select(MapPresentationEvent).ToArray(),
+            CompanyTotals: MapCompanyTotals(result.NextSnapshot.Company),
             OutcomeKind: result.Outcome.Kind,
             ProjectProgressDelta: result.Tick.CompanyDelta.ProjectProgressDelta,
             CashDelta: result.Tick.CompanyDelta.CashDelta,
@@ -199,6 +200,18 @@ public partial class V2CoreBridge : Node
             Kind: presentationEvent.Kind,
             SubjectId: presentationEvent.SubjectId,
             Message: presentationEvent.Message
+        );
+    }
+
+    private static CoreCompanySimulationTotals MapCompanyTotals(CompanyState company)
+    {
+        return new CoreCompanySimulationTotals(
+            CurrentCash: company.Cash,
+            CurrentProjectProgress: company.ActiveProject.Progress,
+            ProjectRequiredProgress: company.ActiveProject.RequiredProgress,
+            CurrentActiveUsers: company.ProductMarket?.ActiveUsers ?? 0,
+            CurrentMonthlyRecurringRevenue: company.ProductMarket?.MonthlyRecurringRevenue ?? 0,
+            ProductStage: company.ProductMarket?.Stage ?? ProductStage.Prototype
         );
     }
 
@@ -292,11 +305,21 @@ public sealed record CoreSimulationPresentationEvent(
     string Message
 );
 
+public sealed record CoreCompanySimulationTotals(
+    double CurrentCash,
+    double CurrentProjectProgress,
+    double ProjectRequiredProgress,
+    int CurrentActiveUsers,
+    double CurrentMonthlyRecurringRevenue,
+    ProductStage ProductStage
+);
+
 public sealed record CoreOfficeSimulationResult(
     IReadOnlyList<CoreEmployeeIntent> Intents,
     IReadOnlyList<CoreEmployeeLifecycleState> EmployeeStates,
     IReadOnlyList<CoreFacilitySimulationState> FacilityStates,
     IReadOnlyList<CoreSimulationPresentationEvent> PresentationEvents,
+    CoreCompanySimulationTotals CompanyTotals,
     PhaseOutcomeKind OutcomeKind,
     double ProjectProgressDelta,
     double CashDelta,

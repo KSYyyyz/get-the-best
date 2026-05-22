@@ -26,6 +26,40 @@ public static class SimulationFrontendContract
         ),
     ];
 
+    public static IReadOnlyList<SimulationResultFieldContract> CompanyTotals { get; } =
+    [
+        new SimulationResultFieldContract(
+            "CurrentCash",
+            "当前总现金",
+            "HUD 当前现金总量"
+        ),
+        new SimulationResultFieldContract(
+            "CurrentProjectProgress",
+            "当前 MVP 总进度",
+            "HUD 当前 MVP 总进度"
+        ),
+        new SimulationResultFieldContract(
+            "ProjectRequiredProgress",
+            "MVP 所需总进度",
+            "HUD MVP 进度上限或进度条分母"
+        ),
+        new SimulationResultFieldContract(
+            "CurrentActiveUsers",
+            "当前活跃用户",
+            "HUD 当前活跃用户总量"
+        ),
+        new SimulationResultFieldContract(
+            "CurrentMonthlyRecurringRevenue",
+            "当前月经常收入",
+            "HUD 当前 MRR 总量"
+        ),
+        new SimulationResultFieldContract(
+            "ProductStage",
+            "当前产品阶段",
+            "HUD 或阶段提示的当前产品阶段"
+        ),
+    ];
+
     public static IReadOnlyList<SimulationEventSemanticContract> EventSemantics { get; } =
     [
         new SimulationEventSemanticContract(
