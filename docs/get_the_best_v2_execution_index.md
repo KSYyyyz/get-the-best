@@ -72,6 +72,7 @@
 - `docs/get_the_best_v2_0_21_employee_facility_use_acceptance_report.md`
 - `docs/get_the_best_v2_0_22_core_employee_behavior_tick_acceptance_report.md`
 - `docs/get_the_best_v2_0_23_employee_activity_badge_acceptance_report.md`
+- `docs/get_the_best_v2_0_24_core_intent_bridge_acceptance_report.md`
 
 ## 5. 第一原则
 
