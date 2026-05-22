@@ -39,6 +39,22 @@ Godot 不应手动调用：
 - 可播放提示：读 `PresentationEvents`
 - 经营阶段结果：读 `Outcome`
 - 现金、收入、用户、MVP 等 delta：读 `Tick`
+- HUD 当前总量：读 Godot bridge 的 `CoreOfficeSimulationResult.CompanyTotals`，该字段直接映射自 `NextSnapshot.Company`
+
+## HUD 总量字段
+
+`CoreOfficeSimulationResult.CompanyTotals` 应暴露以下字段：
+
+| 字段 | 来源 | 用途 |
+| --- | --- | --- |
+| `CurrentCash` | `NextSnapshot.Company.Cash` | 当前总现金 |
+| `CurrentProjectProgress` | `NextSnapshot.Company.ActiveProject.Progress` | 当前 MVP 总进度 |
+| `ProjectRequiredProgress` | `NextSnapshot.Company.ActiveProject.RequiredProgress` | MVP 进度条分母 |
+| `CurrentActiveUsers` | `NextSnapshot.Company.ProductMarket.ActiveUsers` | 当前活跃用户 |
+| `CurrentMonthlyRecurringRevenue` | `NextSnapshot.Company.ProductMarket.MonthlyRecurringRevenue` | 当前 MRR |
+| `ProductStage` | `NextSnapshot.Company.ProductMarket.Stage` | 当前产品阶段 |
+
+`Tick.CompanyDelta` 继续只表达本 tick 变化量；HUD 不应只用 delta 反推总量。
 
 ## `SimulationEventKind` 可播语义表
 
