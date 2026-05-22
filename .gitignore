@@ -10,6 +10,8 @@ godot_editor_start*.log
 # .NET 构建输出
 bin/
 obj/
+**/bin/
+**/obj/
 
 # Python 本地缓存
 __pycache__/
