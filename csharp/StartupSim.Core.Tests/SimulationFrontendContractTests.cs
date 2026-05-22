@@ -10,6 +10,7 @@ public static class SimulationFrontendContractTests
         GodotFactSourcesAreDocumentedInCoreContract();
         EverySimulationEventKindHasPlayableSemantics();
         TickCadenceMatchesV026BridgeRecommendation();
+        OfficeSimulationEngineAcceptsFrontendTickOptions();
         PresetSnapshotProducesMinimumFrontendAcceptanceEvents();
     }
 
@@ -73,6 +74,19 @@ public static class SimulationFrontendContractTests
         Assert.Equal(1.0, cadence.DefaultTickHours);
         Assert.False(cadence.PauseDuringEmployeeWalkAnimation);
         Assert.False(cadence.UseMonthEndInV026Bridge);
+    }
+
+    private static void OfficeSimulationEngineAcceptsFrontendTickOptions()
+    {
+        var options = new SimulationTickOptions(
+            SimulationFrontendContract.Cadence.DefaultTickHours,
+            SimulationFrontendContract.Cadence.UseMonthEndInV026Bridge
+        );
+        var result = new OfficeSimulationEngine(options).Advance(
+            TestSnapshots.FirstLoopEngineerMovingToDesk(projectProgress: 99)
+        );
+
+        Assert.True(result.PresentationEvents.Count > 0);
     }
 
     private static void PresetSnapshotProducesMinimumFrontendAcceptanceEvents()

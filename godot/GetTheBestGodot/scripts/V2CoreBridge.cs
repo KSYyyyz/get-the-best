@@ -13,9 +13,16 @@ public partial class V2CoreBridge : Node
     private const double DefaultProjectProgress = 10.0;
     private const double DefaultProjectRequiredProgress = 100.0;
 
-    private readonly EmployeeBehaviorEngine _behaviorEngine = new();
+    public static readonly double CoreSimulationRealSecondsPerTick =
+        SimulationFrontendContract.Cadence.RecommendedRealSecondsPerTick;
+
     private readonly GodotCoreBridgeContract _bridgeContract = new();
-    private readonly EmployeeLifecycleEngine _lifecycleEngine = new();
+    private readonly OfficeSimulationEngine _simulationEngine = new(
+        new SimulationTickOptions(
+            TickHours: SimulationFrontendContract.Cadence.DefaultTickHours,
+            IsMonthEnd: SimulationFrontendContract.Cadence.UseMonthEndInV026Bridge
+        )
+    );
     private readonly Dictionary<int, CoreEmployeeLifecycleState> _employeeLifecycleStates = [];
     private readonly Dictionary<int, IReadOnlyList<int>> _facilityOccupants = [];
 
@@ -24,27 +31,16 @@ public partial class V2CoreBridge : Node
         return "规则核心桥接已接入：员工意图由 C# Core 规划";
     }
 
-    public IReadOnlyList<CoreEmployeeIntent> PlanEmployeeIntents(
+    public CoreOfficeSimulationResult AdvanceOfficeSimulation(
         EmployeeStore employeeStore,
         FacilityPlacementStore facilityPlacementStore,
         RoomFootprintStore roomFootprintStore
     )
     {
         var snapshot = BuildSnapshot(employeeStore, facilityPlacementStore, roomFootprintStore);
-        return _behaviorEngine.PlanIntents(snapshot).Select(MapCoreIntent).ToArray();
-    }
-
-    public IReadOnlyList<CoreEmployeeLifecycleState> AdvanceEmployeeLifecycle(
-        EmployeeStore employeeStore,
-        FacilityPlacementStore facilityPlacementStore,
-        RoomFootprintStore roomFootprintStore,
-        IReadOnlyList<CoreEmployeeIntent> intents
-    )
-    {
-        var snapshot = BuildSnapshot(employeeStore, facilityPlacementStore, roomFootprintStore);
-        var nextSnapshot = _lifecycleEngine.Advance(snapshot, intents.Select(MapGodotIntent).ToArray());
-        StoreLifecycleState(nextSnapshot);
-        return nextSnapshot.Employees.Select(MapLifecycleState).ToArray();
+        var result = _simulationEngine.Advance(snapshot);
+        StoreSimulationState(result.NextSnapshot);
+        return MapSimulationResult(result);
     }
 
     public OfficeRuleSnapshot BuildSnapshot(
@@ -75,7 +71,7 @@ public partial class V2CoreBridge : Node
             )
         );
 
-        return ApplyLifecycleState(_bridgeContract.BuildSnapshot(dto));
+        return ApplySimulationState(_bridgeContract.BuildSnapshot(dto));
     }
 
     private static GodotEmployeeFactDto MapEmployee(
@@ -120,7 +116,7 @@ public partial class V2CoreBridge : Node
         );
     }
 
-    private OfficeRuleSnapshot ApplyLifecycleState(OfficeRuleSnapshot snapshot)
+    private OfficeRuleSnapshot ApplySimulationState(OfficeRuleSnapshot snapshot)
     {
         return snapshot with
         {
@@ -144,7 +140,7 @@ public partial class V2CoreBridge : Node
         };
     }
 
-    private void StoreLifecycleState(OfficeRuleSnapshot snapshot)
+    private void StoreSimulationState(OfficeRuleSnapshot snapshot)
     {
         _employeeLifecycleStates.Clear();
         foreach (var employee in snapshot.Employees)
@@ -162,14 +158,17 @@ public partial class V2CoreBridge : Node
         }
     }
 
-    private static EmployeeIntent MapGodotIntent(CoreEmployeeIntent intent)
+    private static CoreOfficeSimulationResult MapSimulationResult(SimulationTickResult result)
     {
-        return new EmployeeIntent(
-            ToEmployeeId(intent.EmployeeId),
-            intent.Kind,
-            new IntentTarget(
-                FacilityId: intent.FacilityId == null ? null : ToFacilityId(intent.FacilityId.Value)
-            )
+        return new CoreOfficeSimulationResult(
+            Intents: result.Tick.Intents.Select(MapCoreIntent).ToArray(),
+            EmployeeStates: result.NextSnapshot.Employees.Select(MapLifecycleState).ToArray(),
+            FacilityStates: result.NextSnapshot.Facilities.Select(MapFacilityState).ToArray(),
+            PresentationEvents: result.PresentationEvents.Select(MapPresentationEvent).ToArray(),
+            OutcomeKind: result.Outcome.Kind,
+            ProjectProgressDelta: result.Tick.CompanyDelta.ProjectProgressDelta,
+            CashDelta: result.Tick.CompanyDelta.CashDelta,
+            RevenueDelta: result.Tick.CompanyDelta.RevenueDelta
         );
     }
 
@@ -180,6 +179,26 @@ public partial class V2CoreBridge : Node
             ActivityKind: employee.CurrentActivity,
             FacilityId: ParseCoreFacilityId(employee.ActiveFacilityId),
             RemainingActivityTicks: employee.RemainingActivityTicks
+        );
+    }
+
+    private static CoreFacilitySimulationState MapFacilityState(FacilityState facility)
+    {
+        return new CoreFacilitySimulationState(
+            FacilityId: ParseCoreFacilityId(facility.Id)!.Value,
+            IsInUse: facility.OccupiedByEmployeeIds.Count > 0,
+            CurrentOccupancy: facility.OccupiedByEmployeeIds.Count
+        );
+    }
+
+    private static CoreSimulationPresentationEvent MapPresentationEvent(
+        SimulationPresentationEvent presentationEvent
+    )
+    {
+        return new CoreSimulationPresentationEvent(
+            Kind: presentationEvent.Kind,
+            SubjectId: presentationEvent.SubjectId,
+            Message: presentationEvent.Message
         );
     }
 
@@ -259,4 +278,27 @@ public sealed record CoreEmployeeLifecycleState(
     StartupSim.Core.EmployeeActivityKind ActivityKind,
     int? FacilityId,
     int RemainingActivityTicks
+);
+
+public sealed record CoreFacilitySimulationState(
+    int FacilityId,
+    bool IsInUse,
+    int CurrentOccupancy
+);
+
+public sealed record CoreSimulationPresentationEvent(
+    SimulationEventKind Kind,
+    string SubjectId,
+    string Message
+);
+
+public sealed record CoreOfficeSimulationResult(
+    IReadOnlyList<CoreEmployeeIntent> Intents,
+    IReadOnlyList<CoreEmployeeLifecycleState> EmployeeStates,
+    IReadOnlyList<CoreFacilitySimulationState> FacilityStates,
+    IReadOnlyList<CoreSimulationPresentationEvent> PresentationEvents,
+    PhaseOutcomeKind OutcomeKind,
+    double ProjectProgressDelta,
+    double CashDelta,
+    double RevenueDelta
 );

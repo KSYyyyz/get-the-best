@@ -1330,13 +1330,13 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
 
     assert "FacilityPlacementStore? _facilityPlacementStore" in employee_autonomy
     assert "Facility3DRenderer? _facilityRenderer" in employee_autonomy
-    assert "CoreLifecycleTickSeconds" in employee_autonomy
+    assert "CoreSimulationTickSeconds" in employee_autonomy
     assert "FacilityInteractionTarget" in employee_autonomy
     assert "WalkingToFacility" in employee_autonomy
     assert "UsingFacility" in employee_autonomy
     assert "TryStartFacilityUseBehavior" in employee_autonomy
     assert "FindFacilityUseTarget" in employee_autonomy
-    assert "PlanEmployeeIntents(" in employee_autonomy
+    assert "AdvanceOfficeSimulation(" in employee_autonomy
     assert "GetFacilityInteractionCells(facility)" in employee_autonomy
     assert "_officeNavigationStore.FindPath(employee.Cell, standCell)" in employee_autonomy
     assert (
@@ -1347,7 +1347,7 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
         "_facilityRenderer?.SetFacilityUseState(facilityId, activeFacilityIds.Contains(facilityId))"
         in employee_autonomy
     )
-    assert "ApplyCoreLifecycleStates(lifecycleStates)" in employee_autonomy
+    assert "ApplyCoreSimulationStates(simulationResult)" in employee_autonomy
 
     assert "_usingFacilityIds" in facility_renderer
     assert "SetFacilityUseState(int facilityId, bool isInUse)" in facility_renderer
@@ -1381,9 +1381,9 @@ def test_get_the_best_v2_0_24_godot_autonomy_consumes_core_intents() -> None:
     assert "..\\..\\csharp\\StartupSim.Core\\StartupSim.Core.csproj" in csproj
     assert "using StartupSim.Core;" in bridge
     assert "GodotCoreBridgeContract" in bridge
-    assert "EmployeeBehaviorEngine" in bridge
+    assert "OfficeSimulationEngine" in bridge
     assert "BuildSnapshot(" in bridge
-    assert "PlanEmployeeIntents(" in bridge
+    assert "AdvanceOfficeSimulation(" in bridge
     assert "GodotOfficeSnapshotDto" in bridge
     assert "GodotEmployeeFactDto" in bridge
     assert "GodotFacilityFactDto" in bridge
@@ -1393,7 +1393,7 @@ def test_get_the_best_v2_0_24_godot_autonomy_consumes_core_intents() -> None:
 
     assert "V2CoreBridge? _v2CoreBridge" in employee_autonomy
     assert 'GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge")' in employee_autonomy
-    assert "_v2CoreBridge.PlanEmployeeIntents(" in employee_autonomy
+    assert "_v2CoreBridge.AdvanceOfficeSimulation(" in employee_autonomy
     assert "FindFacilityUseTarget(employee, coreIntent.FacilityId" in employee_autonomy
     assert "GetDesiredFacilityTypes" not in employee_autonomy
 
@@ -1402,21 +1402,47 @@ def test_get_the_best_v2_0_25_godot_uses_core_lifecycle_for_facility_use() -> No
     bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
     employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
 
-    assert "EmployeeLifecycleEngine" in bridge
-    assert "_lifecycleEngine" in bridge
+    assert "OfficeSimulationEngine" in bridge
+    assert "_simulationEngine" in bridge
     assert "_employeeLifecycleStates" in bridge
     assert "_facilityOccupants" in bridge
-    assert "AdvanceEmployeeLifecycle(" in bridge
-    assert "ApplyLifecycleState(" in bridge
-    assert "StoreLifecycleState(" in bridge
+    assert "AdvanceOfficeSimulation(" in bridge
+    assert "ApplySimulationState(" in bridge
+    assert "StoreSimulationState(" in bridge
     assert "CoreEmployeeLifecycleState" in bridge
     assert "RemainingActivityTicks" in bridge
 
     assert "UseFacilityDurationSeconds" not in employee_autonomy
     assert "_facilityUseTimers" not in employee_autonomy
-    assert "CoreLifecycleTickSeconds" in employee_autonomy
-    assert "UpdateCoreLifecycle(" in employee_autonomy
-    assert "AdvanceEmployeeLifecycle(" in employee_autonomy
-    assert "ApplyCoreLifecycleStates(" in employee_autonomy
+    assert "CoreSimulationTickSeconds" in employee_autonomy
+    assert "UpdateCoreSimulation(" in employee_autonomy
+    assert "AdvanceOfficeSimulation(" in employee_autonomy
+    assert "ApplyCoreSimulationStates(" in employee_autonomy
     assert "StartupSim.Core.EmployeeActivityKind.UseFacility" in employee_autonomy
     assert "StartupSim.Core.EmployeeActivityKind.Idle" in employee_autonomy
+
+
+def test_get_the_best_v2_0_26_godot_uses_unified_core_simulation_tick() -> None:
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "OfficeSimulationEngine" in bridge
+    assert "_simulationEngine" in bridge
+    assert "AdvanceOfficeSimulation(" in bridge
+    assert "SimulationFrontendContract.Cadence" in bridge
+    assert "SimulationTickOptions" in bridge
+    assert "SimulationTickResult" in bridge
+    assert "PresentationEvents" in bridge
+    assert "CoreOfficeSimulationResult" in bridge
+    assert "StoreSimulationState(" in bridge
+
+    assert "private readonly EmployeeBehaviorEngine" not in bridge
+    assert "private readonly EmployeeLifecycleEngine" not in bridge
+    assert "PlanEmployeeIntents(" not in bridge
+    assert "AdvanceEmployeeLifecycle(" not in bridge
+
+    assert "CoreSimulationTickSeconds" in employee_autonomy
+    assert "AdvanceOfficeSimulation(" in employee_autonomy
+    assert "ApplyCoreSimulationStates(" in employee_autonomy
+    assert "PlanEmployeeIntents(" not in employee_autonomy
+    assert "AdvanceEmployeeLifecycle(" not in employee_autonomy

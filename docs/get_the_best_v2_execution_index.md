@@ -74,6 +74,7 @@
 - `docs/get_the_best_v2_0_23_employee_activity_badge_acceptance_report.md`
 - `docs/get_the_best_v2_0_24_core_intent_bridge_acceptance_report.md`
 - `docs/get_the_best_v2_0_25_core_lifecycle_bridge_acceptance_report.md`
+- `docs/get_the_best_v2_0_26_unified_core_simulation_tick_acceptance_report.md`
 
 ## 5. 第一原则
 

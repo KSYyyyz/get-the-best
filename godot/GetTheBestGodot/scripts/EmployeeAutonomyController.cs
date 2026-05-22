@@ -6,7 +6,8 @@ namespace GetTheBestGodot;
 public partial class EmployeeAutonomyController : Node
 {
     private const float AutonomousMoveIntervalSeconds = 2.4f;
-    private const float CoreLifecycleTickSeconds = 1.6f;
+    private static readonly float CoreSimulationTickSeconds =
+        (float)V2CoreBridge.CoreSimulationRealSecondsPerTick;
     private const int MaxAutonomousPathCells = 4;
     private static readonly Vector2I[] CandidateTargetOffsets =
     [
@@ -41,7 +42,7 @@ public partial class EmployeeAutonomyController : Node
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
-    private float _coreLifecycleTimer = CoreLifecycleTickSeconds;
+    private float _coreSimulationTimer = CoreSimulationTickSeconds;
     private int _nextEmployeeIndex;
     private bool _isEmployeeMoveInProgress;
 
@@ -64,7 +65,7 @@ public partial class EmployeeAutonomyController : Node
             return;
         }
 
-        UpdateCoreLifecycle((float)delta);
+        UpdateCoreSimulation((float)delta);
         _autonomyTimer -= (float)delta;
         if (_autonomyTimer > 0.0f)
         {
@@ -101,6 +102,9 @@ public partial class EmployeeAutonomyController : Node
             return false;
         }
 
+        var simulationResult = AdvanceCoreSimulation();
+        ApplyCoreSimulationStates(simulationResult);
+
         for (var attempt = 0; attempt < employees.Count; attempt++)
         {
             var employee = employees[_nextEmployeeIndex % employees.Count];
@@ -110,7 +114,7 @@ public partial class EmployeeAutonomyController : Node
                 continue;
             }
 
-            if (TryStartFacilityUseBehavior(employee))
+            if (TryStartFacilityUseBehavior(employee, simulationResult))
             {
                 return true;
             }
@@ -137,24 +141,17 @@ public partial class EmployeeAutonomyController : Node
             || state.ActivityKind == EmployeeActivityKind.Idle;
     }
 
-    private bool TryStartFacilityUseBehavior(EmployeeVisual employee)
+    private bool TryStartFacilityUseBehavior(
+        EmployeeVisual employee,
+        CoreOfficeSimulationResult? simulationResult
+    )
     {
-        if (
-            _employeeStore == null
-            || _facilityPlacementStore == null
-            || _roomFootprintStore == null
-            || _v2CoreBridge == null
-        )
+        if (simulationResult == null)
         {
             return false;
         }
 
-        var coreIntents = _v2CoreBridge.PlanEmployeeIntents(
-            _employeeStore,
-            _facilityPlacementStore,
-            _roomFootprintStore
-        );
-        foreach (var coreIntent in coreIntents)
+        foreach (var coreIntent in simulationResult.Intents)
         {
             if (
                 coreIntent.EmployeeId != employee.Id
@@ -175,23 +172,6 @@ public partial class EmployeeAutonomyController : Node
 
     private void StartFacilityMove(EmployeeVisual employee, FacilityInteractionTarget target)
     {
-        if (
-            _employeeStore == null
-            || _facilityPlacementStore == null
-            || _roomFootprintStore == null
-            || _v2CoreBridge == null
-        )
-        {
-            return;
-        }
-
-        var lifecycleStates = _v2CoreBridge.AdvanceEmployeeLifecycle(
-            _employeeStore,
-            _facilityPlacementStore,
-            _roomFootprintStore,
-            [new CoreEmployeeIntent(employee.Id, StartupSim.Core.EmployeeIntentKind.MoveToFacility, target.Facility.Id)]
-        );
-        ApplyCoreLifecycleStates(lifecycleStates);
         _reservedFacilityIds.Add(target.Facility.Id);
         _isEmployeeMoveInProgress = true;
         SetEmployeeActivity(
@@ -313,7 +293,7 @@ public partial class EmployeeAutonomyController : Node
         {
             _ = movedEmployee;
             _employeeRenderer?.RefreshEmployees();
-            AdvanceAndApplyCoreLifecycle();
+            AdvanceAndApplyCoreSimulation();
         }
         else
         {
@@ -324,24 +304,29 @@ public partial class EmployeeAutonomyController : Node
         _isEmployeeMoveInProgress = false;
     }
 
-    private void UpdateCoreLifecycle(float delta)
+    private void UpdateCoreSimulation(float delta)
     {
-        if (!HasCoreLifecycleActivity())
+        if (!HasCoreSimulationActivity())
         {
             return;
         }
 
-        _coreLifecycleTimer -= delta;
-        if (_coreLifecycleTimer > 0.0f)
+        _coreSimulationTimer -= delta;
+        if (_coreSimulationTimer > 0.0f)
         {
             return;
         }
 
-        _coreLifecycleTimer = CoreLifecycleTickSeconds;
-        AdvanceAndApplyCoreLifecycle();
+        _coreSimulationTimer = CoreSimulationTickSeconds;
+        AdvanceAndApplyCoreSimulation();
     }
 
-    private void AdvanceAndApplyCoreLifecycle()
+    private void AdvanceAndApplyCoreSimulation()
+    {
+        ApplyCoreSimulationStates(AdvanceCoreSimulation());
+    }
+
+    private CoreOfficeSimulationResult? AdvanceCoreSimulation()
     {
         if (
             _employeeStore == null
@@ -350,19 +335,17 @@ public partial class EmployeeAutonomyController : Node
             || _v2CoreBridge == null
         )
         {
-            return;
+            return null;
         }
 
-        var lifecycleStates = _v2CoreBridge.AdvanceEmployeeLifecycle(
+        return _v2CoreBridge.AdvanceOfficeSimulation(
             _employeeStore,
             _facilityPlacementStore,
-            _roomFootprintStore,
-            []
+            _roomFootprintStore
         );
-        ApplyCoreLifecycleStates(lifecycleStates);
     }
 
-    private bool HasCoreLifecycleActivity()
+    private bool HasCoreSimulationActivity()
     {
         foreach (var state in _employeeStates.Values)
         {
@@ -378,10 +361,23 @@ public partial class EmployeeAutonomyController : Node
         return false;
     }
 
-    private void ApplyCoreLifecycleStates(IReadOnlyList<CoreEmployeeLifecycleState> lifecycleStates)
+    private void ApplyCoreSimulationStates(CoreOfficeSimulationResult? simulationResult)
     {
+        if (simulationResult == null)
+        {
+            return;
+        }
+
         var activeFacilityIds = new HashSet<int>();
-        foreach (var lifecycleState in lifecycleStates)
+        foreach (var facilityState in simulationResult.FacilityStates)
+        {
+            if (facilityState.IsInUse)
+            {
+                activeFacilityIds.Add(facilityState.FacilityId);
+            }
+        }
+
+        foreach (var lifecycleState in simulationResult.EmployeeStates)
         {
             if (lifecycleState.ActivityKind == StartupSim.Core.EmployeeActivityKind.UseFacility)
             {
@@ -410,7 +406,7 @@ public partial class EmployeeAutonomyController : Node
         _reservedFacilityIds.RemoveWhere(facilityId => !activeFacilityIds.Contains(facilityId));
         if (_reservedFacilityIds.Count == 0)
         {
-            _coreLifecycleTimer = CoreLifecycleTickSeconds;
+            _coreSimulationTimer = CoreSimulationTickSeconds;
         }
     }
 

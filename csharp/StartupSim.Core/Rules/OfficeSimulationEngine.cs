@@ -15,6 +15,14 @@ public sealed class OfficeSimulationEngine
             new OfficeStateReducer()
         ) { }
 
+    public OfficeSimulationEngine(SimulationTickOptions options)
+        : this(
+            options,
+            new EmployeeBehaviorEngine(),
+            new EmployeeLifecycleEngine(),
+            new OfficeStateReducer()
+        ) { }
+
     public OfficeSimulationEngine(
         SimulationTickOptions options,
         EmployeeBehaviorEngine behaviorEngine,
