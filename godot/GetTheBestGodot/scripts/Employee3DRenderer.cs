@@ -488,9 +488,9 @@ public partial class Employee3DRenderer : Node3D
     {
         return facing switch
         {
-            FacilityFacing.North => new Vector3(-offset.X, offset.Y, -offset.Z),
+            FacilityFacing.North => offset,
             FacilityFacing.East => new Vector3(offset.Z, offset.Y, -offset.X),
-            FacilityFacing.South => offset,
+            FacilityFacing.South => new Vector3(-offset.X, offset.Y, -offset.Z),
             _ => new Vector3(-offset.Z, offset.Y, offset.X),
         };
     }

@@ -32,6 +32,7 @@ public partial class OfficeSelection3DController : Node
     private FacilityPlacement? _draggedFacility;
     private Vector2I _dragFacilityOriginCell;
     private Vector2I _dragFacilityCurrentCell;
+    private FacilityFacing _dragFacilityOriginFacing;
     private bool _dragFacilityTargetLegal;
     private Vector2I? _lastHoveredCell;
     private Vector2 _lastPointerScreenPosition;
@@ -614,6 +615,7 @@ public partial class OfficeSelection3DController : Node
         _draggedFacility = facility;
         _dragFacilityOriginCell = facility.Cell;
         _dragFacilityCurrentCell = facility.Cell;
+        _dragFacilityOriginFacing = facility.Facing;
         _dragFacilityTargetLegal = true;
         ClearSelectedObjects();
         ClearObjectHoverState();
@@ -662,7 +664,10 @@ public partial class OfficeSelection3DController : Node
             _dragFacilityTargetLegal = false;
         }
 
-        if (_dragFacilityCurrentCell == _dragFacilityOriginCell)
+        if (
+            _dragFacilityCurrentCell == _dragFacilityOriginCell
+            && _draggedFacility.Facing == _dragFacilityOriginFacing
+        )
         {
             _facilityRenderer?.ClearFacilityDragPreview();
             _placementPreviewController?.ClearPreview();
@@ -804,9 +809,9 @@ public partial class OfficeSelection3DController : Node
         return facility.Cell
             + (facility.Facing switch
             {
-                FacilityFacing.North => Vector2I.Up,
+                FacilityFacing.North => Vector2I.Down,
                 FacilityFacing.East => Vector2I.Right,
-                FacilityFacing.South => Vector2I.Down,
+                FacilityFacing.South => Vector2I.Up,
                 _ => Vector2I.Left,
             });
     }
@@ -817,6 +822,7 @@ public partial class OfficeSelection3DController : Node
         _draggedFacility = null;
         _dragFacilityOriginCell = Vector2I.Zero;
         _dragFacilityCurrentCell = Vector2I.Zero;
+        _dragFacilityOriginFacing = FacilityFacing.South;
         _dragFacilityTargetLegal = false;
     }
 

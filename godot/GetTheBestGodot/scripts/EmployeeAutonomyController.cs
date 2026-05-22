@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Godot;
+using StartupSim.Core;
 
 namespace GetTheBestGodot;
 
@@ -187,14 +188,18 @@ public partial class EmployeeAutonomyController : Node
                 continue;
             }
 
-            StartFacilityMove(employee, target);
+            StartFacilityMove(employee, target, BuildCoreIntentActivityLabel(coreIntent));
             return true;
         }
 
         return false;
     }
 
-    private void StartFacilityMove(EmployeeVisual employee, FacilityInteractionTarget target)
+    private void StartFacilityMove(
+        EmployeeVisual employee,
+        FacilityInteractionTarget target,
+        string? activityLabel = null
+    )
     {
         _reservedFacilityIds.Add(target.Facility.Id);
         _isEmployeeMoveInProgress = true;
@@ -202,7 +207,8 @@ public partial class EmployeeAutonomyController : Node
             employee.Id,
             EmployeeActivityKind.WalkingToFacility,
             target.StandCell,
-            target.Facility.Id
+            target.Facility.Id,
+            activityLabel
         );
         _employeeRenderer?.PlayEmployeePathMove(employee, target.Path, () =>
             FinishFacilityArrival(employee.Id, target)
@@ -305,10 +311,27 @@ public partial class EmployeeAutonomyController : Node
 
     private static IEnumerable<Vector2I> GetFacilityInteractionCells(FacilityPlacement facility)
     {
+        yield return GetFacilitySeatCell(facility);
         foreach (var offset in FacilityInteractionOffsets)
         {
-            yield return facility.Cell + offset;
+            var standCell = facility.Cell + offset;
+            if (standCell != GetFacilitySeatCell(facility))
+            {
+                yield return standCell;
+            }
         }
+    }
+
+    private static Vector2I GetFacilitySeatCell(FacilityPlacement facility)
+    {
+        return facility.Cell
+            + (facility.Facing switch
+            {
+                FacilityFacing.North => Vector2I.Down,
+                FacilityFacing.East => Vector2I.Right,
+                FacilityFacing.South => Vector2I.Up,
+                _ => Vector2I.Left,
+            });
     }
 
     private void FinishFacilityArrival(int employeeId, FacilityInteractionTarget target)
@@ -452,7 +475,8 @@ public partial class EmployeeAutonomyController : Node
         int employeeId,
         EmployeeActivityKind activityKind,
         Vector2I? targetCell = null,
-        int? facilityId = null
+        int? facilityId = null,
+        string? labelOverride = null
     )
     {
         _employeeStates[employeeId] = new EmployeeAutonomyState(
@@ -461,7 +485,10 @@ public partial class EmployeeAutonomyController : Node
             targetCell,
             facilityId
         );
-        _employeeRenderer?.SetEmployeeActivityLabel(employeeId, GetActivityLabel(activityKind));
+        _employeeRenderer?.SetEmployeeActivityLabel(
+            employeeId,
+            labelOverride ?? GetActivityLabel(activityKind)
+        );
     }
 
     private void ClearEmployeeActivity(int employeeId)
@@ -479,6 +506,22 @@ public partial class EmployeeAutonomyController : Node
             EmployeeActivityKind.WalkingToTarget => "\u79fb\u52a8\u4e2d",
             _ => null,
         };
+    }
+
+    private static string BuildCoreIntentActivityLabel(CoreEmployeeIntent coreIntent)
+    {
+        var actionLabel = coreIntent.SourceAction switch
+        {
+            EmployeeActionCandidateKind.WorkAtDesk => "\u524d\u5f80\u529e\u516c\u684c",
+            EmployeeActionCandidateKind.UseWhiteboard => "\u524d\u5f80\u767d\u677f",
+            EmployeeActionCandidateKind.MaintainServer => "\u524d\u5f80\u670d\u52a1\u5668",
+            EmployeeActionCandidateKind.Rest => "\u524d\u5f80\u4f11\u606f",
+            _ => "\u524d\u5f80\u8bbe\u65bd",
+        };
+
+        return string.IsNullOrWhiteSpace(coreIntent.ReasonSummary)
+            ? actionLabel
+            : $"{actionLabel}: {coreIntent.ReasonSummary}";
     }
 }
 

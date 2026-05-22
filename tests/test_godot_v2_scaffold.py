@@ -1556,3 +1556,33 @@ def test_get_the_best_v2_0_29_employee_facility_snap_work_pose_and_drag_cleanup(
         "_employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: true, facility)"
         in employee_autonomy
     )
+
+
+def test_get_the_best_v2_0_30_seat_anchor_facility_rotation_and_core_intent_labels() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+
+    assert "_dragFacilityOriginFacing" in selection
+    assert "_draggedFacility.Facing == _dragFacilityOriginFacing" in selection
+    assert "FacilityFacing.South => Vector2I.Up" in selection
+    assert "FacilityFacing.North => Vector2I.Down" in selection
+
+    assert (
+        "FacilityFacing.South => new Vector3(-offset.X, offset.Y, -offset.Z)" in employee_renderer
+    )
+    assert "FacilityFacing.North => offset" in employee_renderer
+    assert "GetDeskSeatWorldPosition(workFacility)" in employee_renderer
+
+    assert "SourceAction" in bridge
+    assert "ReasonSummary" in bridge
+    assert "intent.SourceAction" in bridge
+    assert "intent.Explanation?.Reasons.FirstOrDefault()" in bridge
+
+    assert "GetFacilitySeatCell(facility)" in employee_autonomy
+    assert "BuildCoreIntentActivityLabel(" in employee_autonomy
+    assert "coreIntent.SourceAction" in employee_autonomy
+    assert "EmployeeActionCandidateKind.WorkAtDesk" in employee_autonomy
+    assert "EmployeeActionCandidateKind.UseWhiteboard" in employee_autonomy
+    assert "EmployeeActionCandidateKind.MaintainServer" in employee_autonomy

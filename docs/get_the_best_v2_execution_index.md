@@ -78,6 +78,7 @@
 - `docs/get_the_best_v2_0_27_business_feedback_hud_acceptance_report.md`
 - `docs/get_the_best_v2_0_28_facility_preview_rotation_work_feedback_acceptance_report.md`
 - `docs/get_the_best_v2_0_29_employee_facility_snap_work_pose_acceptance_report.md`
+- `docs/get_the_best_v2_0_30_employee_seat_rotation_core_utility_acceptance_report.md`
 - `docs/get_the_best_v2_animation_asset_plan.md`
 
 ## 5. 第一原则

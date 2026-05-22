@@ -240,7 +240,9 @@ public partial class V2CoreBridge : Node
         return new CoreEmployeeIntent(
             EmployeeId: ParseCoreEmployeeId(intent.EmployeeId),
             Kind: intent.Kind,
-            FacilityId: ParseCoreFacilityId(intent.Target.FacilityId)
+            FacilityId: ParseCoreFacilityId(intent.Target.FacilityId),
+            SourceAction: intent.SourceAction,
+            ReasonSummary: intent.Explanation?.Reasons.FirstOrDefault()
         );
     }
 
@@ -283,7 +285,9 @@ public partial class V2CoreBridge : Node
 public sealed record CoreEmployeeIntent(
     int EmployeeId,
     EmployeeIntentKind Kind,
-    int? FacilityId
+    int? FacilityId,
+    EmployeeActionCandidateKind? SourceAction,
+    string? ReasonSummary
 );
 
 public sealed record CoreEmployeeLifecycleState(
