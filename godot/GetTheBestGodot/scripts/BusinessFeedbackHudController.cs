@@ -23,6 +23,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
     private Label? _objectiveValueLabel;
     private Label? _nextObjectiveValueLabel;
     private Label? _recentCoreEventValueLabel;
+    private Label? _phaseRecapTitleLabel;
+    private Label? _phaseRecapSummaryLabel;
+    private Label? _phaseRecapReasonLabel;
 
     public override void _Ready()
     {
@@ -44,6 +47,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
         _recentCoreEventValueLabel = GetNodeOrNull<Label>(
             "BusinessRows/RecentCoreEventValueLabel"
         );
+        _phaseRecapTitleLabel = GetNodeOrNull<Label>("BusinessRows/PhaseRecapTitleLabel");
+        _phaseRecapSummaryLabel = GetNodeOrNull<Label>("BusinessRows/PhaseRecapSummaryLabel");
+        _phaseRecapReasonLabel = GetNodeOrNull<Label>("BusinessRows/PhaseRecapReasonLabel");
 
         ConfigurePanel();
         ConfigureLabel(_cashValueLabel, PrimaryTextColor);
@@ -55,6 +61,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
         ConfigureLongLineLabel(_objectiveValueLabel, MutedTextColor);
         ConfigureLongLineLabel(_nextObjectiveValueLabel, MutedTextColor);
         ConfigureLongLineLabel(_recentCoreEventValueLabel, MutedTextColor);
+        ConfigureLongLineLabel(_phaseRecapTitleLabel, PrimaryTextColor);
+        ConfigureLongLineLabel(_phaseRecapSummaryLabel, MutedTextColor);
+        ConfigureLongLineLabel(_phaseRecapReasonLabel, MutedTextColor);
         ResetDisplay();
     }
 
@@ -107,6 +116,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
             FormatNextObjective(result.CompanyTotals, result.OutcomeKind)
         );
         SetLabel(_recentCoreEventValueLabel, FormatRecentCoreEvent(result));
+        SetLabel(_phaseRecapTitleLabel, FormatPhaseRecapTitle(result));
+        SetLabel(_phaseRecapSummaryLabel, FormatPhaseRecapSummary(result));
+        SetLabel(_phaseRecapReasonLabel, FormatPhaseRecapReason(result));
     }
 
     private void ResetDisplay()
@@ -120,6 +132,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
         SetLabel(_objectiveValueLabel, "\u76ee\u6807 \u7b49\u5f85 Core tick");
         SetLabel(_nextObjectiveValueLabel, "\u4e0b\u4e00\u6b65 \u89c2\u5bdf\u5458\u5de5\u884c\u52a8");
         SetLabel(_recentCoreEventValueLabel, "\u6700\u8fd1\u4e8b\u4ef6 --");
+        SetLabel(_phaseRecapTitleLabel, "\u9636\u6bb5\u590d\u76d8 \u7b49\u5f85 Core \u7ed3\u679c");
+        SetLabel(_phaseRecapSummaryLabel, "\u590d\u76d8\u6458\u8981 --");
+        SetLabel(_phaseRecapReasonLabel, "\u590d\u76d8\u539f\u56e0 --");
     }
 
     private void ConfigurePanel()
@@ -271,6 +286,70 @@ public partial class BusinessFeedbackHudController : PanelContainer
         return eventSummary == null
             ? "\u6700\u8fd1\u4e8b\u4ef6 \u672c\u6b21 tick \u65e0\u65b0\u4e8b\u4ef6"
             : $"\u6700\u8fd1\u4e8b\u4ef6 {FormatEventKind(eventSummary.Kind)}: {eventSummary.Message}";
+    }
+
+    private static string FormatPhaseRecapTitle(CoreOfficeSimulationResult result)
+    {
+        if (result.OutcomeKind == PhaseOutcomeKind.FirstUsersAcquired)
+        {
+            return "\u9636\u6bb5\u590d\u76d8 \u9996\u6279\u7528\u6237\u9a8c\u8bc1\u901a\u8fc7";
+        }
+
+        if (result.OutcomeKind == PhaseOutcomeKind.MvpCompleted)
+        {
+            return "\u9636\u6bb5\u590d\u76d8 MVP \u5df2\u5b8c\u6210";
+        }
+
+        if (result.OutcomeKind == PhaseOutcomeKind.RevenuePositive)
+        {
+            return "\u9636\u6bb5\u590d\u76d8 \u6536\u5165\u8f6c\u6b63";
+        }
+
+        if (result.OutcomeKind == PhaseOutcomeKind.FailedCashDepleted)
+        {
+            return "\u9636\u6bb5\u590d\u76d8 \u73b0\u91d1\u8017\u5c3d";
+        }
+
+        return result.CompanyTotals.ProductStage == ProductStage.MvpReady
+            ? "\u9636\u6bb5\u590d\u76d8 \u51c6\u5907\u83b7\u53d6\u7528\u6237"
+            : "\u9636\u6bb5\u590d\u76d8 \u539f\u578b\u63a8\u8fdb\u4e2d";
+    }
+
+    private static string FormatPhaseRecapSummary(CoreOfficeSimulationResult result)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "\u590d\u76d8\u6458\u8981 MVP {0:0.#}/{1:0.#}\uff0c\u7528\u6237 {2}\uff0cMRR \u00a5{3:0}\uff0c\u73b0\u91d1 \u00a5{4:0}",
+            result.CompanyTotals.CurrentProjectProgress,
+            result.CompanyTotals.ProjectRequiredProgress,
+            result.CompanyTotals.CurrentActiveUsers,
+            result.CompanyTotals.CurrentMonthlyRecurringRevenue,
+            result.CompanyTotals.CurrentCash
+        );
+    }
+
+    private static string FormatPhaseRecapReason(CoreOfficeSimulationResult result)
+    {
+        var phaseEvent = result.PresentationEvents.LastOrDefault(
+            eventSummary => eventSummary.Kind == SimulationEventKind.PhaseOutcomeReached
+        );
+        if (phaseEvent != null)
+        {
+            return $"\u590d\u76d8\u539f\u56e0 {phaseEvent.Message}";
+        }
+
+        var monthlyReport = result.PresentationEvents.LastOrDefault(
+            eventSummary => eventSummary.Kind == SimulationEventKind.MonthlyReportReady
+        );
+        if (monthlyReport != null)
+        {
+            return $"\u590d\u76d8\u539f\u56e0 {monthlyReport.Message}";
+        }
+
+        var lastEvent = result.PresentationEvents.LastOrDefault();
+        return lastEvent == null
+            ? "\u590d\u76d8\u539f\u56e0 Core tick \u5df2\u66f4\u65b0\uff0c\u7ee7\u7eed\u89c2\u5bdf\u5458\u5de5\u884c\u52a8\u4e0e\u6307\u6807\u53d8\u5316"
+            : $"\u590d\u76d8\u539f\u56e0 {FormatEventKind(lastEvent.Kind)}: {lastEvent.Message}";
     }
 
     private static string FormatLastEvent(CoreOfficeSimulationResult result)

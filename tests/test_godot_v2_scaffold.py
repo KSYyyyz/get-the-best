@@ -1679,3 +1679,21 @@ def test_get_the_best_v2_1_2_core_company_state_persists_between_ticks() -> None
     assert "_companyState = snapshot.Company;" in bridge
     assert "MapCompanyTotals(result.NextSnapshot.Company)" in bridge
     assert "ProductMarket = nextProductMarket" not in bridge
+
+
+def test_get_the_best_v2_1_3_phase_recap_panel_explains_core_outcomes() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    hud = read_text(GODOT_ROOT / "scripts" / "BusinessFeedbackHudController.cs")
+
+    assert 'name="PhaseRecapTitleLabel"' in scene_text
+    assert 'name="PhaseRecapSummaryLabel"' in scene_text
+    assert 'name="PhaseRecapReasonLabel"' in scene_text
+    assert "_phaseRecapTitleLabel" in hud
+    assert "_phaseRecapSummaryLabel" in hud
+    assert "_phaseRecapReasonLabel" in hud
+    assert "FormatPhaseRecapTitle(result)" in hud
+    assert "FormatPhaseRecapSummary(result)" in hud
+    assert "FormatPhaseRecapReason(result)" in hud
+    assert "SimulationEventKind.PhaseOutcomeReached" in hud
+    assert "result.CompanyTotals.CurrentActiveUsers" in hud
+    assert "result.CompanyTotals.CurrentMonthlyRecurringRevenue" in hud

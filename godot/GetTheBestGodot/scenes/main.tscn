@@ -163,7 +163,7 @@ text = "?"
 offset_left = 16.0
 offset_top = 58.0
 offset_right = 876.0
-offset_bottom = 198.0
+offset_bottom = 286.0
 mouse_filter = 2
 script = ExtResource("9_gqmmt")
 
@@ -197,17 +197,29 @@ text = "Stage --"
 layout_mode = 2
 text = "Waiting for Core tick"
 
-[node name="ObjectiveValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows"]
+[node name="ObjectiveValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=1157638137]
 layout_mode = 2
 text = "目标 等待 Core tick"
 
-[node name="NextObjectiveValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows"]
+[node name="NextObjectiveValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=160839685]
 layout_mode = 2
 text = "下一步 观察员工行动"
 
-[node name="RecentCoreEventValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows"]
+[node name="RecentCoreEventValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=1295804768]
 layout_mode = 2
 text = "最近事件 --"
+
+[node name="PhaseRecapTitleLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=1153534863]
+layout_mode = 2
+text = "阶段复盘 等待 Core 结果"
+
+[node name="PhaseRecapSummaryLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=1514238680]
+layout_mode = 2
+text = "复盘摘要 --"
+
+[node name="PhaseRecapReasonLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=1728029614]
+layout_mode = 2
+text = "复盘原因 --"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 
