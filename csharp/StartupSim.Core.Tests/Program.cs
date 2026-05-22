@@ -7,4 +7,5 @@ LifecycleTests.Run();
 RestRecoveryTests.Run();
 FirstLoopBusinessTests.Run();
 SimulationEngineTests.Run();
+SimulationFrontendContractTests.Run();
 Console.WriteLine("StartupSim.Core.Tests passed");

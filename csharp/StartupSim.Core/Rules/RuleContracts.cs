@@ -69,6 +69,28 @@ public enum SimulationEventKind
     PhaseOutcomeReached,
 }
 
+public enum SimulationEventLifetime
+{
+    Instant,
+    StateChange,
+}
+
+public enum SimulationEventSubjectKind
+{
+    Employee,
+    Facility,
+    Metric,
+    Report,
+    Outcome,
+}
+
+public enum TextDisplayPolicy
+{
+    None,
+    Optional,
+    Recommended,
+}
+
 public sealed record GridCell(int X, int Y);
 
 public sealed record EmployeeState(
@@ -216,4 +238,26 @@ public sealed record SimulationTickResult(
     OfficeRuleSnapshot NextSnapshot,
     PhaseOutcome Outcome,
     IReadOnlyList<SimulationPresentationEvent> PresentationEvents
+);
+
+public sealed record SimulationResultFieldContract(
+    string FieldName,
+    string Meaning,
+    string GodotConsumption
+);
+
+public sealed record SimulationEventSemanticContract(
+    SimulationEventKind Kind,
+    SimulationEventLifetime Lifetime,
+    TextDisplayPolicy TextDisplay,
+    SimulationEventSubjectKind SubjectKind,
+    string SubjectIdMeaning,
+    bool CanIgnoreIfSubjectMissing
+);
+
+public sealed record SimulationTickCadenceContract(
+    double RecommendedRealSecondsPerTick,
+    double DefaultTickHours,
+    bool PauseDuringEmployeeWalkAnimation,
+    bool UseMonthEndInV026Bridge
 );
