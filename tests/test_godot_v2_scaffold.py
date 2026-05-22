@@ -1669,3 +1669,13 @@ def test_get_the_best_v2_1_1_core_intent_queue_keeps_non_desk_actions_observable
         )
     ]
     assert "AdvanceAndApplyCoreSimulation();" not in finish_block
+
+
+def test_get_the_best_v2_1_2_core_company_state_persists_between_ticks() -> None:
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+
+    assert "private CompanyState? _companyState;" in bridge
+    assert "Company = _companyState ?? snapshot.Company" in bridge
+    assert "_companyState = snapshot.Company;" in bridge
+    assert "MapCompanyTotals(result.NextSnapshot.Company)" in bridge
+    assert "ProductMarket = nextProductMarket" not in bridge

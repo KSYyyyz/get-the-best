@@ -25,6 +25,7 @@ public partial class V2CoreBridge : Node
     );
     private readonly Dictionary<int, CoreEmployeeLifecycleState> _employeeLifecycleStates = [];
     private readonly Dictionary<int, IReadOnlyList<int>> _facilityOccupants = [];
+    private CompanyState? _companyState;
 
     public string GetInitialStatusText()
     {
@@ -120,6 +121,7 @@ public partial class V2CoreBridge : Node
     {
         return snapshot with
         {
+            Company = _companyState ?? snapshot.Company,
             Employees = snapshot
                 .Employees
                 .Select(employee =>
@@ -142,6 +144,7 @@ public partial class V2CoreBridge : Node
 
     private void StoreSimulationState(OfficeRuleSnapshot snapshot)
     {
+        _companyState = snapshot.Company;
         _employeeLifecycleStates.Clear();
         foreach (var employee in snapshot.Employees)
         {

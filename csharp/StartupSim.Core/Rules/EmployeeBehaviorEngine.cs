@@ -63,7 +63,7 @@ public sealed class EmployeeBehaviorEngine
                 reservedFacilityIds,
                 EmployeeActionCandidateKind.UseWhiteboard,
                 FacilityType.ProductWhiteboard,
-                [RoomType.ResearchRoom, RoomType.MarketRoom],
+                WhiteboardAllowedRoomTypes(snapshot, employee.Role),
                 RoleFitForWhiteboard(employee.Role),
                 WhiteboardGoalScore(snapshot, employee.Role),
                 "白板适合产品方案或获客讨论"
@@ -498,6 +498,20 @@ public sealed class EmployeeBehaviorEngine
         }
 
         return 0.45;
+    }
+
+    private static RoomType[] WhiteboardAllowedRoomTypes(OfficeRuleSnapshot snapshot, EmployeeRole role)
+    {
+        if (snapshot.Company.ActiveProject.Progress < snapshot.Company.ActiveProject.RequiredProgress)
+        {
+            return role is EmployeeRole.Designer or EmployeeRole.Planner
+                ? new[] { RoomType.ResearchRoom }
+                : new[] { RoomType.MarketRoom };
+        }
+
+        return role == EmployeeRole.Marketing
+            ? new[] { RoomType.MarketRoom }
+            : new[] { RoomType.ResearchRoom, RoomType.MarketRoom };
     }
 
     private static double StabilityGoalScore(OfficeRuleSnapshot snapshot)

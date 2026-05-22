@@ -7,6 +7,8 @@ public static class FirstLoopBusinessTests
     public static void Run()
     {
         ResearchWorkCompletesMvpStage();
+        ResearchWorkContinuesFromWorkState();
+        PlannerDoesNotReserveMarketWhiteboardBeforeMvp();
         MarketingWorkAddsFirstUsersAfterMvp();
         RevenueOffsetsOperatingCost();
         MonthEndReportExplainsProgressUsersRevenueAndCash();
@@ -30,6 +32,70 @@ public static class FirstLoopBusinessTests
         Assert.Equal(ProductStage.MvpReady, result.ProductMarketDelta!.NextStage);
         Assert.Equal(ProductStage.MvpReady, next.Company.ProductMarket!.Stage);
         Assert.Equal(100.0, next.Company.ActiveProject.Progress);
+    }
+
+    private static void ResearchWorkContinuesFromWorkState()
+    {
+        var usingSnapshot = TestSnapshots.FirstLoopEngineerUsingDesk(projectProgress: 20);
+        var snapshot = usingSnapshot with
+        {
+            Employees =
+            [
+                usingSnapshot.Employees[0] with
+                {
+                    CurrentActivity = EmployeeActivityKind.Work,
+                    ActiveFacilityId = "desk-1",
+                },
+            ],
+        };
+
+        var result = new FirstLoopBusinessEngine().Tick(snapshot);
+
+        Assert.True(
+            result.CompanyDelta.ProjectProgressDelta > 0,
+            "employees in persistent Work state should continue producing MVP progress"
+        );
+        Assert.True(
+            result.FacilityDeltas.Count > 0,
+            "persistent Work state should keep the active facility visible to the frontend"
+        );
+    }
+
+    private static void PlannerDoesNotReserveMarketWhiteboardBeforeMvp()
+    {
+        var snapshot = TestSnapshots.SingleEngineerWithTwoFacilities() with
+        {
+            Employees =
+            [
+                new EmployeeState(
+                    Id: "employee-planner-1",
+                    DisplayName: "\u9648\u5b50\u822a",
+                    Role: EmployeeRole.Planner,
+                    Skill: 1.1,
+                    Energy: 80,
+                    Fatigue: 20,
+                    Satisfaction: 70,
+                    CurrentActivity: EmployeeActivityKind.Idle,
+                    RoomId: "research-room",
+                    Cell: new GridCell(10, 7)
+                ),
+            ],
+            Company = new CompanyState(
+                Cash: 50_000,
+                MonthlyCostRate: 6_000,
+                ActiveProject: new ProjectState("mvp-project", Progress: 20, RequiredProgress: 100),
+                ProductMarket: new ProductMarketState(
+                    ProductStage.Prototype,
+                    ActiveUsers: 0,
+                    MonthlyRecurringRevenue: 0
+                )
+            ),
+        };
+
+        var intent = new EmployeeBehaviorEngine().PlanIntents(snapshot)[0];
+
+        Assert.Equal(EmployeeActionCandidateKind.WorkAtDesk, intent.SourceAction);
+        Assert.Equal("desk-1", intent.Target.FacilityId);
     }
 
     private static void MarketingWorkAddsFirstUsersAfterMvp()

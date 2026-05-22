@@ -81,6 +81,7 @@
 - `docs/get_the_best_v2_0_30_employee_seat_rotation_core_utility_acceptance_report.md`
 - `docs/get_the_best_v2_1_0_first_loop_animation_acceptance_report.md`
 - `docs/get_the_best_v2_1_1_core_intent_queue_acceptance_report.md`
+- `docs/get_the_best_v2_1_2_persistent_company_loop_acceptance_report.md`
 - `docs/get_the_best_v2_animation_asset_plan.md`
 
 ## 5. 第一原则

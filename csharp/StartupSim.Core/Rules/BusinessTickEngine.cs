@@ -35,7 +35,7 @@ public sealed class BusinessTickEngine
             }
 
             var facility = FindFacilityUsedBy(snapshot, employee.Id);
-            if (facility == null || employee.CurrentActivity != EmployeeActivityKind.UseFacility)
+            if (facility == null || !IsProductiveActivity(employee.CurrentActivity))
             {
                 employeeDeltas.Add(CreateIdleDelta(employee));
                 continue;
@@ -112,6 +112,11 @@ public sealed class BusinessTickEngine
         return snapshot.Facilities
             .OrderBy(facility => facility.Id, StringComparer.Ordinal)
             .FirstOrDefault(facility => facility.OccupiedByEmployeeIds.Contains(employeeId));
+    }
+
+    private static bool IsProductiveActivity(EmployeeActivityKind activity)
+    {
+        return activity is EmployeeActivityKind.UseFacility or EmployeeActivityKind.Work;
     }
 
     private static EmployeeTickDelta CreateIdleDelta(EmployeeState employee)
