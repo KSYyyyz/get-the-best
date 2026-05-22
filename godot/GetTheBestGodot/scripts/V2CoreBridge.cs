@@ -15,6 +15,9 @@ public partial class V2CoreBridge : Node
 
     private readonly EmployeeBehaviorEngine _behaviorEngine = new();
     private readonly GodotCoreBridgeContract _bridgeContract = new();
+    private readonly EmployeeLifecycleEngine _lifecycleEngine = new();
+    private readonly Dictionary<int, CoreEmployeeLifecycleState> _employeeLifecycleStates = [];
+    private readonly Dictionary<int, IReadOnlyList<int>> _facilityOccupants = [];
 
     public string GetInitialStatusText()
     {
@@ -29,6 +32,19 @@ public partial class V2CoreBridge : Node
     {
         var snapshot = BuildSnapshot(employeeStore, facilityPlacementStore, roomFootprintStore);
         return _behaviorEngine.PlanIntents(snapshot).Select(MapCoreIntent).ToArray();
+    }
+
+    public IReadOnlyList<CoreEmployeeLifecycleState> AdvanceEmployeeLifecycle(
+        EmployeeStore employeeStore,
+        FacilityPlacementStore facilityPlacementStore,
+        RoomFootprintStore roomFootprintStore,
+        IReadOnlyList<CoreEmployeeIntent> intents
+    )
+    {
+        var snapshot = BuildSnapshot(employeeStore, facilityPlacementStore, roomFootprintStore);
+        var nextSnapshot = _lifecycleEngine.Advance(snapshot, intents.Select(MapGodotIntent).ToArray());
+        StoreLifecycleState(nextSnapshot);
+        return nextSnapshot.Employees.Select(MapLifecycleState).ToArray();
     }
 
     public OfficeRuleSnapshot BuildSnapshot(
@@ -59,7 +75,7 @@ public partial class V2CoreBridge : Node
             )
         );
 
-        return _bridgeContract.BuildSnapshot(dto);
+        return ApplyLifecycleState(_bridgeContract.BuildSnapshot(dto));
     }
 
     private static GodotEmployeeFactDto MapEmployee(
@@ -83,7 +99,7 @@ public partial class V2CoreBridge : Node
         );
     }
 
-    private static GodotFacilityFactDto MapFacility(
+    private GodotFacilityFactDto MapFacility(
         FacilityPlacement facility,
         RoomFootprintStore roomFootprintStore
     )
@@ -94,8 +110,76 @@ public partial class V2CoreBridge : Node
             FacilityTypeCode: facility.FacilityType.ToString(),
             RoomId: room == null ? "room-0" : ToRoomId(room.Id),
             Capacity: 1,
-            OccupiedByEmployeeIds: [],
+            OccupiedByEmployeeIds: _facilityOccupants.TryGetValue(
+                facility.Id,
+                out var occupantIds
+            )
+                ? occupantIds
+                : [],
             EfficiencyModifier: 1.0
+        );
+    }
+
+    private OfficeRuleSnapshot ApplyLifecycleState(OfficeRuleSnapshot snapshot)
+    {
+        return snapshot with
+        {
+            Employees = snapshot
+                .Employees
+                .Select(employee =>
+                {
+                    var employeeId = ParseCoreEmployeeId(employee.Id);
+                    return _employeeLifecycleStates.TryGetValue(employeeId, out var state)
+                        ? employee with
+                        {
+                            CurrentActivity = state.ActivityKind,
+                            ActiveFacilityId = state.FacilityId == null
+                                ? null
+                                : ToFacilityId(state.FacilityId.Value),
+                            RemainingActivityTicks = state.RemainingActivityTicks,
+                        }
+                        : employee;
+                })
+                .ToArray(),
+        };
+    }
+
+    private void StoreLifecycleState(OfficeRuleSnapshot snapshot)
+    {
+        _employeeLifecycleStates.Clear();
+        foreach (var employee in snapshot.Employees)
+        {
+            _employeeLifecycleStates[ParseCoreEmployeeId(employee.Id)] = MapLifecycleState(employee);
+        }
+
+        _facilityOccupants.Clear();
+        foreach (var facility in snapshot.Facilities)
+        {
+            _facilityOccupants[ParseCoreFacilityId(facility.Id)!.Value] = facility
+                .OccupiedByEmployeeIds
+                .Select(ParseCoreEmployeeId)
+                .ToArray();
+        }
+    }
+
+    private static EmployeeIntent MapGodotIntent(CoreEmployeeIntent intent)
+    {
+        return new EmployeeIntent(
+            ToEmployeeId(intent.EmployeeId),
+            intent.Kind,
+            new IntentTarget(
+                FacilityId: intent.FacilityId == null ? null : ToFacilityId(intent.FacilityId.Value)
+            )
+        );
+    }
+
+    private static CoreEmployeeLifecycleState MapLifecycleState(EmployeeState employee)
+    {
+        return new CoreEmployeeLifecycleState(
+            EmployeeId: ParseCoreEmployeeId(employee.Id),
+            ActivityKind: employee.CurrentActivity,
+            FacilityId: ParseCoreFacilityId(employee.ActiveFacilityId),
+            RemainingActivityTicks: employee.RemainingActivityTicks
         );
     }
 
@@ -138,6 +222,11 @@ public partial class V2CoreBridge : Node
         return $"facility-{facilityId}";
     }
 
+    private static string ToEmployeeId(int employeeId)
+    {
+        return $"employee-{employeeId}";
+    }
+
     private static int ParseCoreEmployeeId(string employeeId)
     {
         return ParseCoreId(employeeId, "employee-");
@@ -163,4 +252,11 @@ public sealed record CoreEmployeeIntent(
     int EmployeeId,
     EmployeeIntentKind Kind,
     int? FacilityId
+);
+
+public sealed record CoreEmployeeLifecycleState(
+    int EmployeeId,
+    StartupSim.Core.EmployeeActivityKind ActivityKind,
+    int? FacilityId,
+    int RemainingActivityTicks
 );

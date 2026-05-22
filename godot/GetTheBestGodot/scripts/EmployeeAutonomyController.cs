@@ -6,7 +6,7 @@ namespace GetTheBestGodot;
 public partial class EmployeeAutonomyController : Node
 {
     private const float AutonomousMoveIntervalSeconds = 2.4f;
-    private const float UseFacilityDurationSeconds = 3.2f;
+    private const float CoreLifecycleTickSeconds = 1.6f;
     private const int MaxAutonomousPathCells = 4;
     private static readonly Vector2I[] CandidateTargetOffsets =
     [
@@ -32,7 +32,6 @@ public partial class EmployeeAutonomyController : Node
     ];
 
     private readonly Dictionary<int, EmployeeAutonomyState> _employeeStates = [];
-    private readonly Dictionary<int, float> _facilityUseTimers = [];
     private readonly HashSet<int> _reservedFacilityIds = [];
     private EmployeeStore? _employeeStore;
     private Employee3DRenderer? _employeeRenderer;
@@ -42,6 +41,7 @@ public partial class EmployeeAutonomyController : Node
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
+    private float _coreLifecycleTimer = CoreLifecycleTickSeconds;
     private int _nextEmployeeIndex;
     private bool _isEmployeeMoveInProgress;
 
@@ -59,12 +59,12 @@ public partial class EmployeeAutonomyController : Node
 
     public override void _Process(double delta)
     {
-        UpdateFacilityUseTimers((float)delta);
         if (_isEmployeeMoveInProgress)
         {
             return;
         }
 
+        UpdateCoreLifecycle((float)delta);
         _autonomyTimer -= (float)delta;
         if (_autonomyTimer > 0.0f)
         {
@@ -175,6 +175,23 @@ public partial class EmployeeAutonomyController : Node
 
     private void StartFacilityMove(EmployeeVisual employee, FacilityInteractionTarget target)
     {
+        if (
+            _employeeStore == null
+            || _facilityPlacementStore == null
+            || _roomFootprintStore == null
+            || _v2CoreBridge == null
+        )
+        {
+            return;
+        }
+
+        var lifecycleStates = _v2CoreBridge.AdvanceEmployeeLifecycle(
+            _employeeStore,
+            _facilityPlacementStore,
+            _roomFootprintStore,
+            [new CoreEmployeeIntent(employee.Id, StartupSim.Core.EmployeeIntentKind.MoveToFacility, target.Facility.Id)]
+        );
+        ApplyCoreLifecycleStates(lifecycleStates);
         _reservedFacilityIds.Add(target.Facility.Id);
         _isEmployeeMoveInProgress = true;
         SetEmployeeActivity(
@@ -296,14 +313,7 @@ public partial class EmployeeAutonomyController : Node
         {
             _ = movedEmployee;
             _employeeRenderer?.RefreshEmployees();
-            _facilityUseTimers[target.Facility.Id] = UseFacilityDurationSeconds;
-            _facilityRenderer?.SetFacilityUseState(target.Facility.Id, isInUse: true);
-            SetEmployeeActivity(
-                employeeId,
-                EmployeeActivityKind.UsingFacility,
-                target.StandCell,
-                target.Facility.Id
-            );
+            AdvanceAndApplyCoreLifecycle();
         }
         else
         {
@@ -314,65 +324,93 @@ public partial class EmployeeAutonomyController : Node
         _isEmployeeMoveInProgress = false;
     }
 
-    private void UpdateFacilityUseTimers(float delta)
+    private void UpdateCoreLifecycle(float delta)
     {
-        if (_facilityUseTimers.Count == 0)
+        if (!HasCoreLifecycleActivity())
         {
             return;
         }
 
-        var completedFacilityIds = new List<int>();
-        var activeFacilityTimers = new Dictionary<int, float>();
-        foreach (var (facilityId, remainingSeconds) in _facilityUseTimers)
+        _coreLifecycleTimer -= delta;
+        if (_coreLifecycleTimer > 0.0f)
         {
-            var nextRemainingSeconds = remainingSeconds - delta;
-            if (nextRemainingSeconds <= 0.0f)
-            {
-                completedFacilityIds.Add(facilityId);
-            }
-            else
-            {
-                activeFacilityTimers[facilityId] = nextRemainingSeconds;
-            }
+            return;
         }
 
-        foreach (var (facilityId, remainingSeconds) in activeFacilityTimers)
-        {
-            _facilityUseTimers[facilityId] = remainingSeconds;
-        }
-
-        foreach (var facilityId in completedFacilityIds)
-        {
-            _facilityUseTimers.Remove(facilityId);
-            _reservedFacilityIds.Remove(facilityId);
-            _facilityRenderer?.SetFacilityUseState(facilityId, isInUse: false);
-            ClearEmployeeFacilityState(facilityId);
-        }
+        _coreLifecycleTimer = CoreLifecycleTickSeconds;
+        AdvanceAndApplyCoreLifecycle();
     }
 
-    private void ClearEmployeeFacilityState(int facilityId)
+    private void AdvanceAndApplyCoreLifecycle()
     {
-        var completedEmployeeIds = new List<int>();
-        foreach (var (employeeId, state) in _employeeStates)
+        if (
+            _employeeStore == null
+            || _facilityPlacementStore == null
+            || _roomFootprintStore == null
+            || _v2CoreBridge == null
+        )
         {
-            if (state.FacilityId != facilityId)
-            {
-                continue;
-            }
-
-            completedEmployeeIds.Add(employeeId);
+            return;
         }
 
-        foreach (var employeeId in completedEmployeeIds)
+        var lifecycleStates = _v2CoreBridge.AdvanceEmployeeLifecycle(
+            _employeeStore,
+            _facilityPlacementStore,
+            _roomFootprintStore,
+            []
+        );
+        ApplyCoreLifecycleStates(lifecycleStates);
+    }
+
+    private bool HasCoreLifecycleActivity()
+    {
+        foreach (var state in _employeeStates.Values)
         {
-            var state = _employeeStates[employeeId];
-            _employeeStates[employeeId] = state with
+            if (
+                state.ActivityKind == EmployeeActivityKind.WalkingToFacility
+                || state.ActivityKind == EmployeeActivityKind.UsingFacility
+            )
             {
-                ActivityKind = EmployeeActivityKind.Idle,
-                TargetCell = null,
-                FacilityId = null,
-            };
-            _employeeRenderer?.SetEmployeeActivityLabel(employeeId, null);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ApplyCoreLifecycleStates(IReadOnlyList<CoreEmployeeLifecycleState> lifecycleStates)
+    {
+        var activeFacilityIds = new HashSet<int>();
+        foreach (var lifecycleState in lifecycleStates)
+        {
+            if (lifecycleState.ActivityKind == StartupSim.Core.EmployeeActivityKind.UseFacility)
+            {
+                if (lifecycleState.FacilityId != null)
+                {
+                    activeFacilityIds.Add(lifecycleState.FacilityId.Value);
+                }
+
+                SetEmployeeActivity(
+                    lifecycleState.EmployeeId,
+                    EmployeeActivityKind.UsingFacility,
+                    facilityId: lifecycleState.FacilityId
+                );
+            }
+            else if (lifecycleState.ActivityKind == StartupSim.Core.EmployeeActivityKind.Idle)
+            {
+                ClearEmployeeActivity(lifecycleState.EmployeeId);
+            }
+        }
+
+        foreach (var facilityId in _reservedFacilityIds)
+        {
+            _facilityRenderer?.SetFacilityUseState(facilityId, activeFacilityIds.Contains(facilityId));
+        }
+
+        _reservedFacilityIds.RemoveWhere(facilityId => !activeFacilityIds.Contains(facilityId));
+        if (_reservedFacilityIds.Count == 0)
+        {
+            _coreLifecycleTimer = CoreLifecycleTickSeconds;
         }
     }
 

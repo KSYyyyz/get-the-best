@@ -1330,7 +1330,7 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
 
     assert "FacilityPlacementStore? _facilityPlacementStore" in employee_autonomy
     assert "Facility3DRenderer? _facilityRenderer" in employee_autonomy
-    assert "UseFacilityDurationSeconds" in employee_autonomy
+    assert "CoreLifecycleTickSeconds" in employee_autonomy
     assert "FacilityInteractionTarget" in employee_autonomy
     assert "WalkingToFacility" in employee_autonomy
     assert "UsingFacility" in employee_autonomy
@@ -1344,11 +1344,10 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
     )
     assert "FinishFacilityArrival(employee.Id, target)" in employee_autonomy
     assert (
-        "_facilityRenderer?.SetFacilityUseState(target.Facility.Id, isInUse: true)"
+        "_facilityRenderer?.SetFacilityUseState(facilityId, activeFacilityIds.Contains(facilityId))"
         in employee_autonomy
     )
-    assert "_facilityRenderer?.SetFacilityUseState(facilityId, isInUse: false)" in employee_autonomy
-    assert "completedEmployeeIds" in employee_autonomy
+    assert "ApplyCoreLifecycleStates(lifecycleStates)" in employee_autonomy
 
     assert "_usingFacilityIds" in facility_renderer
     assert "SetFacilityUseState(int facilityId, bool isInUse)" in facility_renderer
@@ -1397,3 +1396,27 @@ def test_get_the_best_v2_0_24_godot_autonomy_consumes_core_intents() -> None:
     assert "_v2CoreBridge.PlanEmployeeIntents(" in employee_autonomy
     assert "FindFacilityUseTarget(employee, coreIntent.FacilityId" in employee_autonomy
     assert "GetDesiredFacilityTypes" not in employee_autonomy
+
+
+def test_get_the_best_v2_0_25_godot_uses_core_lifecycle_for_facility_use() -> None:
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "EmployeeLifecycleEngine" in bridge
+    assert "_lifecycleEngine" in bridge
+    assert "_employeeLifecycleStates" in bridge
+    assert "_facilityOccupants" in bridge
+    assert "AdvanceEmployeeLifecycle(" in bridge
+    assert "ApplyLifecycleState(" in bridge
+    assert "StoreLifecycleState(" in bridge
+    assert "CoreEmployeeLifecycleState" in bridge
+    assert "RemainingActivityTicks" in bridge
+
+    assert "UseFacilityDurationSeconds" not in employee_autonomy
+    assert "_facilityUseTimers" not in employee_autonomy
+    assert "CoreLifecycleTickSeconds" in employee_autonomy
+    assert "UpdateCoreLifecycle(" in employee_autonomy
+    assert "AdvanceEmployeeLifecycle(" in employee_autonomy
+    assert "ApplyCoreLifecycleStates(" in employee_autonomy
+    assert "StartupSim.Core.EmployeeActivityKind.UseFacility" in employee_autonomy
+    assert "StartupSim.Core.EmployeeActivityKind.Idle" in employee_autonomy
