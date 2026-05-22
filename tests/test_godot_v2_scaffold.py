@@ -1647,3 +1647,25 @@ def test_get_the_best_v2_1_0_employee_animation_states_follow_core_intents() -> 
         "SetEmployeeAnimationState(employeeId, EmployeePresentationAnimationState.Idle)"
         in employee_autonomy
     )
+
+
+def test_get_the_best_v2_1_1_core_intent_queue_keeps_non_desk_actions_observable() -> None:
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "CoreOfficeSimulationResult? _pendingCoreIntentResult" in employee_autonomy
+    assert (
+        "var isReplayingPendingCoreIntents = _pendingCoreIntentResult != null" in employee_autonomy
+    )
+    assert "_pendingCoreIntentResult ?? AdvanceCoreSimulation()" in employee_autonomy
+    assert "_pendingCoreIntentResult = simulationResult" in employee_autonomy
+    assert "TryStartNextAutonomousMove();" in employee_autonomy
+    assert "GetFacilityUseActivityLabel(facility)" in employee_autonomy
+    assert 'FacilityBuildType.ProductWhiteboard => "讨论方案"' in employee_autonomy
+    assert 'FacilityBuildType.ServerRack => "维护服务器"' in employee_autonomy
+
+    finish_block = employee_autonomy[
+        employee_autonomy.index("private void FinishFacilityArrival") : employee_autonomy.index(
+            "private void UpdateCoreSimulation"
+        )
+    ]
+    assert "AdvanceAndApplyCoreSimulation();" not in finish_block

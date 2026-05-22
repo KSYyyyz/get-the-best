@@ -43,6 +43,7 @@ public partial class EmployeeAutonomyController : Node
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
     private BusinessFeedbackHudController? _businessFeedbackHud;
+    private CoreOfficeSimulationResult? _pendingCoreIntentResult;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
     private float _coreSimulationTimer = CoreSimulationTickSeconds;
     private int _nextEmployeeIndex;
@@ -96,7 +97,12 @@ public partial class EmployeeAutonomyController : Node
     public void StartManualFacilityWork(int employeeId, FacilityPlacement facility)
     {
         _reservedFacilityIds.Add(facility.Id);
-        SetEmployeeActivity(employeeId, EmployeeActivityKind.UsingFacility, facilityId: facility.Id);
+        SetEmployeeActivity(
+            employeeId,
+            EmployeeActivityKind.UsingFacility,
+            facilityId: facility.Id,
+            labelOverride: GetFacilityUseActivityLabel(facility)
+        );
         _facilityRenderer?.SetFacilityUseState(facility.Id, true);
         _employeeRenderer?.SetEmployeeAnimationState(
             employeeId,
@@ -138,7 +144,8 @@ public partial class EmployeeAutonomyController : Node
             return false;
         }
 
-        var simulationResult = AdvanceCoreSimulation();
+        var isReplayingPendingCoreIntents = _pendingCoreIntentResult != null;
+        var simulationResult = _pendingCoreIntentResult ?? AdvanceCoreSimulation();
         ApplyCoreSimulationStates(simulationResult);
 
         for (var attempt = 0; attempt < employees.Count; attempt++)
@@ -152,6 +159,7 @@ public partial class EmployeeAutonomyController : Node
 
             if (TryStartFacilityUseBehavior(employee, simulationResult))
             {
+                _pendingCoreIntentResult = simulationResult;
                 return true;
             }
 
@@ -170,6 +178,11 @@ public partial class EmployeeAutonomyController : Node
                 FinishAutonomousMove(employee.Id, targetCell)
             );
             return true;
+        }
+
+        if (isReplayingPendingCoreIntents)
+        {
+            _pendingCoreIntentResult = null;
         }
 
         return false;
@@ -361,12 +374,14 @@ public partial class EmployeeAutonomyController : Node
         {
             _ = movedEmployee;
             _employeeRenderer?.RefreshEmployees();
-            AdvanceAndApplyCoreSimulation();
             _employeeRenderer?.SetEmployeeAnimationState(
                 employeeId,
                 GetFacilityUseAnimationState(target.Facility)
             );
             StartManualFacilityWork(employeeId, target.Facility);
+            _isEmployeeMoveInProgress = false;
+            TryStartNextAutonomousMove();
+            return;
         }
         else
         {
@@ -567,6 +582,16 @@ public partial class EmployeeAutonomyController : Node
             EmployeeActivityKind.UsingFacility => "\u5de5\u4f5c\u4e2d",
             EmployeeActivityKind.WalkingToTarget => "\u79fb\u52a8\u4e2d",
             _ => null,
+        };
+    }
+
+    private static string GetFacilityUseActivityLabel(FacilityPlacement facility)
+    {
+        return facility.FacilityType switch
+        {
+            FacilityBuildType.ProductWhiteboard => "讨论方案",
+            FacilityBuildType.ServerRack => "维护服务器",
+            _ => "工作中",
         };
     }
 
