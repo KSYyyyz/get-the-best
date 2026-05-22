@@ -9,10 +9,12 @@ public partial class Employee3DRenderer : Node3D
     private const float DragPreviewYOffset = OfficeWorld3DConfig.GridSize * 0.18f;
     private const float SmoothMoveDurationSeconds = 0.12f;
     private const float PathMoveStepDurationSeconds = 0.18f;
+    private const float CellInnerSize = OfficeWorld3DConfig.GridSize * 0.72f;
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
     private static readonly Color ActivityBadgeFill = new(0.96f, 0.98f, 1.0f, 1.0f);
     private static readonly Color ActivityBadgeOutline = new(0.10f, 0.14f, 0.18f, 1.0f);
+    private static readonly Color TypingHandFill = new(0.96f, 0.72f, 0.48f, 1.0f);
     private static readonly string[] EmployeeModelScenePaths =
     [
         "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-a.glb",
@@ -29,6 +31,7 @@ public partial class Employee3DRenderer : Node3D
     private readonly HashSet<int> _workingEmployeeIds = [];
     private readonly Dictionary<int, string> _employeeActivityLabels = [];
     private readonly Dictionary<int, Vector2I> _employeeFacingTargets = [];
+    private readonly Dictionary<int, EmployeeWorkPose> _employeeWorkPoses = [];
     private readonly Dictionary<int, Vector3> _lastEmployeePositions = [];
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
@@ -126,33 +129,70 @@ public partial class Employee3DRenderer : Node3D
     {
         if (string.IsNullOrWhiteSpace(labelText))
         {
-            _employeeActivityLabels.Remove(employeeId);
+            if (!_employeeActivityLabels.Remove(employeeId))
+            {
+                return;
+            }
         }
         else
         {
+            if (
+                _employeeActivityLabels.TryGetValue(employeeId, out var currentLabel)
+                && currentLabel == labelText
+            )
+            {
+                return;
+            }
+
             _employeeActivityLabels[employeeId] = labelText;
         }
 
         RefreshEmployees();
     }
 
-    public void SetEmployeeWorkState(int employeeId, bool isWorking, Vector2I? facingCell = null)
+    public void SetEmployeeWorkState(
+        int employeeId,
+        bool isWorking,
+        FacilityPlacement? facility = null
+    )
     {
+        var changed = false;
         if (isWorking)
         {
-            _workingEmployeeIds.Add(employeeId);
-            if (facingCell != null)
+            changed |= _workingEmployeeIds.Add(employeeId);
+            if (facility != null)
             {
-                _employeeFacingTargets[employeeId] = facingCell.Value;
+                var nextPose = new EmployeeWorkPose(facility);
+                if (
+                    !_employeeWorkPoses.TryGetValue(employeeId, out var currentPose)
+                    || currentPose != nextPose
+                )
+                {
+                    _employeeWorkPoses[employeeId] = nextPose;
+                    changed = true;
+                }
+
+                if (
+                    !_employeeFacingTargets.TryGetValue(employeeId, out var currentTarget)
+                    || currentTarget != facility.Cell
+                )
+                {
+                    _employeeFacingTargets[employeeId] = facility.Cell;
+                    changed = true;
+                }
             }
         }
         else
         {
-            _workingEmployeeIds.Remove(employeeId);
-            _employeeFacingTargets.Remove(employeeId);
+            changed |= _workingEmployeeIds.Remove(employeeId);
+            changed |= _employeeFacingTargets.Remove(employeeId);
+            changed |= _employeeWorkPoses.Remove(employeeId);
         }
 
-        RefreshEmployees();
+        if (changed)
+        {
+            RefreshEmployees();
+        }
     }
 
     public void PlayEmployeePathMove(
@@ -194,6 +234,15 @@ public partial class Employee3DRenderer : Node3D
                 : 0.02f;
         var targetPosition =
             OfficeWorld3DConfig.CellToWorldPosition(renderCell) + new Vector3(0.0f, yOffset, 0.0f);
+        FacilityPlacement? workFacility = null;
+        if (_employeeWorkPoses.TryGetValue(employee.Id, out var workPose))
+        {
+            workFacility = workPose.Facility;
+        }
+        if (workFacility != null)
+        {
+            targetPosition = GetDeskSeatWorldPosition(workFacility);
+        }
 
         var modelScene = GetEmployeeModelScene(employee);
         if (modelScene == null)
@@ -205,8 +254,10 @@ public partial class Employee3DRenderer : Node3D
         var modelRoot = modelScene.Instantiate<Node3D>();
         modelRoot.Name = $"Employee_{employee.Id}";
         modelRoot.Position = GetEmployeeStartPosition(employee.Id, targetPosition);
-        modelRoot.Scale = Vector3.One * EmployeeModelScale;
-        modelRoot.RotationDegrees = new Vector3(0.0f, GetEmployeeFacingYawDegrees(employee), 0.0f);
+        modelRoot.Scale = Vector3.One * GetWorkPoseScale(employee.Id);
+        modelRoot.RotationDegrees = workFacility != null
+            ? new Vector3(-5.0f, GetDeskWorkYawDegrees(workFacility), 0.0f)
+            : new Vector3(0.0f, GetEmployeeFacingYawDegrees(employee), 0.0f);
         AddChild(modelRoot);
         _renderedEmployees.Add(modelRoot);
         TweenEmployeeToTarget(modelRoot, targetPosition);
@@ -230,7 +281,8 @@ public partial class Employee3DRenderer : Node3D
         AddEmployeeActivityBadge(modelRoot, employee);
         if (_workingEmployeeIds.Contains(employee.Id))
         {
-            PlayEmployeeWorkAnimation(modelRoot);
+            AddTypingHands(modelRoot);
+            PlayEmployeeTypingAnimation(modelRoot);
         }
     }
 
@@ -331,21 +383,116 @@ public partial class Employee3DRenderer : Node3D
 
     private void PlayEmployeeWorkAnimation(Node3D modelRoot)
     {
-        var basePosition = modelRoot.Position;
+        PlayEmployeeTypingAnimation(modelRoot);
+    }
+
+    private void PlayEmployeeTypingAnimation(Node3D modelRoot)
+    {
+        var baseRotation = modelRoot.RotationDegrees;
         var tween = CreateTween().SetLoops();
         tween
             .TweenProperty(
                 modelRoot,
-                "position",
-                basePosition + new Vector3(0.0f, 0.10f, 0.0f),
-                0.38f
+                "rotation_degrees",
+                baseRotation + new Vector3(-2.0f, 1.4f, 0.0f),
+                0.32f
             )
             .SetTrans(Tween.TransitionType.Sine)
             .SetEase(Tween.EaseType.InOut);
         tween
-            .TweenProperty(modelRoot, "position", basePosition, 0.38f)
+            .TweenProperty(modelRoot, "rotation_degrees", baseRotation, 0.32f)
             .SetTrans(Tween.TransitionType.Sine)
             .SetEase(Tween.EaseType.InOut);
+
+        var typingHands = modelRoot.GetNodeOrNull<Node3D>("TypingHands");
+        if (typingHands == null)
+        {
+            return;
+        }
+
+        var baseHandsPosition = typingHands.Position;
+        var handsTween = CreateTween().SetLoops();
+        handsTween
+            .TweenProperty(
+                typingHands,
+                "position",
+                baseHandsPosition + new Vector3(0.0f, 0.0f, -0.08f / modelRoot.Scale.X),
+                0.16f
+            )
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+        handsTween
+            .TweenProperty(typingHands, "position", baseHandsPosition, 0.16f)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+    }
+
+    private static void AddTypingHands(Node3D modelRoot)
+    {
+        var inverseScale = 1.0f / Mathf.Max(modelRoot.Scale.X, 0.001f);
+        var handsRoot = new Node3D
+        {
+            Name = "TypingHands",
+            Position = new Vector3(0.0f, 0.76f * inverseScale, -0.58f * inverseScale),
+            Scale = Vector3.One * inverseScale,
+        };
+        modelRoot.AddChild(handsRoot);
+
+        AddTypingHand(handsRoot, -0.26f);
+        AddTypingHand(handsRoot, 0.26f);
+    }
+
+    private static void AddTypingHand(Node3D parent, float xOffset)
+    {
+        parent.AddChild(
+            new MeshInstance3D
+            {
+                Mesh = new BoxMesh
+                {
+                    Size = new Vector3(0.30f, 0.16f, 0.36f),
+                },
+                MaterialOverride = CreateMaterial(TypingHandFill),
+                Position = new Vector3(xOffset, 0.0f, 0.0f),
+            }
+        );
+    }
+
+    private float GetWorkPoseScale(int employeeId)
+    {
+        return _employeeWorkPoses.ContainsKey(employeeId)
+            ? EmployeeModelScale * 0.82f
+            : EmployeeModelScale;
+    }
+
+    private static Vector3 GetDeskSeatWorldPosition(FacilityPlacement facility)
+    {
+        var facilityCenter = OfficeWorld3DConfig.CellToWorldPosition(facility.Cell);
+        var localSeatOffset = new Vector3(0.0f, 0.0f, CellInnerSize * 0.40f);
+        return facilityCenter
+            + RotateLocalOffsetByFacing(localSeatOffset, facility.Facing)
+            + new Vector3(0.0f, 0.04f, 0.0f);
+    }
+
+    private static float GetDeskWorkYawDegrees(FacilityPlacement facility)
+    {
+        return facility.Facing switch
+        {
+            FacilityFacing.North => 180.0f,
+            FacilityFacing.East => 270.0f,
+            FacilityFacing.South => 0.0f,
+            _ => 90.0f,
+        };
+    }
+
+    private static Vector3 RotateLocalOffsetByFacing(Vector3 offset, FacilityFacing facing)
+    {
+        return facing switch
+        {
+            FacilityFacing.North => new Vector3(-offset.X, offset.Y, -offset.Z),
+            FacilityFacing.East => new Vector3(offset.Z, offset.Y, -offset.X),
+            FacilityFacing.South => offset,
+            _ => new Vector3(-offset.Z, offset.Y, offset.X),
+        };
     }
 
     private void AddEmployeeActivityBadge(Node3D modelRoot, EmployeeVisual employee)
@@ -486,3 +633,5 @@ public partial class Employee3DRenderer : Node3D
         };
     }
 }
+
+public sealed record EmployeeWorkPose(FacilityPlacement Facility);

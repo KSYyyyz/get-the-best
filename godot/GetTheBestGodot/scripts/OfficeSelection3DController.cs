@@ -18,6 +18,7 @@ public partial class OfficeSelection3DController : Node
     private OfficeNavigationStore? _officeNavigationStore;
     private EmployeeStore? _employeeStore;
     private Employee3DRenderer? _employeeRenderer;
+    private EmployeeAutonomyController? _employeeAutonomyController;
     private bool _isDraggingSelection;
     private bool _isDraggingEmployee;
     private bool _isDraggingFacility;
@@ -27,6 +28,7 @@ public partial class OfficeSelection3DController : Node
     private Vector2I _dragEmployeeOriginCell;
     private Vector2I _dragEmployeeCurrentCell;
     private bool _dragEmployeeTargetLegal;
+    private EmployeeFacilityDropTarget? _activeEmployeeFacilityDropTarget;
     private FacilityPlacement? _draggedFacility;
     private Vector2I _dragFacilityOriginCell;
     private Vector2I _dragFacilityCurrentCell;
@@ -48,6 +50,7 @@ public partial class OfficeSelection3DController : Node
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         _employeeStore = GetNodeOrNull<EmployeeStore>("../EmployeeStore");
         _employeeRenderer = GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer");
+        _employeeAutonomyController = GetNodeOrNull<EmployeeAutonomyController>("../EmployeeAutonomyController");
         HidePointerTooltip();
     }
 
@@ -483,6 +486,21 @@ public partial class OfficeSelection3DController : Node
         }
 
         _dragEmployeeCurrentCell = cell;
+        if (TryFindFacilityDropTarget(_draggedEmployee, cell, out var facilityDropTarget))
+        {
+            _activeEmployeeFacilityDropTarget = facilityDropTarget;
+            _dragEmployeeCurrentCell = facilityDropTarget.StandCell;
+            _dragEmployeeTargetLegal = true;
+            _employeeRenderer?.ShowEmployeeDragPreview(
+                _draggedEmployee,
+                facilityDropTarget.StandCell,
+                isLegal: true
+            );
+            ShowPointerTooltip("\u5f00\u59cb\u5de5\u4f5c", screenPosition);
+            return;
+        }
+
+        _activeEmployeeFacilityDropTarget = null;
         var path = _officeNavigationStore?.FindPath(_dragEmployeeOriginCell, cell);
         _dragEmployeeTargetLegal =
             _employeeStore?.CanMoveEmployee(_draggedEmployee, cell) == true
@@ -511,11 +529,38 @@ public partial class OfficeSelection3DController : Node
             _dragEmployeeTargetLegal = false;
         }
 
+        if (_activeEmployeeFacilityDropTarget is { } facilityDropTarget)
+        {
+            var movedToSeat =
+                facilityDropTarget.StandCell == _dragEmployeeOriginCell
+                || _employeeStore?.TryMoveEmployee(
+                    _draggedEmployee.Id,
+                    facilityDropTarget.StandCell,
+                    out var seatedEmployee
+                ) == true && seatedEmployee != null;
+            if (movedToSeat)
+            {
+                _employeeRenderer?.ClearEmployeeDragPreview();
+                _placementPreviewController?.ClearPreview();
+                _employeeRenderer?.RefreshEmployees();
+                _employeeRenderer?.HighlightEmployee(null);
+                _employeeAutonomyController?.StartManualFacilityWork(
+                    _draggedEmployee.Id,
+                    facilityDropTarget.Facility
+                );
+                ClearObjectHoverState();
+                HidePointerTooltip();
+                ResetEmployeeDragState();
+                return;
+            }
+        }
+
         if (_dragEmployeeCurrentCell == _dragEmployeeOriginCell)
         {
             _employeeRenderer?.ClearEmployeeDragPreview();
             _placementPreviewController?.ClearPreview();
             _employeeRenderer?.HighlightEmployee(null);
+            _employeeAutonomyController?.ClearEmployeePresentationState(_draggedEmployee.Id);
             ClearObjectHoverState();
             HidePointerTooltip();
             ResetEmployeeDragState();
@@ -536,6 +581,7 @@ public partial class OfficeSelection3DController : Node
             _placementPreviewController?.ClearPreview();
             _employeeRenderer?.RefreshEmployees();
             _employeeRenderer?.HighlightEmployee(null);
+            _employeeAutonomyController?.ClearEmployeePresentationState(movedEmployee.Id);
             ClearObjectHoverState();
             HidePointerTooltip();
             ResetEmployeeDragState();
@@ -546,6 +592,7 @@ public partial class OfficeSelection3DController : Node
         _placementPreviewController?.ClearPreview();
         _employeeRenderer?.RefreshEmployees();
         _employeeRenderer?.HighlightEmployee(null);
+        _employeeAutonomyController?.ClearEmployeePresentationState(_draggedEmployee.Id);
         ClearObjectHoverState();
         ShowPointerTooltip("\u8fd4\u56de\u539f\u4f4d", screenPosition);
         ResetEmployeeDragState();
@@ -691,6 +738,77 @@ public partial class OfficeSelection3DController : Node
         _dragEmployeeOriginCell = Vector2I.Zero;
         _dragEmployeeCurrentCell = Vector2I.Zero;
         _dragEmployeeTargetLegal = false;
+        _activeEmployeeFacilityDropTarget = null;
+    }
+
+    private bool TryFindFacilityDropTarget(
+        EmployeeVisual employee,
+        Vector2I hoverCell,
+        out EmployeeFacilityDropTarget target
+    )
+    {
+        target = EmployeeFacilityDropTarget.Empty;
+        if (_buildModeController == null || _employeeStore == null || _officeNavigationStore == null)
+        {
+            return false;
+        }
+
+        var facility = _buildModeController.FindFacilityAtCell(hoverCell)
+            ?? FindFacilityWithSeatCell(hoverCell);
+        if (facility == null)
+        {
+            return false;
+        }
+
+        var standCell = GetFacilitySeatCell(facility);
+        var canReachSeat =
+            standCell == employee.Cell || _employeeStore.CanMoveEmployee(employee, standCell);
+        if (!canReachSeat)
+        {
+            return false;
+        }
+
+        var path = standCell == employee.Cell
+            ? new[] { employee.Cell }
+            : _officeNavigationStore.FindPath(employee.Cell, standCell);
+        if (path.Count == 0)
+        {
+            return false;
+        }
+
+        target = new EmployeeFacilityDropTarget(facility, standCell);
+        return true;
+    }
+
+    private FacilityPlacement? FindFacilityWithSeatCell(Vector2I seatCell)
+    {
+        if (_buildModeController == null)
+        {
+            return null;
+        }
+
+        foreach (var offset in new[] { Vector2I.Up, Vector2I.Down, Vector2I.Left, Vector2I.Right })
+        {
+            var candidate = _buildModeController.FindFacilityAtCell(seatCell + offset);
+            if (candidate != null && GetFacilitySeatCell(candidate) == seatCell)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static Vector2I GetFacilitySeatCell(FacilityPlacement facility)
+    {
+        return facility.Cell
+            + (facility.Facing switch
+            {
+                FacilityFacing.North => Vector2I.Up,
+                FacilityFacing.East => Vector2I.Right,
+                FacilityFacing.South => Vector2I.Down,
+                _ => Vector2I.Left,
+            });
     }
 
     private void ResetFacilityDragState()
@@ -1212,4 +1330,13 @@ public partial class OfficeSelection3DController : Node
             _floatingTooltip.Visible = false;
         }
     }
+}
+
+public sealed record EmployeeFacilityDropTarget(FacilityPlacement Facility, Vector2I StandCell)
+{
+    public static readonly EmployeeFacilityDropTarget Empty =
+        new(
+            new FacilityPlacement(0, FacilityBuildType.OfficeDesk, Vector2I.Zero, FacilityFacing.South),
+            Vector2I.Zero
+        );
 }

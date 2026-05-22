@@ -78,6 +78,28 @@ public partial class EmployeeAutonomyController : Node
         TryStartNextAutonomousMove();
     }
 
+    public void ClearEmployeePresentationState(int employeeId)
+    {
+        if (
+            _employeeStates.TryGetValue(employeeId, out var currentState)
+            && currentState.FacilityId != null
+        )
+        {
+            _facilityRenderer?.SetFacilityUseState(currentState.FacilityId.Value, false);
+            _reservedFacilityIds.Remove(currentState.FacilityId.Value);
+        }
+
+        ClearEmployeeActivity(employeeId);
+    }
+
+    public void StartManualFacilityWork(int employeeId, FacilityPlacement facility)
+    {
+        _reservedFacilityIds.Add(facility.Id);
+        SetEmployeeActivity(employeeId, EmployeeActivityKind.UsingFacility, facilityId: facility.Id);
+        _facilityRenderer?.SetFacilityUseState(facility.Id, true);
+        _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: true, facility);
+    }
+
     private void InitializeEmployeeStates()
     {
         if (_employeeStore == null)
@@ -296,6 +318,7 @@ public partial class EmployeeAutonomyController : Node
             _ = movedEmployee;
             _employeeRenderer?.RefreshEmployees();
             AdvanceAndApplyCoreSimulation();
+            StartManualFacilityWork(employeeId, target.Facility);
         }
         else
         {
@@ -404,7 +427,7 @@ public partial class EmployeeAutonomyController : Node
                 _employeeRenderer?.SetEmployeeWorkState(
                     lifecycleState.EmployeeId,
                     isWorking: true,
-                    facility?.Cell
+                    facility
                 );
             }
             else if (lifecycleState.ActivityKind == StartupSim.Core.EmployeeActivityKind.Idle)
@@ -452,7 +475,7 @@ public partial class EmployeeAutonomyController : Node
         return activityKind switch
         {
             EmployeeActivityKind.WalkingToFacility => "\u524d\u5f80\u8bbe\u65bd",
-            EmployeeActivityKind.UsingFacility => "\u6b63\u5728\u4f7f\u7528",
+            EmployeeActivityKind.UsingFacility => "\u5de5\u4f5c\u4e2d",
             EmployeeActivityKind.WalkingToTarget => "\u79fb\u52a8\u4e2d",
             _ => null,
         };

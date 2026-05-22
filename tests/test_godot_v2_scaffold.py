@@ -992,7 +992,7 @@ def test_get_the_best_v2_employee_uses_kenney_glb_model_resources() -> None:
     )
     assert "new CylinderMesh" not in employee_renderer
     assert "new SphereMesh" not in employee_renderer
-    assert "new BoxMesh" not in employee_renderer
+    assert "AddTypingHand(" in employee_renderer
 
 
 def test_get_the_best_v2_floor_and_wall_use_kenney_texture_resources() -> None:
@@ -1519,3 +1519,40 @@ def test_get_the_best_v2_0_28_facility_preview_rotation_and_work_feedback() -> N
     assert "SetEmployeeWorkState(employeeId, isWorking: false" in employee_autonomy
 
     assert "FormatBusinessTickSummary(result)" in hud
+
+
+def test_get_the_best_v2_0_29_employee_facility_snap_work_pose_and_drag_cleanup() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "EmployeeAutonomyController? _employeeAutonomyController" in selection
+    assert 'GetNodeOrNull<EmployeeAutonomyController>("../EmployeeAutonomyController")' in selection
+    assert "EmployeeFacilityDropTarget" in selection
+    assert "TryFindFacilityDropTarget(" in selection
+    assert "GetFacilitySeatCell(" in selection
+    assert "_activeEmployeeFacilityDropTarget" in selection
+    assert "_employeeAutonomyController?.ClearEmployeePresentationState(" in selection
+    assert "_employeeAutonomyController?.StartManualFacilityWork(" in selection
+    assert '"\\u5f00\\u59cb\\u5de5\\u4f5c"' in selection
+
+    assert "EmployeeWorkPose" in employee_renderer
+    assert "_employeeWorkPoses" in employee_renderer
+    assert "SetEmployeeWorkState(" in employee_renderer
+    assert "FacilityPlacement? facility = null" in employee_renderer
+    assert "GetDeskSeatWorldPosition(" in employee_renderer
+    assert "GetDeskWorkYawDegrees(" in employee_renderer
+    assert "PlayEmployeeTypingAnimation(" in employee_renderer
+    assert "TypingHands" in employee_renderer
+    assert "GetWorkPoseScale(" in employee_renderer
+
+    assert "ClearEmployeePresentationState(int employeeId)" in employee_autonomy
+    assert (
+        "StartManualFacilityWork(int employeeId, FacilityPlacement facility)" in employee_autonomy
+    )
+    assert "StartManualFacilityWork(employeeId, target.Facility)" in employee_autonomy
+    assert "_facilityRenderer?.SetFacilityUseState(facility.Id, true)" in employee_autonomy
+    assert (
+        "_employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: true, facility)"
+        in employee_autonomy
+    )
