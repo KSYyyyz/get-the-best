@@ -98,7 +98,18 @@ public partial class EmployeeAutonomyController : Node
         _reservedFacilityIds.Add(facility.Id);
         SetEmployeeActivity(employeeId, EmployeeActivityKind.UsingFacility, facilityId: facility.Id);
         _facilityRenderer?.SetFacilityUseState(facility.Id, true);
-        _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: true, facility);
+        _employeeRenderer?.SetEmployeeAnimationState(
+            employeeId,
+            GetFacilityUseAnimationState(facility)
+        );
+        if (facility.FacilityType == FacilityBuildType.OfficeDesk)
+        {
+            _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: true, facility);
+        }
+        else
+        {
+            _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: false);
+        }
     }
 
     private void InitializeEmployeeStates()
@@ -151,6 +162,10 @@ public partial class EmployeeAutonomyController : Node
 
             _isEmployeeMoveInProgress = true;
             SetEmployeeActivity(employee.Id, EmployeeActivityKind.WalkingToTarget, targetCell);
+            _employeeRenderer?.SetEmployeeAnimationState(
+                employee.Id,
+                EmployeePresentationAnimationState.Walking
+            );
             _employeeRenderer?.PlayEmployeePathMove(employee, path, () =>
                 FinishAutonomousMove(employee.Id, targetCell)
             );
@@ -182,13 +197,13 @@ public partial class EmployeeAutonomyController : Node
                 coreIntent.EmployeeId != employee.Id
                 || coreIntent.Kind != StartupSim.Core.EmployeeIntentKind.MoveToFacility
                 || coreIntent.FacilityId == null
-                || !FindFacilityUseTarget(employee, coreIntent.FacilityId, out var target)
+                || !FindFacilityUseTarget(employee, coreIntent.FacilityId, coreIntent.SourceAction, out var target)
             )
             {
                 continue;
             }
 
-            StartFacilityMove(employee, target, BuildCoreIntentActivityLabel(coreIntent));
+            StartFacilityMove(employee, target, coreIntent, BuildCoreIntentActivityLabel(coreIntent));
             return true;
         }
 
@@ -198,6 +213,7 @@ public partial class EmployeeAutonomyController : Node
     private void StartFacilityMove(
         EmployeeVisual employee,
         FacilityInteractionTarget target,
+        CoreEmployeeIntent coreIntent,
         string? activityLabel = null
     )
     {
@@ -209,6 +225,10 @@ public partial class EmployeeAutonomyController : Node
             target.StandCell,
             target.Facility.Id,
             activityLabel
+        );
+        _employeeRenderer?.SetEmployeeAnimationState(
+            employee.Id,
+            GetAnimationStateForCoreIntent(coreIntent.SourceAction)
         );
         _employeeRenderer?.PlayEmployeePathMove(employee, target.Path, () =>
             FinishFacilityArrival(employee.Id, target)
@@ -265,6 +285,7 @@ public partial class EmployeeAutonomyController : Node
     private bool FindFacilityUseTarget(
         EmployeeVisual employee,
         int? preferredFacilityId,
+        EmployeeActionCandidateKind? sourceAction,
         out FacilityInteractionTarget target
     )
     {
@@ -301,7 +322,7 @@ public partial class EmployeeAutonomyController : Node
                     continue;
                 }
 
-                target = new FacilityInteractionTarget(facility, standCell, path);
+                target = new FacilityInteractionTarget(facility, standCell, path, sourceAction);
                 return true;
             }
         }
@@ -341,6 +362,10 @@ public partial class EmployeeAutonomyController : Node
             _ = movedEmployee;
             _employeeRenderer?.RefreshEmployees();
             AdvanceAndApplyCoreSimulation();
+            _employeeRenderer?.SetEmployeeAnimationState(
+                employeeId,
+                GetFacilityUseAnimationState(target.Facility)
+            );
             StartManualFacilityWork(employeeId, target.Facility);
         }
         else
@@ -449,9 +474,23 @@ public partial class EmployeeAutonomyController : Node
                     : _facilityPlacementStore?.FindById(lifecycleState.FacilityId.Value);
                 _employeeRenderer?.SetEmployeeWorkState(
                     lifecycleState.EmployeeId,
-                    isWorking: true,
-                    facility
+                    facility?.FacilityType == FacilityBuildType.OfficeDesk,
+                    facility?.FacilityType == FacilityBuildType.OfficeDesk ? facility : null
                 );
+                if (facility != null)
+                {
+                    _employeeRenderer?.SetEmployeeAnimationState(
+                        lifecycleState.EmployeeId,
+                        GetFacilityUseAnimationState(facility)
+                    );
+                }
+                else
+                {
+                    _employeeRenderer?.SetEmployeeAnimationState(
+                        lifecycleState.EmployeeId,
+                        EmployeePresentationAnimationState.UsingStandingFacility
+                    );
+                }
             }
             else if (lifecycleState.ActivityKind == StartupSim.Core.EmployeeActivityKind.Idle)
             {
@@ -495,6 +534,29 @@ public partial class EmployeeAutonomyController : Node
     {
         SetEmployeeActivity(employeeId, EmployeeActivityKind.Idle);
         _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: false);
+        _employeeRenderer?.SetEmployeeAnimationState(employeeId, EmployeePresentationAnimationState.Idle);
+    }
+
+    private static EmployeePresentationAnimationState GetAnimationStateForCoreIntent(
+        EmployeeActionCandidateKind? sourceAction
+    )
+    {
+        return sourceAction switch
+        {
+            EmployeeActionCandidateKind.WorkAtDesk => EmployeePresentationAnimationState.Walking,
+            EmployeeActionCandidateKind.UseWhiteboard => EmployeePresentationAnimationState.Walking,
+            EmployeeActionCandidateKind.MaintainServer => EmployeePresentationAnimationState.Walking,
+            _ => EmployeePresentationAnimationState.Walking,
+        };
+    }
+
+    private static EmployeePresentationAnimationState GetFacilityUseAnimationState(
+        FacilityPlacement facility
+    )
+    {
+        return facility.FacilityType == FacilityBuildType.OfficeDesk
+            ? EmployeePresentationAnimationState.WorkingAtDesk
+            : EmployeePresentationAnimationState.UsingStandingFacility;
     }
 
     private static string? GetActivityLabel(EmployeeActivityKind activityKind)
@@ -543,7 +605,8 @@ public sealed record EmployeeAutonomyState(
 public sealed record FacilityInteractionTarget(
     FacilityPlacement Facility,
     Vector2I StandCell,
-    IReadOnlyList<Vector2I> Path
+    IReadOnlyList<Vector2I> Path,
+    EmployeeActionCandidateKind? SourceAction = null
 )
 {
     public static readonly FacilityInteractionTarget Empty =

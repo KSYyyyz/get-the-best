@@ -163,7 +163,7 @@ text = "?"
 offset_left = 16.0
 offset_top = 58.0
 offset_right = 876.0
-offset_bottom = 116.0
+offset_bottom = 198.0
 mouse_filter = 2
 script = ExtResource("9_gqmmt")
 
@@ -196,6 +196,18 @@ text = "Stage --"
 [node name="LastEventValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=268370248]
 layout_mode = 2
 text = "Waiting for Core tick"
+
+[node name="ObjectiveValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows"]
+layout_mode = 2
+text = "目标 等待 Core tick"
+
+[node name="NextObjectiveValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows"]
+layout_mode = 2
+text = "下一步 观察员工行动"
+
+[node name="RecentCoreEventValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows"]
+layout_mode = 2
+text = "最近事件 --"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

@@ -20,6 +20,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
     private Label? _revenueValueLabel;
     private Label? _outcomeValueLabel;
     private Label? _lastEventValueLabel;
+    private Label? _objectiveValueLabel;
+    private Label? _nextObjectiveValueLabel;
+    private Label? _recentCoreEventValueLabel;
 
     public override void _Ready()
     {
@@ -36,6 +39,11 @@ public partial class BusinessFeedbackHudController : PanelContainer
             "BusinessRows/BusinessMetricsRow/OutcomeValueLabel"
         );
         _lastEventValueLabel = GetNodeOrNull<Label>("BusinessRows/LastEventValueLabel");
+        _objectiveValueLabel = GetNodeOrNull<Label>("BusinessRows/ObjectiveValueLabel");
+        _nextObjectiveValueLabel = GetNodeOrNull<Label>("BusinessRows/NextObjectiveValueLabel");
+        _recentCoreEventValueLabel = GetNodeOrNull<Label>(
+            "BusinessRows/RecentCoreEventValueLabel"
+        );
 
         ConfigurePanel();
         ConfigureLabel(_cashValueLabel, PrimaryTextColor);
@@ -43,7 +51,10 @@ public partial class BusinessFeedbackHudController : PanelContainer
         ConfigureLabel(_usersValueLabel, PrimaryTextColor);
         ConfigureLabel(_revenueValueLabel, PrimaryTextColor);
         ConfigureLabel(_outcomeValueLabel, PrimaryTextColor);
-        ConfigureLabel(_lastEventValueLabel, MutedTextColor);
+        ConfigureLongLineLabel(_lastEventValueLabel, MutedTextColor);
+        ConfigureLongLineLabel(_objectiveValueLabel, MutedTextColor);
+        ConfigureLongLineLabel(_nextObjectiveValueLabel, MutedTextColor);
+        ConfigureLongLineLabel(_recentCoreEventValueLabel, MutedTextColor);
         ResetDisplay();
     }
 
@@ -87,6 +98,15 @@ public partial class BusinessFeedbackHudController : PanelContainer
         );
         SetLabel(_outcomeValueLabel, FormatOutcome(result.OutcomeKind, result.CompanyTotals.ProductStage));
         SetLabel(_lastEventValueLabel, FormatLastEvent(result));
+        SetLabel(
+            _objectiveValueLabel,
+            FormatFirstLoopObjective(result.CompanyTotals, result.OutcomeKind)
+        );
+        SetLabel(
+            _nextObjectiveValueLabel,
+            FormatNextObjective(result.CompanyTotals, result.OutcomeKind)
+        );
+        SetLabel(_recentCoreEventValueLabel, FormatRecentCoreEvent(result));
     }
 
     private void ResetDisplay()
@@ -97,6 +117,9 @@ public partial class BusinessFeedbackHudController : PanelContainer
         SetLabel(_revenueValueLabel, "MRR --");
         SetLabel(_outcomeValueLabel, "\u9636\u6bb5 --");
         SetLabel(_lastEventValueLabel, "\u7b49\u5f85 Core tick");
+        SetLabel(_objectiveValueLabel, "\u76ee\u6807 \u7b49\u5f85 Core tick");
+        SetLabel(_nextObjectiveValueLabel, "\u4e0b\u4e00\u6b65 \u89c2\u5bdf\u5458\u5de5\u884c\u52a8");
+        SetLabel(_recentCoreEventValueLabel, "\u6700\u8fd1\u4e8b\u4ef6 --");
     }
 
     private void ConfigurePanel()
@@ -129,6 +152,20 @@ public partial class BusinessFeedbackHudController : PanelContainer
         label.AddThemeConstantOverride("outline_size", 0);
         label.CustomMinimumSize = new Vector2(108.0f, 22.0f);
         label.VerticalAlignment = VerticalAlignment.Center;
+    }
+
+    private static void ConfigureLongLineLabel(Label? label, Color color)
+    {
+        ConfigureLabel(label, color);
+        if (label == null)
+        {
+            return;
+        }
+
+        label.ClipText = true;
+        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        label.CustomMinimumSize = new Vector2(640.0f, 22.0f);
+        label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
     }
 
     private static void SetLabel(Label? label, string text, double delta = 0.0)
@@ -185,6 +222,55 @@ public partial class BusinessFeedbackHudController : PanelContainer
             PhaseOutcomeKind.FailedCashDepleted => "\u73b0\u91d1\u8017\u5c3d",
             _ => "\u8fdb\u884c\u4e2d",
         };
+    }
+
+    private static string FormatFirstLoopObjective(
+        CoreCompanySimulationTotals totals,
+        PhaseOutcomeKind outcomeKind
+    )
+    {
+        if (outcomeKind == PhaseOutcomeKind.FirstUsersAcquired)
+        {
+            return "\u76ee\u6807 \u9996\u6279\u7528\u6237\u5df2\u83b7\u5f97";
+        }
+
+        if (outcomeKind == PhaseOutcomeKind.MvpCompleted || totals.ProductStage == ProductStage.MvpReady)
+        {
+            return "\u76ee\u6807 \u51c6\u5907\u9500\u552e\u4e0e\u9996\u6279\u7528\u6237";
+        }
+
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "\u76ee\u6807 \u63a8\u8fdb MVP {0:0.#}/{1:0.#}",
+            totals.CurrentProjectProgress,
+            totals.ProjectRequiredProgress
+        );
+    }
+
+    private static string FormatNextObjective(
+        CoreCompanySimulationTotals totals,
+        PhaseOutcomeKind outcomeKind
+    )
+    {
+        if (outcomeKind == PhaseOutcomeKind.FirstUsersAcquired)
+        {
+            return "\u4e0b\u4e00\u6b65 \u67e5\u770b\u6708\u62a5\u4e0e\u9636\u6bb5\u590d\u76d8";
+        }
+
+        if (outcomeKind == PhaseOutcomeKind.MvpCompleted || totals.ProductStage == ProductStage.MvpReady)
+        {
+            return "\u4e0b\u4e00\u6b65 \u8ba9\u5e02\u573a/\u8fd0\u8425\u5458\u5de5\u4f7f\u7528\u767d\u677f\u6216\u9500\u552e\u8bbe\u65bd";
+        }
+
+        return "\u4e0b\u4e00\u6b65 \u89c2\u5bdf\u5de5\u7a0b\u5e08\u524d\u5f80\u529e\u516c\u684c\u7814\u53d1";
+    }
+
+    private static string FormatRecentCoreEvent(CoreOfficeSimulationResult result)
+    {
+        var eventSummary = result.PresentationEvents.LastOrDefault();
+        return eventSummary == null
+            ? "\u6700\u8fd1\u4e8b\u4ef6 \u672c\u6b21 tick \u65e0\u65b0\u4e8b\u4ef6"
+            : $"\u6700\u8fd1\u4e8b\u4ef6 {FormatEventKind(eventSummary.Kind)}: {eventSummary.Message}";
     }
 
     private static string FormatLastEvent(CoreOfficeSimulationResult result)

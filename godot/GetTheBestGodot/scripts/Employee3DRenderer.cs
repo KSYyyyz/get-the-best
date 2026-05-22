@@ -30,9 +30,12 @@ public partial class Employee3DRenderer : Node3D
     private readonly HashSet<int> _highlightedEmployeeIds = [];
     private readonly HashSet<int> _workingEmployeeIds = [];
     private readonly Dictionary<int, string> _employeeActivityLabels = [];
+    private readonly Dictionary<int, EmployeePresentationAnimationState> _employeeAnimationStates = [];
     private readonly Dictionary<int, Vector2I> _employeeFacingTargets = [];
     private readonly Dictionary<int, EmployeeWorkPose> _employeeWorkPoses = [];
     private readonly Dictionary<int, Vector3> _lastEmployeePositions = [];
+    private readonly Dictionary<int, Tween> _employeePathMoveTweens = [];
+    private readonly Dictionary<int, List<Tween>> _employeeLoopingTweens = [];
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
     private int? _dragPreviewEmployeeId;
@@ -49,17 +52,26 @@ public partial class Employee3DRenderer : Node3D
 
     public void RefreshEmployees()
     {
+        var retainedEmployees = new List<Node>();
         foreach (var renderedEmployee in _renderedEmployees)
         {
             if (TryGetEmployeeId(renderedEmployee.Name.ToString(), out var employeeId))
             {
+                if (_employeePathMoveTweens.ContainsKey(employeeId))
+                {
+                    retainedEmployees.Add(renderedEmployee);
+                    continue;
+                }
+
                 _lastEmployeePositions[employeeId] = ((Node3D)renderedEmployee).Position;
+                KillEmployeeLoopingTweens(employeeId);
             }
 
             RemoveChild(renderedEmployee);
             renderedEmployee.QueueFree();
         }
         _renderedEmployees.Clear();
+        _renderedEmployees.AddRange(retainedEmployees);
 
         if (_employeeStore == null)
         {
@@ -68,6 +80,11 @@ public partial class Employee3DRenderer : Node3D
 
         foreach (var employee in _employeeStore.GetEmployees())
         {
+            if (_employeePathMoveTweens.ContainsKey(employee.Id))
+            {
+                continue;
+            }
+
             AddEmployeeModel(employee);
         }
     }
@@ -150,6 +167,31 @@ public partial class Employee3DRenderer : Node3D
         RefreshEmployees();
     }
 
+    public void SetEmployeeAnimationState(int employeeId, EmployeePresentationAnimationState state)
+    {
+        if (state == EmployeePresentationAnimationState.Idle)
+        {
+            if (!_employeeAnimationStates.Remove(employeeId))
+            {
+                return;
+            }
+        }
+        else
+        {
+            if (
+                _employeeAnimationStates.TryGetValue(employeeId, out var currentState)
+                && currentState == state
+            )
+            {
+                return;
+            }
+
+            _employeeAnimationStates[employeeId] = state;
+        }
+
+        RefreshEmployees();
+    }
+
     public void SetEmployeeWorkState(
         int employeeId,
         bool isWorking,
@@ -208,19 +250,35 @@ public partial class Employee3DRenderer : Node3D
             return;
         }
 
+        KillEmployeePathMoveTween(employee.Id);
+        KillEmployeeLoopingTweens(employee.Id);
         _pathMovingEmployeeId = employee.Id;
         ApplyEmployeeOutline(modelRoot, OutlineStroke);
 
         var tween = CreateTween();
+        _employeePathMoveTweens[employee.Id] = tween;
         for (var index = 1; index < path.Count; index++)
         {
             TweenEmployeePathStep(tween, modelRoot, path[index]);
         }
 
+        var finalPosition = GetPathCellWorldPosition(path[^1]);
+        var didFinish = false;
         tween.Finished += () =>
         {
-            _lastEmployeePositions[employee.Id] = modelRoot.Position;
-            _pathMovingEmployeeId = null;
+            if (didFinish)
+            {
+                return;
+            }
+
+            didFinish = true;
+            _lastEmployeePositions[employee.Id] = finalPosition;
+            _employeePathMoveTweens.Remove(employee.Id);
+            if (_pathMovingEmployeeId == employee.Id)
+            {
+                _pathMovingEmployeeId = null;
+            }
+
             onFinished();
         };
     }
@@ -281,9 +339,10 @@ public partial class Employee3DRenderer : Node3D
         AddEmployeeActivityBadge(modelRoot, employee);
         if (_workingEmployeeIds.Contains(employee.Id))
         {
-            AddTypingHands(modelRoot);
-            PlayEmployeeTypingAnimation(modelRoot);
+            _employeeAnimationStates[employee.Id] = EmployeePresentationAnimationState.WorkingAtDesk;
         }
+
+        ApplyEmployeeAnimationState(modelRoot, employee.Id);
     }
 
     private static PackedScene? GetEmployeeModelScene(EmployeeVisual employee)
@@ -321,17 +380,58 @@ public partial class Employee3DRenderer : Node3D
 
     private static void TweenEmployeePathStep(Tween tween, Node3D modelRoot, Vector2I pathCell)
     {
-        var targetPosition =
-            OfficeWorld3DConfig.CellToWorldPosition(pathCell) + new Vector3(0.0f, 0.02f, 0.0f);
         tween
             .TweenProperty(
                 modelRoot,
                 "position",
-                targetPosition,
+                GetPathCellWorldPosition(pathCell),
                 PathMoveStepDurationSeconds
             )
             .SetTrans(Tween.TransitionType.Cubic)
             .SetEase(Tween.EaseType.InOut);
+    }
+
+    private static Vector3 GetPathCellWorldPosition(Vector2I pathCell)
+    {
+        return OfficeWorld3DConfig.CellToWorldPosition(pathCell) + new Vector3(0.0f, 0.02f, 0.0f);
+    }
+
+    private void KillEmployeePathMoveTween(int employeeId)
+    {
+        if (!_employeePathMoveTweens.Remove(employeeId, out var tween))
+        {
+            return;
+        }
+
+        tween.Kill();
+        if (_pathMovingEmployeeId == employeeId)
+        {
+            _pathMovingEmployeeId = null;
+        }
+    }
+
+    private void RegisterEmployeeLoopingTween(int employeeId, Tween tween)
+    {
+        if (!_employeeLoopingTweens.TryGetValue(employeeId, out var tweens))
+        {
+            tweens = [];
+            _employeeLoopingTweens[employeeId] = tweens;
+        }
+
+        tweens.Add(tween);
+    }
+
+    private void KillEmployeeLoopingTweens(int employeeId)
+    {
+        if (!_employeeLoopingTweens.Remove(employeeId, out var tweens))
+        {
+            return;
+        }
+
+        foreach (var tween in tweens)
+        {
+            tween.Kill();
+        }
     }
 
     private static bool TryGetEmployeeId(string nodeName, out int employeeId)
@@ -381,15 +481,127 @@ public partial class Employee3DRenderer : Node3D
         return delta.Y < 0 ? 0.0f : 180.0f;
     }
 
-    private void PlayEmployeeWorkAnimation(Node3D modelRoot)
+    private void PlayEmployeeWorkAnimation(Node3D modelRoot, int employeeId)
     {
-        PlayEmployeeTypingAnimation(modelRoot);
+        PlayEmployeeTypingAnimation(modelRoot, employeeId);
     }
 
-    private void PlayEmployeeTypingAnimation(Node3D modelRoot)
+    private void ApplyEmployeeAnimationState(Node3D modelRoot, int employeeId)
+    {
+        if (!_employeeAnimationStates.TryGetValue(employeeId, out var state))
+        {
+            return;
+        }
+
+        switch (state)
+        {
+            case EmployeePresentationAnimationState.SittingDown:
+                PlayEmployeeSittingDownAnimation(modelRoot);
+                break;
+            case EmployeePresentationAnimationState.WorkingAtDesk:
+                AddTypingHands(modelRoot);
+                PlayEmployeeWorkAnimation(modelRoot, employeeId);
+                break;
+            case EmployeePresentationAnimationState.UsingStandingFacility:
+                PlayEmployeeStandingUseAnimation(modelRoot);
+                break;
+            case EmployeePresentationAnimationState.Walking:
+            case EmployeePresentationAnimationState.LeavingFacility:
+                PlayEmployeeWalkingAnimation(modelRoot);
+                break;
+        }
+    }
+
+    private void PlayEmployeeWalkingAnimation(Node3D modelRoot)
+    {
+        if (!TryGetEmployeeId(modelRoot.Name.ToString(), out var employeeId))
+        {
+            return;
+        }
+
+        PlayEmployeeWalkingAnimation(modelRoot, employeeId);
+    }
+
+    private void PlayEmployeeWalkingAnimation(Node3D modelRoot, int employeeId)
     {
         var baseRotation = modelRoot.RotationDegrees;
         var tween = CreateTween().SetLoops();
+        RegisterEmployeeLoopingTween(employeeId, tween);
+        tween
+            .TweenProperty(
+                modelRoot,
+                "rotation_degrees",
+                baseRotation + new Vector3(0.0f, 0.0f, 4.0f),
+                0.18f
+            )
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+        tween
+            .TweenProperty(
+                modelRoot,
+                "rotation_degrees",
+                baseRotation + new Vector3(0.0f, 0.0f, -4.0f),
+                0.18f
+            )
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+        tween
+            .TweenProperty(modelRoot, "rotation_degrees", baseRotation, 0.12f)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+    }
+
+    private void PlayEmployeeSittingDownAnimation(Node3D modelRoot)
+    {
+        var baseRotation = modelRoot.RotationDegrees;
+        var targetRotation = baseRotation + new Vector3(-6.0f, 0.0f, 0.0f);
+        var targetScale = modelRoot.Scale * 0.94f;
+
+        CreateTween()
+            .TweenProperty(modelRoot, "rotation_degrees", targetRotation, 0.22f)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+        CreateTween()
+            .TweenProperty(modelRoot, "scale", targetScale, 0.22f)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+    }
+
+    private void PlayEmployeeStandingUseAnimation(Node3D modelRoot)
+    {
+        if (!TryGetEmployeeId(modelRoot.Name.ToString(), out var employeeId))
+        {
+            return;
+        }
+
+        PlayEmployeeStandingUseAnimation(modelRoot, employeeId);
+    }
+
+    private void PlayEmployeeStandingUseAnimation(Node3D modelRoot, int employeeId)
+    {
+        var baseRotation = modelRoot.RotationDegrees;
+        var tween = CreateTween().SetLoops();
+        RegisterEmployeeLoopingTween(employeeId, tween);
+        tween
+            .TweenProperty(
+                modelRoot,
+                "rotation_degrees",
+                baseRotation + new Vector3(-3.0f, 2.0f, 0.0f),
+                0.36f
+            )
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+        tween
+            .TweenProperty(modelRoot, "rotation_degrees", baseRotation, 0.36f)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+    }
+
+    private void PlayEmployeeTypingAnimation(Node3D modelRoot, int employeeId)
+    {
+        var baseRotation = modelRoot.RotationDegrees;
+        var tween = CreateTween().SetLoops();
+        RegisterEmployeeLoopingTween(employeeId, tween);
         tween
             .TweenProperty(
                 modelRoot,
@@ -412,6 +624,7 @@ public partial class Employee3DRenderer : Node3D
 
         var baseHandsPosition = typingHands.Position;
         var handsTween = CreateTween().SetLoops();
+        RegisterEmployeeLoopingTween(employeeId, handsTween);
         handsTween
             .TweenProperty(
                 typingHands,
@@ -635,3 +848,13 @@ public partial class Employee3DRenderer : Node3D
 }
 
 public sealed record EmployeeWorkPose(FacilityPlacement Facility);
+
+public enum EmployeePresentationAnimationState
+{
+    Idle,
+    Walking,
+    SittingDown,
+    WorkingAtDesk,
+    UsingStandingFacility,
+    LeavingFacility,
+}

@@ -1586,3 +1586,64 @@ def test_get_the_best_v2_0_30_seat_anchor_facility_rotation_and_core_intent_labe
     assert "EmployeeActionCandidateKind.WorkAtDesk" in employee_autonomy
     assert "EmployeeActionCandidateKind.UseWhiteboard" in employee_autonomy
     assert "EmployeeActionCandidateKind.MaintainServer" in employee_autonomy
+
+
+def test_get_the_best_v2_1_0_first_loop_objective_hud_uses_core_result() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    hud = read_text(GODOT_ROOT / "scripts" / "BusinessFeedbackHudController.cs")
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+
+    assert 'name="ObjectiveValueLabel"' in scene_text
+    assert 'name="NextObjectiveValueLabel"' in scene_text
+    assert 'name="RecentCoreEventValueLabel"' in scene_text
+    assert "_objectiveValueLabel" in hud
+    assert "_nextObjectiveValueLabel" in hud
+    assert "_recentCoreEventValueLabel" in hud
+    assert "FormatFirstLoopObjective(result.CompanyTotals, result.OutcomeKind)" in hud
+    assert "FormatNextObjective(result.CompanyTotals, result.OutcomeKind)" in hud
+    assert "FormatRecentCoreEvent(result)" in hud
+    assert "result.CompanyTotals.CurrentProjectProgress" in hud
+    assert "result.CompanyTotals.ProductStage" in hud
+    assert "PhaseOutcomeKind.FirstUsersAcquired" in hud
+    assert "CoreOfficeSimulationResult" in bridge
+
+
+def test_get_the_best_v2_1_0_employee_animation_states_follow_core_intents() -> None:
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "public enum EmployeePresentationAnimationState" in employee_renderer
+    assert "Idle" in employee_renderer
+    assert "Walking" in employee_renderer
+    assert "SittingDown" in employee_renderer
+    assert "WorkingAtDesk" in employee_renderer
+    assert "UsingStandingFacility" in employee_renderer
+    assert "LeavingFacility" in employee_renderer
+    assert "_employeeAnimationStates" in employee_renderer
+    assert (
+        "SetEmployeeAnimationState(int employeeId, EmployeePresentationAnimationState state)"
+        in employee_renderer
+    )
+    assert "PlayEmployeeStandingUseAnimation(modelRoot)" in employee_renderer
+    assert "PlayEmployeeSittingDownAnimation(modelRoot)" in employee_renderer
+
+    assert "GetAnimationStateForCoreIntent(coreIntent.SourceAction)" in employee_autonomy
+    assert (
+        "EmployeeActionCandidateKind.WorkAtDesk => EmployeePresentationAnimationState.Walking"
+        in employee_autonomy
+    )
+    assert (
+        "EmployeeActionCandidateKind.UseWhiteboard => EmployeePresentationAnimationState.Walking"
+        in employee_autonomy
+    )
+    assert (
+        "EmployeeActionCandidateKind.MaintainServer => EmployeePresentationAnimationState.Walking"
+        in employee_autonomy
+    )
+    assert "GetFacilityUseAnimationState(target.Facility)" in employee_autonomy
+    assert "EmployeePresentationAnimationState.WorkingAtDesk" in employee_autonomy
+    assert "EmployeePresentationAnimationState.UsingStandingFacility" in employee_autonomy
+    assert (
+        "SetEmployeeAnimationState(employeeId, EmployeePresentationAnimationState.Idle)"
+        in employee_autonomy
+    )
