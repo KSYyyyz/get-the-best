@@ -46,6 +46,7 @@ public partial class EmployeeAutonomyController : Node
     private CoreOfficeSimulationResult? _pendingCoreIntentResult;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
     private float _coreSimulationTimer = CoreSimulationTickSeconds;
+    private float _simulationTimeScale = 1.0f;
     private int _nextEmployeeIndex;
     private bool _isEmployeeMoveInProgress;
 
@@ -64,13 +65,19 @@ public partial class EmployeeAutonomyController : Node
 
     public override void _Process(double delta)
     {
+        var scaledDelta = (float)delta * _simulationTimeScale;
+        if (scaledDelta <= 0.0f)
+        {
+            return;
+        }
+
         if (_isEmployeeMoveInProgress)
         {
             return;
         }
 
-        UpdateCoreSimulation((float)delta);
-        _autonomyTimer -= (float)delta;
+        UpdateCoreSimulation(scaledDelta);
+        _autonomyTimer -= scaledDelta;
         if (_autonomyTimer > 0.0f)
         {
             return;
@@ -78,6 +85,12 @@ public partial class EmployeeAutonomyController : Node
 
         _autonomyTimer = AutonomousMoveIntervalSeconds;
         TryStartNextAutonomousMove();
+    }
+
+    public void SetSimulationTimeScale(float timeScale)
+    {
+        _simulationTimeScale = Mathf.Clamp(timeScale, 0.0f, 3.0f);
+        _employeeRenderer?.SetPresentationTimeScale(_simulationTimeScale);
     }
 
     public void ClearEmployeePresentationState(int employeeId)

@@ -474,7 +474,9 @@ public partial class OfficeSelection3DController : Node
         _dragEmployeeTargetLegal = true;
         ClearSelectedObjects();
         ClearObjectHoverState();
+        _employeeAutonomyController?.ClearEmployeePresentationState(employee.Id);
         _employeeRenderer?.HighlightEmployee(employee);
+        _employeeRenderer?.ShowEmployeeDragPreview(employee, cell, isLegal: true);
         UpdateEmployeeDragPreview(cell, screenPosition);
         return true;
     }

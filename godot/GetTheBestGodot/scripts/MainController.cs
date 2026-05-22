@@ -9,6 +9,7 @@ public partial class MainController : Node3D
     private Control? _businessFeedbackPanel;
     private Control? _buildModePanel;
     private Control? _buildConfirmPanel;
+    private Control? _timeScalePanel;
     private Control? _floatingTooltip;
     private Vector2 _lastViewportSize;
 
@@ -18,6 +19,7 @@ public partial class MainController : Node3D
         _businessFeedbackPanel = GetNodeOrNull<Control>("HudRoot/BusinessFeedbackPanel");
         _buildModePanel = GetNodeOrNull<Control>("HudRoot/BuildModePanel");
         _buildConfirmPanel = GetNodeOrNull<Control>("HudRoot/BuildConfirmPanel");
+        _timeScalePanel = GetNodeOrNull<Control>("HudRoot/TimeScalePanel");
         _floatingTooltip = GetNodeOrNull<Control>("HudRoot/FloatingTooltip");
         _statusLabel = GetNodeOrNull<Label>("HudRoot/TopStatusBar/StatusLabel");
         var bridge = GetNodeOrNull<V2CoreBridge>("V2CoreBridge");
@@ -87,6 +89,12 @@ public partial class MainController : Node3D
             _buildConfirmPanel.Size = new Vector2(320.0f, 42.0f);
         }
 
+        if (_timeScalePanel != null)
+        {
+            _timeScalePanel.Position = new Vector2(Mathf.Max(16.0f, viewportSize.X - 320.0f), 58.0f);
+            _timeScalePanel.Size = new Vector2(268.0f, 40.0f);
+        }
+
         if (_floatingTooltip != null)
         {
             _floatingTooltip.Size = Vector2.Zero;
@@ -111,7 +119,11 @@ public partial class MainController : Node3D
 
     private static void RemoveHudChrome(Control control)
     {
-        if (control.Name == "BuildConfirmPanel" || control.Name == "BusinessFeedbackPanel")
+        if (
+            control.Name == "BuildConfirmPanel"
+            || control.Name == "BusinessFeedbackPanel"
+            || control.Name == "TimeScalePanel"
+        )
         {
             return;
         }

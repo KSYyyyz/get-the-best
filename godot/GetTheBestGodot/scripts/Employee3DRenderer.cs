@@ -42,6 +42,7 @@ public partial class Employee3DRenderer : Node3D
     private int? _pathMovingEmployeeId;
     private Vector2I _dragPreviewCell;
     private bool _dragPreviewIsLegal = true;
+    private float _presentationTimeScale = 1.0f;
     private EmployeeStore? _employeeStore;
 
     public override void _Ready()
@@ -237,6 +238,12 @@ public partial class Employee3DRenderer : Node3D
         }
     }
 
+    public void SetPresentationTimeScale(float timeScale)
+    {
+        _presentationTimeScale = Mathf.Clamp(timeScale, 0.0f, 3.0f);
+        SetActiveTweenSpeedScale();
+    }
+
     public void PlayEmployeePathMove(
         EmployeeVisual employee,
         IReadOnlyList<Vector2I> path,
@@ -255,7 +262,7 @@ public partial class Employee3DRenderer : Node3D
         _pathMovingEmployeeId = employee.Id;
         ApplyEmployeeOutline(modelRoot, OutlineStroke);
 
-        var tween = CreateTween();
+        var tween = CreateScaledTween();
         _employeePathMoveTweens[employee.Id] = tween;
         for (var index = 1; index < path.Count; index++)
         {
@@ -285,9 +292,10 @@ public partial class Employee3DRenderer : Node3D
 
     private void AddEmployeeModel(EmployeeVisual employee)
     {
+        var isDragPreviewEmployee = _dragPreviewEmployeeId == employee.Id;
         var renderCell = GetRenderCell(employee);
         var yOffset =
-            _dragPreviewEmployeeId == employee.Id
+            isDragPreviewEmployee
                 ? DragPreviewYOffset
                 : 0.02f;
         var targetPosition =
@@ -297,7 +305,7 @@ public partial class Employee3DRenderer : Node3D
         {
             workFacility = workPose.Facility;
         }
-        if (workFacility != null)
+        if (workFacility != null && !isDragPreviewEmployee)
         {
             targetPosition = GetDeskSeatWorldPosition(workFacility);
         }
@@ -337,7 +345,7 @@ public partial class Employee3DRenderer : Node3D
         }
 
         AddEmployeeActivityBadge(modelRoot, employee);
-        if (_workingEmployeeIds.Contains(employee.Id))
+        if (_workingEmployeeIds.Contains(employee.Id) && !isDragPreviewEmployee)
         {
             _employeeAnimationStates[employee.Id] = EmployeePresentationAnimationState.WorkingAtDesk;
         }
@@ -372,7 +380,7 @@ public partial class Employee3DRenderer : Node3D
             return;
         }
 
-        CreateTween()
+        CreateScaledTween()
             .TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)
             .SetTrans(Tween.TransitionType.Cubic)
             .SetEase(Tween.EaseType.Out);
@@ -419,6 +427,41 @@ public partial class Employee3DRenderer : Node3D
         }
 
         tweens.Add(tween);
+    }
+
+    private Tween CreateScaledTween()
+    {
+        var tween = CreateTween();
+        ApplyTweenTimeScale(tween);
+        return tween;
+    }
+
+    private void SetActiveTweenSpeedScale()
+    {
+        foreach (var tween in _employeePathMoveTweens.Values)
+        {
+            ApplyTweenTimeScale(tween);
+        }
+
+        foreach (var tweens in _employeeLoopingTweens.Values)
+        {
+            foreach (var tween in tweens)
+            {
+                ApplyTweenTimeScale(tween);
+            }
+        }
+    }
+
+    private void ApplyTweenTimeScale(Tween tween)
+    {
+        if (_presentationTimeScale <= 0.0f)
+        {
+            tween.Pause();
+            return;
+        }
+
+        tween.SetSpeedScale(_presentationTimeScale);
+        tween.Play();
     }
 
     private void KillEmployeeLoopingTweens(int employeeId)
@@ -525,7 +568,7 @@ public partial class Employee3DRenderer : Node3D
     private void PlayEmployeeWalkingAnimation(Node3D modelRoot, int employeeId)
     {
         var baseRotation = modelRoot.RotationDegrees;
-        var tween = CreateTween().SetLoops();
+        var tween = CreateScaledTween().SetLoops();
         RegisterEmployeeLoopingTween(employeeId, tween);
         tween
             .TweenProperty(
@@ -557,11 +600,11 @@ public partial class Employee3DRenderer : Node3D
         var targetRotation = baseRotation + new Vector3(-6.0f, 0.0f, 0.0f);
         var targetScale = modelRoot.Scale * 0.94f;
 
-        CreateTween()
+        CreateScaledTween()
             .TweenProperty(modelRoot, "rotation_degrees", targetRotation, 0.22f)
             .SetTrans(Tween.TransitionType.Cubic)
             .SetEase(Tween.EaseType.Out);
-        CreateTween()
+        CreateScaledTween()
             .TweenProperty(modelRoot, "scale", targetScale, 0.22f)
             .SetTrans(Tween.TransitionType.Cubic)
             .SetEase(Tween.EaseType.Out);
@@ -580,7 +623,7 @@ public partial class Employee3DRenderer : Node3D
     private void PlayEmployeeStandingUseAnimation(Node3D modelRoot, int employeeId)
     {
         var baseRotation = modelRoot.RotationDegrees;
-        var tween = CreateTween().SetLoops();
+        var tween = CreateScaledTween().SetLoops();
         RegisterEmployeeLoopingTween(employeeId, tween);
         tween
             .TweenProperty(
@@ -600,7 +643,7 @@ public partial class Employee3DRenderer : Node3D
     private void PlayEmployeeTypingAnimation(Node3D modelRoot, int employeeId)
     {
         var baseRotation = modelRoot.RotationDegrees;
-        var tween = CreateTween().SetLoops();
+        var tween = CreateScaledTween().SetLoops();
         RegisterEmployeeLoopingTween(employeeId, tween);
         tween
             .TweenProperty(
@@ -623,7 +666,7 @@ public partial class Employee3DRenderer : Node3D
         }
 
         var baseHandsPosition = typingHands.Position;
-        var handsTween = CreateTween().SetLoops();
+        var handsTween = CreateScaledTween().SetLoops();
         RegisterEmployeeLoopingTween(employeeId, handsTween);
         handsTween
             .TweenProperty(

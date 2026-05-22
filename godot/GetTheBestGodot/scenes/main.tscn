@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://cj4wk6r5docf6" path="res://scripts/RoomFootprintStore.cs" id="8_tipki"]
 [ext_resource type="Script" uid="uid://bcwbjkvrjrvi8" path="res://scripts/BusinessFeedbackHudController.cs" id="9_gqmmt"]
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
+[ext_resource type="Script" uid="uid://ba0mt7nlp55mf" path="res://scripts/TimeScaleHudController.cs" id="10_yc10j"]
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
 [ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
 [ext_resource type="Script" uid="uid://vwi5tn4mcavf" path="res://scripts/EmployeeStore.cs" id="16_jbj1t"]
@@ -220,6 +221,39 @@ text = "复盘摘要 --"
 [node name="PhaseRecapReasonLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=1728029614]
 layout_mode = 2
 text = "复盘原因 --"
+
+[node name="TimeScalePanel" type="PanelContainer" parent="HudRoot" unique_id=1582695895]
+offset_left = 1046.0
+offset_top = 58.0
+offset_right = 1314.0
+offset_bottom = 98.0
+script = ExtResource("10_yc10j")
+
+[node name="TimeScaleRows" type="HBoxContainer" parent="HudRoot/TimeScalePanel" unique_id=1725505426]
+layout_mode = 2
+
+[node name="SpeedStatusLabel" type="Label" parent="HudRoot/TimeScalePanel/TimeScaleRows" unique_id=1009429824]
+layout_mode = 2
+text = "时间 1x"
+
+[node name="TimeScaleButtons" type="HBoxContainer" parent="HudRoot/TimeScalePanel/TimeScaleRows" unique_id=1986236731]
+layout_mode = 2
+
+[node name="PauseButton" type="Button" parent="HudRoot/TimeScalePanel/TimeScaleRows/TimeScaleButtons" unique_id=84324389]
+layout_mode = 2
+text = "暂停"
+
+[node name="NormalSpeedButton" type="Button" parent="HudRoot/TimeScalePanel/TimeScaleRows/TimeScaleButtons" unique_id=1133712953]
+layout_mode = 2
+text = "1x"
+
+[node name="DoubleSpeedButton" type="Button" parent="HudRoot/TimeScalePanel/TimeScaleRows/TimeScaleButtons" unique_id=127610819]
+layout_mode = 2
+text = "2x"
+
+[node name="TripleSpeedButton" type="Button" parent="HudRoot/TimeScalePanel/TimeScaleRows/TimeScaleButtons" unique_id=821907139]
+layout_mode = 2
+text = "3x"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

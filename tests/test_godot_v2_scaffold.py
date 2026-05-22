@@ -1697,3 +1697,64 @@ def test_get_the_best_v2_1_3_phase_recap_panel_explains_core_outcomes() -> None:
     assert "SimulationEventKind.PhaseOutcomeReached" in hud
     assert "result.CompanyTotals.CurrentActiveUsers" in hud
     assert "result.CompanyTotals.CurrentMonthlyRecurringRevenue" in hud
+
+
+def test_get_the_best_v2_1_4_time_scale_controls_drive_frontend_simulation() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    time_scale_hud = read_text(GODOT_ROOT / "scripts" / "TimeScaleHudController.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+
+    assert "TimeScaleHudController.cs" in scene_text
+    assert 'name="TimeScalePanel"' in scene_text
+    assert 'name="PauseButton"' in scene_text
+    assert 'name="NormalSpeedButton"' in scene_text
+    assert 'name="DoubleSpeedButton"' in scene_text
+    assert 'name="TripleSpeedButton"' in scene_text
+
+    assert "public partial class TimeScaleHudController : PanelContainer" in time_scale_hud
+    assert "SetSimulationTimeScale(0.0f)" in time_scale_hud
+    assert "SetSimulationTimeScale(1.0f)" in time_scale_hud
+    assert "SetSimulationTimeScale(2.0f)" in time_scale_hud
+    assert "SetSimulationTimeScale(3.0f)" in time_scale_hud
+    assert "_employeeAutonomyController?.SetSimulationTimeScale(scale)" in time_scale_hud
+    assert "_speedStatusLabel.Text" in time_scale_hud
+
+    assert "private float _simulationTimeScale = 1.0f;" in employee_autonomy
+    assert "public void SetSimulationTimeScale(float timeScale)" in employee_autonomy
+    assert "_employeeRenderer?.SetPresentationTimeScale(_simulationTimeScale)" in employee_autonomy
+    assert "var scaledDelta = (float)delta * _simulationTimeScale;" in employee_autonomy
+    assert "UpdateCoreSimulation(scaledDelta)" in employee_autonomy
+    assert "_autonomyTimer -= scaledDelta" in employee_autonomy
+
+    assert "public void SetPresentationTimeScale(float timeScale)" in employee_renderer
+    assert "_presentationTimeScale" in employee_renderer
+    assert "SetActiveTweenSpeedScale()" in employee_renderer
+    assert "CreateScaledTween()" in employee_renderer
+
+
+def test_get_the_best_v2_1_4_dragging_working_employee_clears_work_pose_preview_override() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+
+    begin_drag_block = selection[
+        selection.index("private bool TryBeginEmployeeDrag") : selection.index(
+            "private void UpdateEmployeeDragPreview"
+        )
+    ]
+    assert (
+        "_employeeAutonomyController?.ClearEmployeePresentationState(employee.Id);"
+        in begin_drag_block
+    )
+    assert (
+        "_employeeRenderer?.ShowEmployeeDragPreview(employee, cell, isLegal: true);"
+        in begin_drag_block
+    )
+
+    add_model_block = employee_renderer[
+        employee_renderer.index("private void AddEmployeeModel") : employee_renderer.index(
+            "private static PackedScene? GetEmployeeModelScene"
+        )
+    ]
+    assert "var isDragPreviewEmployee = _dragPreviewEmployeeId == employee.Id;" in add_model_block
+    assert "if (workFacility != null && !isDragPreviewEmployee)" in add_model_block
