@@ -7,12 +7,13 @@ namespace GetTheBestGodot;
 
 public partial class MonthlyReportHudController : PanelContainer
 {
-    private static readonly Color PanelColor = new(0.04f, 0.06f, 0.07f, 0.94f);
-    private static readonly Color BorderColor = new(0.74f, 0.86f, 0.78f, 0.42f);
-    private static readonly Color TitleTextColor = new(0.98f, 0.96f, 0.82f, 1.0f);
-    private static readonly Color PrimaryTextColor = new(0.92f, 0.96f, 0.94f, 0.98f);
-    private static readonly Color MutedTextColor = new(0.70f, 0.80f, 0.75f, 0.94f);
-    private static readonly Color ButtonTextColor = new(0.10f, 0.16f, 0.13f, 1.0f);
+    private static readonly Color ReportWindowColor = new(0.94f, 0.94f, 0.92f, 0.98f);
+    private static readonly Color TitleBarColor = new(0.09f, 0.47f, 0.74f, 1.0f);
+    private static readonly Color BorderColor = new(0.18f, 0.20f, 0.20f, 1.0f);
+    private static readonly Color TitleTextColor = new(1.0f, 1.0f, 0.96f, 1.0f);
+    private static readonly Color PrimaryTextColor = new(0.14f, 0.15f, 0.15f, 1.0f);
+    private static readonly Color MutedTextColor = new(0.36f, 0.38f, 0.38f, 1.0f);
+    private static readonly Color ButtonTextColor = new(0.08f, 0.22f, 0.10f, 1.0f);
 
     private Label? _titleLabel;
     private Label? _metricsLabel;
@@ -35,12 +36,13 @@ public partial class MonthlyReportHudController : PanelContainer
         );
 
         ConfigurePanel();
-        CustomMinimumSize = new Vector2(620.0f, 224.0f);
-        ConfigureLabel(_titleLabel, TitleTextColor, fontSize: 21);
-        ConfigureLabel(_metricsLabel, PrimaryTextColor, fontSize: 17);
-        ConfigureLabel(_deltaLabel, PrimaryTextColor, fontSize: 17);
-        ConfigureLabel(_reasonLabel, MutedTextColor, fontSize: 17);
-        ConfigureLabel(_nextStepLabel, MutedTextColor, fontSize: 17);
+        ConfigureTitleBar();
+        CustomMinimumSize = new Vector2(500.0f, 500.0f);
+        ConfigureTitleLabel(_titleLabel);
+        ConfigureBodyLabel(_metricsLabel, fontSize: 15, minHeight: 72);
+        ConfigureBodyLabel(_deltaLabel, fontSize: 15, minHeight: 170);
+        ConfigureBodyLabel(_reasonLabel, fontSize: 14, minHeight: 72, isMuted: true);
+        ConfigureBodyLabel(_nextStepLabel, fontSize: 14, minHeight: 68, isMuted: true);
         ConfigureButton(_continueButton);
 
         if (_continueButton != null)
@@ -70,8 +72,8 @@ public partial class MonthlyReportHudController : PanelContainer
     public void ShowMonthlyReport(CoreOfficeSimulationResult result)
     {
         SetLabel(_titleLabel, FormatReportTitle(result));
-        SetLabel(_metricsLabel, FormatMetrics(result));
-        SetLabel(_deltaLabel, FormatDelta(result));
+        SetLabel(_metricsLabel, FormatOverview(result));
+        SetLabel(_deltaLabel, FormatReportRows(result));
         SetLabel(_reasonLabel, FormatReason(result));
         SetLabel(_nextStepLabel, FormatNextStep(result));
         Visible = true;
@@ -86,35 +88,90 @@ public partial class MonthlyReportHudController : PanelContainer
     {
         var panelStyle = new StyleBoxFlat
         {
-            BgColor = PanelColor,
+            BgColor = ReportWindowColor,
             BorderColor = BorderColor,
-            CornerRadiusTopLeft = 6,
-            CornerRadiusTopRight = 6,
-            CornerRadiusBottomRight = 6,
-            CornerRadiusBottomLeft = 6,
-            ContentMarginLeft = 22.0f,
+            CornerRadiusTopLeft = 8,
+            CornerRadiusTopRight = 8,
+            CornerRadiusBottomRight = 8,
+            CornerRadiusBottomLeft = 8,
+            ContentMarginLeft = 24.0f,
             ContentMarginTop = 18.0f,
-            ContentMarginRight = 22.0f,
+            ContentMarginRight = 24.0f,
             ContentMarginBottom = 18.0f,
         };
         panelStyle.SetBorderWidthAll(2);
         AddThemeStyleboxOverride("panel", panelStyle);
     }
 
-    private static void ConfigureLabel(Label? label, Color color, int fontSize = 22)
+    private void ConfigureTitleBar()
+    {
+        if (_titleLabel == null || _titleLabel.GetParent() is not VBoxContainer rows)
+        {
+            return;
+        }
+
+        var titleIndex = _titleLabel.GetIndex();
+        var titleBar = new PanelContainer
+        {
+            Name = "MonthlyReportTitleBar",
+            CustomMinimumSize = new Vector2(0.0f, 46.0f),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        var titleBarStyle = new StyleBoxFlat
+        {
+            BgColor = TitleBarColor,
+            BorderColor = BorderColor,
+            CornerRadiusTopLeft = 6,
+            CornerRadiusTopRight = 6,
+            ContentMarginLeft = 12.0f,
+            ContentMarginTop = 2.0f,
+            ContentMarginRight = 12.0f,
+            ContentMarginBottom = 2.0f,
+        };
+        titleBarStyle.SetBorderWidthAll(1);
+        titleBar.AddThemeStyleboxOverride("panel", titleBarStyle);
+
+        rows.RemoveChild(_titleLabel);
+        titleBar.AddChild(_titleLabel);
+        rows.AddChild(titleBar);
+        rows.MoveChild(titleBar, titleIndex);
+    }
+
+    private static void ConfigureTitleLabel(Label? label)
     {
         if (label == null)
         {
             return;
         }
 
-        label.AddThemeColorOverride("font_color", color);
+        label.CustomMinimumSize = new Vector2(0.0f, 44.0f);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.VerticalAlignment = VerticalAlignment.Center;
+        label.AddThemeColorOverride("font_color", TitleTextColor);
+        label.AddThemeColorOverride("font_shadow_color", new Color(0.0f, 0.0f, 0.0f, 0.35f));
+        label.AddThemeConstantOverride("shadow_outline_size", 1);
+        label.AddThemeFontSizeOverride("font_size", 22);
+    }
+
+    private static void ConfigureBodyLabel(
+        Label? label,
+        int fontSize,
+        int minHeight,
+        bool isMuted = false
+    )
+    {
+        if (label == null)
+        {
+            return;
+        }
+
+        label.AddThemeColorOverride("font_color", isMuted ? MutedTextColor : PrimaryTextColor);
         label.AddThemeFontSizeOverride("font_size", fontSize);
-        label.CustomMinimumSize = new Vector2(0.0f, 26.0f);
+        label.CustomMinimumSize = new Vector2(0.0f, minHeight);
         label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        label.ClipText = true;
+        label.ClipText = false;
     }
 
     private static void ConfigureButton(Button? button)
@@ -125,49 +182,63 @@ public partial class MonthlyReportHudController : PanelContainer
         }
 
         button.Text = "继续经营";
-        button.CustomMinimumSize = new Vector2(132.0f, 34.0f);
+        button.CustomMinimumSize = new Vector2(132.0f, 38.0f);
         button.FocusMode = FocusModeEnum.None;
         button.AddThemeColorOverride("font_color", ButtonTextColor);
     }
 
     private static void SetLabel(Label? label, string text)
     {
-        if (label == null)
+        if (label != null)
         {
-            return;
+            label.Text = text;
         }
-
-        label.Text = text;
     }
 
     private static string FormatReportTitle(CoreOfficeSimulationResult result)
     {
         var reportEvent = FindMonthlyReportEvent(result);
-        return reportEvent == null ? "月报待查看" : $"月报：{reportEvent.SubjectId}";
+        return reportEvent == null ? "月报待查看" : $"经营月报：{reportEvent.SubjectId}";
     }
 
-    private static string FormatMetrics(CoreOfficeSimulationResult result)
+    private static string FormatOverview(CoreOfficeSimulationResult result)
     {
         return string.Format(
             CultureInfo.InvariantCulture,
-            "现金 ¥{0:0} | MVP {1:0.#}/{2:0.#} | 用户 {3} | MRR ¥{4:0}",
+            "公司 76号\n现金 ¥{0:0}    用户 {1}    MRR ¥{2:0}",
             result.CompanyTotals.CurrentCash,
-            result.CompanyTotals.CurrentProjectProgress,
-            result.CompanyTotals.ProjectRequiredProgress,
             result.CompanyTotals.CurrentActiveUsers,
             result.CompanyTotals.CurrentMonthlyRecurringRevenue
         );
     }
 
-    private static string FormatDelta(CoreOfficeSimulationResult result)
+    private static string FormatReportRows(CoreOfficeSimulationResult result)
     {
+        return string.Join(
+            "\n",
+            "本月变化",
+            FormatReportLine("现金结余", result.CompanyTotals.CurrentCash, result.CashDelta, "¥"),
+            FormatReportLine(
+                "开发进度",
+                result.CompanyTotals.CurrentProjectProgress,
+                result.ProjectProgressDelta,
+                string.Empty
+            ),
+            FormatReportLine("用户数量", result.CompanyTotals.CurrentActiveUsers, 0.0, string.Empty),
+            FormatReportLine("本月收入", result.CompanyTotals.CurrentMonthlyRecurringRevenue, result.RevenueDelta, "¥")
+        );
+    }
+
+    private static string FormatReportLine(string label, double value, double delta, string prefix)
+    {
+        var deltaText = string.Format(CultureInfo.InvariantCulture, "{0:+0.#;-0.#;0}", delta);
         return string.Format(
             CultureInfo.InvariantCulture,
-            "本月变化：现金 {0:+0;-0;0} | MVP {1:+0.#;-0.#;0} | 收入 {2:+0;-0;0}",
-            result.CashDelta,
-            result.ProjectProgressDelta,
-            result.RevenueDelta,
-            FormatOutcome(result.OutcomeKind)
+            "{0,-6} {1}{2:0.#}    变化 {3}",
+            label,
+            prefix,
+            value,
+            deltaText
         );
     }
 
@@ -176,23 +247,21 @@ public partial class MonthlyReportHudController : PanelContainer
         var reportEvent = FindMonthlyReportEvent(result);
         if (reportEvent != null)
         {
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                "原因：Core 已生成月报，现金 {0:+0;-0;0}，收入 {1:+0;-0;0}。",
-                result.CashDelta,
-                result.RevenueDelta
-            );
+            return $"经营说明\nCore 已生成月报，本月现金变化 {FormatDelta(result.CashDelta)}，收入变化 {FormatDelta(result.RevenueDelta)}。";
         }
 
         var recentEvent = result.PresentationEvents.LastOrDefault();
-        return recentEvent == null
-            ? "原因：本月 Core tick 已完成，暂无额外事件。"
-            : $"原因：{recentEvent.Message}";
+        return recentEvent == null ? "经营说明\n本月暂无额外事件。" : $"经营说明\n{recentEvent.Message}";
     }
 
     private static string FormatNextStep(CoreOfficeSimulationResult result)
     {
-        return $"下一步：{FormatOutcome(result.OutcomeKind)}，观察用户、MRR 与现金。";
+        return $"下一步\n{FormatOutcome(result.OutcomeKind)}，继续观察用户、现金和软件表现。";
+    }
+
+    private static string FormatDelta(double delta)
+    {
+        return string.Format(CultureInfo.InvariantCulture, "{0:+0.#;-0.#;0}", delta);
     }
 
     private static CoreSimulationPresentationEvent? FindMonthlyReportEvent(

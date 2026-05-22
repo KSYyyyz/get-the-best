@@ -87,6 +87,7 @@
 - `docs/get_the_best_v2_1_5_delete_priority_time_shortcuts_acceptance_report.md`
 - `docs/get_the_best_v2_1_6_business_calendar_pause_editing_acceptance_report.md`
 - `docs/get_the_best_v2_1_7_monthly_report_panel_acceptance_report.md`
+- `docs/get_the_best_v2_1_8_management_toolbar_monthly_report_acceptance_report.md`
 - `docs/get_the_best_v2_animation_asset_plan.md`
 
 ## 5. 第一原则

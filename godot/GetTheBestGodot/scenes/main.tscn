@@ -57,6 +57,7 @@ script = ExtResource("6_a8y0u")
 [node name="HudRoot" type="CanvasLayer" parent="." unique_id=1023233117]
 
 [node name="TopStatusBar" type="PanelContainer" parent="HudRoot" unique_id=1191419523]
+visible = false
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 760.0
@@ -68,37 +69,14 @@ layout_mode = 2
 text = "Get The Best V2-0:3D ????????"
 
 [node name="BuildModePanel" type="PanelContainer" parent="HudRoot" unique_id=466452476]
-offset_left = 760.0
-offset_top = 12.0
-offset_right = 1248.0
-offset_bottom = 124.0
+offset_left = 548.0
+offset_top = 666.0
+offset_right = 1044.0
+offset_bottom = 716.0
 script = ExtResource("5_choun")
 
 [node name="BuildModeRows" type="VBoxContainer" parent="HudRoot/BuildModePanel" unique_id=1993170608]
 layout_mode = 2
-
-[node name="BuildEntryButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1778906187]
-layout_mode = 2
-
-[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1746442359]
-layout_mode = 2
-text = "??"
-
-[node name="EntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1040878296]
-layout_mode = 2
-text = "|"
-
-[node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=386794345]
-layout_mode = 2
-text = "??"
-
-[node name="FacilityEntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=566916671]
-layout_mode = 2
-text = "|"
-
-[node name="FacilityMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=2141391404]
-layout_mode = 2
-text = "??"
 
 [node name="RoomTypeButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1363755373]
 visible = false
@@ -132,6 +110,125 @@ text = "????"
 layout_mode = 2
 text = "?????"
 
+[node name="EmployeeManagementButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=615906771]
+visible = false
+layout_mode = 2
+
+[node name="EmployeeInfoButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/EmployeeManagementButtons" unique_id=388617599]
+layout_mode = 2
+text = "员工信息"
+
+[node name="TalentMarketButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/EmployeeManagementButtons" unique_id=1014454670]
+layout_mode = 2
+text = "人才市场"
+
+[node name="TeamManagementButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/EmployeeManagementButtons" unique_id=196134663]
+layout_mode = 2
+text = "团队管理"
+
+[node name="EmployeeSettingsButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/EmployeeManagementButtons" unique_id=653126323]
+layout_mode = 2
+text = "员工设置"
+
+[node name="AdministrationButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1947888653]
+visible = false
+layout_mode = 2
+
+[node name="MarketResearchButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/AdministrationButtons" unique_id=98846304]
+layout_mode = 2
+text = "市场调研"
+
+[node name="FinancingLoanButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/AdministrationButtons" unique_id=230197555]
+layout_mode = 2
+text = "融资贷款"
+
+[node name="BankButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/AdministrationButtons" unique_id=1500648852]
+layout_mode = 2
+text = "银行"
+
+[node name="CompanyIdentityButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/AdministrationButtons" unique_id=649183916]
+layout_mode = 2
+text = "公司名称及标志"
+
+[node name="PublishingButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=283803215]
+visible = false
+layout_mode = 2
+
+[node name="PublishSoftwareButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/PublishingButtons" unique_id=487720765]
+layout_mode = 2
+text = "发布软件"
+
+[node name="InAppPurchaseButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/PublishingButtons" unique_id=1015450045]
+layout_mode = 2
+text = "内购管理"
+
+[node name="PricingDiscountButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/PublishingButtons" unique_id=1749169758]
+layout_mode = 2
+text = "定价与折扣"
+
+[node name="DelistSoftwareButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/PublishingButtons" unique_id=1155450463]
+layout_mode = 2
+text = "下架软件"
+
+[node name="StatisticsButtons" type="VBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=753651858]
+visible = false
+layout_mode = 2
+
+[node name="FinanceStatsButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/StatisticsButtons" unique_id=1430135923]
+layout_mode = 2
+text = "财务数据"
+
+[node name="SalesStatsButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/StatisticsButtons" unique_id=261970546]
+layout_mode = 2
+text = "销售数据"
+
+[node name="ProductStatsButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/StatisticsButtons" unique_id=1170538596]
+layout_mode = 2
+text = "产品数据"
+
+[node name="SubsidiaryStatsButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/StatisticsButtons" unique_id=1068557919]
+layout_mode = 2
+text = "子公司"
+
+[node name="BuildEntryButtons" type="HBoxContainer" parent="HudRoot/BuildModePanel/BuildModeRows" unique_id=1778906187]
+layout_mode = 2
+
+[node name="EntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1040878296]
+layout_mode = 2
+text = "|"
+
+[node name="BuildMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=386794345]
+layout_mode = 2
+text = "??"
+
+[node name="FacilityEntrySeparator" type="Label" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=566916671]
+layout_mode = 2
+text = "|"
+
+[node name="FacilityMenuButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=2141391404]
+layout_mode = 2
+text = "??"
+
+[node name="EmployeeManagementButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=52250594]
+layout_mode = 2
+text = "员工"
+
+[node name="AdministrationButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1172395169]
+layout_mode = 2
+text = "管理部"
+
+[node name="PublishingButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=785489200]
+layout_mode = 2
+text = "发行部"
+
+[node name="StatisticsButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1076491600]
+layout_mode = 2
+text = "统计"
+
+[node name="DeleteRoomButton" type="Button" parent="HudRoot/BuildModePanel/BuildModeRows/BuildEntryButtons" unique_id=1746442359]
+layout_mode = 2
+text = "??"
+
 [node name="FloatingTooltip" type="PanelContainer" parent="HudRoot" unique_id=418273176]
 visible = false
 offset_right = 160.0
@@ -163,10 +260,10 @@ layout_mode = 2
 text = "?"
 
 [node name="BusinessFeedbackPanel" type="PanelContainer" parent="HudRoot" unique_id=1600944576]
-offset_left = 16.0
-offset_top = 58.0
-offset_right = 876.0
-offset_bottom = 286.0
+offset_left = 8.0
+offset_top = 666.0
+offset_right = 548.0
+offset_bottom = 716.0
 mouse_filter = 2
 script = ExtResource("9_gqmmt")
 
@@ -176,17 +273,30 @@ layout_mode = 2
 [node name="BusinessMetricsRow" type="HBoxContainer" parent="HudRoot/BusinessFeedbackPanel/BusinessRows" unique_id=295315650]
 layout_mode = 2
 
+[node name="CompanyLogoLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1295395585]
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = "志"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CompanyNameLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1105708957]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "76号"
+vertical_alignment = 1
+
 [node name="CashValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1071210556]
 layout_mode = 2
 text = "Cash --"
 
-[node name="ProjectProgressValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1217786988]
-layout_mode = 2
-text = "MVP --"
-
 [node name="UsersValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1887565508]
 layout_mode = 2
 text = "Users --"
+
+[node name="ProjectProgressValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=1217786988]
+layout_mode = 2
+text = "MVP --"
 
 [node name="RevenueValueLabel" type="Label" parent="HudRoot/BusinessFeedbackPanel/BusinessRows/BusinessMetricsRow" unique_id=641896543]
 layout_mode = 2
@@ -225,10 +335,10 @@ layout_mode = 2
 text = "复盘原因 --"
 
 [node name="TimeScalePanel" type="PanelContainer" parent="HudRoot" unique_id=1582695895]
-offset_left = 1046.0
-offset_top = 58.0
-offset_right = 1314.0
-offset_bottom = 98.0
+offset_left = 1048.0
+offset_top = 666.0
+offset_right = 1272.0
+offset_bottom = 716.0
 script = ExtResource("10_yc10j")
 
 [node name="TimeScaleRows" type="HBoxContainer" parent="HudRoot/TimeScalePanel" unique_id=1725505426]
@@ -258,10 +368,10 @@ layout_mode = 2
 text = "3x"
 
 [node name="BusinessCalendarPanel" type="PanelContainer" parent="HudRoot" unique_id=1382784868]
-offset_left = 1046.0
-offset_top = 104.0
-offset_right = 1314.0
-offset_bottom = 144.0
+offset_left = 1048.0
+offset_top = 622.0
+offset_right = 1272.0
+offset_bottom = 660.0
 mouse_filter = 2
 script = ExtResource("11_jscy8")
 
@@ -271,10 +381,10 @@ text = "第 1 月 第 1 天"
 
 [node name="MonthlyReportPanel" type="PanelContainer" parent="HudRoot" unique_id=649682595]
 visible = false
-offset_left = 960.0
-offset_top = 232.0
-offset_right = 1580.0
-offset_bottom = 456.0
+offset_left = 390.0
+offset_top = 168.0
+offset_right = 890.0
+offset_bottom = 552.0
 script = ExtResource("12_pm3ni")
 
 [node name="MonthlyReportRows" type="VBoxContainer" parent="HudRoot/MonthlyReportPanel" unique_id=1477879304]

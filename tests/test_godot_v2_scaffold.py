@@ -189,11 +189,23 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "BuildModeHudController" in scene_text
     assert '[node name="BuildEntryButtons" type="HBoxContainer"' in scene_text
     assert '[node name="RoomTypeButtons" type="VBoxContainer"' in scene_text
-    assert scene_text.index('[node name="DeleteRoomButton"') < scene_text.index(
-        '[node name="EntrySeparator"'
+    assert scene_text.index('[node name="BuildMenuButton"') < scene_text.index(
+        '[node name="FacilityMenuButton"'
     )
-    assert scene_text.index('[node name="EntrySeparator"') < scene_text.index(
-        '[node name="BuildMenuButton"'
+    assert scene_text.index('[node name="FacilityMenuButton"') < scene_text.index(
+        '[node name="EmployeeManagementButton"'
+    )
+    assert scene_text.index('[node name="EmployeeManagementButton"') < scene_text.index(
+        '[node name="AdministrationButton"'
+    )
+    assert scene_text.index('[node name="AdministrationButton"') < scene_text.index(
+        '[node name="PublishingButton"'
+    )
+    assert scene_text.index('[node name="PublishingButton"') < scene_text.index(
+        '[node name="StatisticsButton"'
+    )
+    assert scene_text.index('[node name="StatisticsButton"') < scene_text.index(
+        '[node name="DeleteRoomButton"'
     )
 
     assert "BuildModeHudController.cs" in scripts
@@ -201,13 +213,15 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "_entryButtons" in scripts["BuildModeHudController.cs"]
     assert "_entrySeparator" in scripts["BuildModeHudController.cs"]
     assert "ConfigureEntryButtons" in scripts["BuildModeHudController.cs"]
-    assert 'AddThemeConstantOverride("separation", 2)' in scripts["BuildModeHudController.cs"]
+    assert 'AddThemeConstantOverride("separation", 3)' in scripts["BuildModeHudController.cs"]
     assert "ConfigureSeparator" in scripts["BuildModeHudController.cs"]
-    assert 'Text = "|"' in scripts["BuildModeHudController.cs"]
     assert "VBoxContainer? _roomTypeButtons" in scripts["BuildModeHudController.cs"]
-    assert "ToggleBuildMenu" in scripts["BuildModeHudController.cs"]
-    assert "RefreshRoomTypeVisibility" in scripts["BuildModeHudController.cs"]
-    assert "_roomTypeButtons.Visible = _isBuildMenuOpen" in scripts["BuildModeHudController.cs"]
+    assert "ToggleMenu(CommandMenu.Build)" in scripts["BuildModeHudController.cs"]
+    assert "RefreshToolMenuVisibility" in scripts["BuildModeHudController.cs"]
+    assert (
+        "SetMenuVisible(_roomTypeButtons, _openMenu == CommandMenu.Build)"
+        in scripts["BuildModeHudController.cs"]
+    )
     assert "_buildModeLabel" not in scripts["BuildModeHudController.cs"]
     assert "RefreshBuildModeLabel" not in scripts["BuildModeHudController.cs"]
     assert "MouseEntered" in scripts["BuildModeHudController.cs"]
@@ -215,15 +229,15 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "OnToolModeChanged" in scripts["BuildModeHudController.cs"]
     assert "ActiveButtonColor" in scripts["BuildModeHudController.cs"]
     assert "HoverButtonColor" in scripts["BuildModeHudController.cs"]
-    assert "GetButtonPrefix" in scripts["BuildModeHudController.cs"]
-    assert "minWidth: 46.0f" in scripts["BuildModeHudController.cs"]
-    assert "new Vector2(8.0f, 30.0f)" in scripts["BuildModeHudController.cs"]
+    assert "GetButtonPrefix" not in scripts["BuildModeHudController.cs"]
+    assert "minWidth: 64.0f" in scripts["BuildModeHudController.cs"]
+    assert "new Vector2(businessWidth + 8.0f" in scripts["BuildModeHudController.cs"]
     assert (
-        "CustomMinimumSize = new Vector2(minWidth, 30.0f)" in scripts["BuildModeHudController.cs"]
+        "CustomMinimumSize = new Vector2(minWidth, 36.0f)" in scripts["BuildModeHudController.cs"]
     )
-    assert "viewportSize.X * 0.14f" in scripts["MainController.cs"]
-    assert "viewportSize.X - width - 180.0f" in scripts["MainController.cs"]
-    assert "new Vector2(width, 180.0f)" in scripts["MainController.cs"]
+    assert "LayoutBottomHud(viewportSize)" in scripts["MainController.cs"]
+    assert "BuildModePanel" in scripts["MainController.cs"]
+    assert "TimeScalePanel" in scripts["MainController.cs"]
     assert "enum RoomBuildType" in scripts["BuildModeController.cs"]
     assert "ResearchRoom" in scripts["BuildModeController.cs"]
     assert "MarketRoom" in scripts["BuildModeController.cs"]
@@ -354,7 +368,7 @@ def test_get_the_best_v2_0_3_facility_placement_baseline_exists() -> None:
     assert "FacilityMenuText" in scripts["BuildModeHudController.cs"]
     assert "_facilityMenuButton" in scripts["BuildModeHudController.cs"]
     assert "VBoxContainer? _facilityTypeButtons" in scripts["BuildModeHudController.cs"]
-    assert "ToggleFacilityMenu" in scripts["BuildModeHudController.cs"]
+    assert "ToggleMenu(CommandMenu.Facility)" in scripts["BuildModeHudController.cs"]
     assert "SetFacilityType" in scripts["BuildModeHudController.cs"]
     assert "RefreshToolMenuVisibility" in scripts["BuildModeHudController.cs"]
     assert "BuildModeController.GetFacilityTypeLabel" in scripts["BuildModeHudController.cs"]
@@ -1481,10 +1495,8 @@ def test_get_the_best_v2_0_27_business_feedback_hud_consumes_core_totals() -> No
 
     assert "ApplySimulationResult(CoreOfficeSimulationResult result)" in hud
     assert "result.CompanyTotals.CurrentCash" in hud
-    assert "result.CompanyTotals.CurrentProjectProgress" in hud
     assert "result.CompanyTotals.CurrentActiveUsers" in hud
-    assert "result.CompanyTotals.CurrentMonthlyRecurringRevenue" in hud
-    assert "result.CompanyTotals.ProductStage" in hud
+    assert "HideDebugMetricLabels()" in hud
 
 
 def test_get_the_best_v2_0_28_facility_preview_rotation_and_work_feedback() -> None:
@@ -1518,7 +1530,7 @@ def test_get_the_best_v2_0_28_facility_preview_rotation_and_work_feedback() -> N
     assert "isWorking: true" in employee_autonomy
     assert "SetEmployeeWorkState(employeeId, isWorking: false" in employee_autonomy
 
-    assert "FormatBusinessTickSummary(result)" in hud
+    assert "HideDebugMetricLabels()" in hud
 
 
 def test_get_the_best_v2_0_29_employee_facility_snap_work_pose_and_drag_cleanup() -> None:
@@ -1596,15 +1608,10 @@ def test_get_the_best_v2_1_0_first_loop_objective_hud_uses_core_result() -> None
     assert 'name="ObjectiveValueLabel"' in scene_text
     assert 'name="NextObjectiveValueLabel"' in scene_text
     assert 'name="RecentCoreEventValueLabel"' in scene_text
-    assert "_objectiveValueLabel" in hud
-    assert "_nextObjectiveValueLabel" in hud
-    assert "_recentCoreEventValueLabel" in hud
-    assert "FormatFirstLoopObjective(result.CompanyTotals, result.OutcomeKind)" in hud
-    assert "FormatNextObjective(result.CompanyTotals, result.OutcomeKind)" in hud
-    assert "FormatRecentCoreEvent(result)" in hud
-    assert "result.CompanyTotals.CurrentProjectProgress" in hud
-    assert "result.CompanyTotals.ProductStage" in hud
-    assert "PhaseOutcomeKind.FirstUsersAcquired" in hud
+    assert "_hiddenObjectiveLabel" in hud
+    assert "_hiddenNextObjectiveLabel" in hud
+    assert "_hiddenRecentCoreEventLabel" in hud
+    assert "HideDebugMetricLabels()" in hud
     assert "CoreOfficeSimulationResult" in bridge
 
 
@@ -1688,15 +1695,10 @@ def test_get_the_best_v2_1_3_phase_recap_panel_explains_core_outcomes() -> None:
     assert 'name="PhaseRecapTitleLabel"' in scene_text
     assert 'name="PhaseRecapSummaryLabel"' in scene_text
     assert 'name="PhaseRecapReasonLabel"' in scene_text
-    assert "_phaseRecapTitleLabel" in hud
-    assert "_phaseRecapSummaryLabel" in hud
-    assert "_phaseRecapReasonLabel" in hud
-    assert "FormatPhaseRecapTitle(result)" in hud
-    assert "FormatPhaseRecapSummary(result)" in hud
-    assert "FormatPhaseRecapReason(result)" in hud
-    assert "SimulationEventKind.PhaseOutcomeReached" in hud
-    assert "result.CompanyTotals.CurrentActiveUsers" in hud
-    assert "result.CompanyTotals.CurrentMonthlyRecurringRevenue" in hud
+    assert "_hiddenPhaseRecapTitleLabel" in hud
+    assert "_hiddenPhaseRecapSummaryLabel" in hud
+    assert "_hiddenPhaseRecapReasonLabel" in hud
+    assert "HideDebugMetricLabels()" in hud
 
 
 def test_get_the_best_v2_1_4_time_scale_controls_drive_frontend_simulation() -> None:
@@ -1899,3 +1901,58 @@ def test_get_the_best_v2_1_7_monthly_report_panel_consumes_core_result() -> None
         in employee_autonomy
     )
     assert "_monthlyReportHud?.ShowMonthlyReport(simulationResult)" in employee_autonomy
+
+
+def test_get_the_best_v2_1_8_management_toolbar_and_report_window() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    feedback_hud = read_text(GODOT_ROOT / "scripts" / "BusinessFeedbackHudController.cs")
+    build_hud = read_text(GODOT_ROOT / "scripts" / "BuildModeHudController.cs")
+    monthly_report_hud = read_text(GODOT_ROOT / "scripts" / "MonthlyReportHudController.cs")
+    main_controller = read_text(GODOT_ROOT / "scripts" / "MainController.cs")
+
+    assert 'name="CompanyLogoLabel"' in scene_text
+    assert 'name="CompanyNameLabel"' in scene_text
+    assert 'name="EmployeeManagementButton"' in scene_text
+    assert 'name="AdministrationButton"' in scene_text
+    assert 'name="PublishingButton"' in scene_text
+    assert 'name="StatisticsButton"' in scene_text
+    assert 'name="EmployeeManagementButtons"' in scene_text
+    assert 'name="AdministrationButtons"' in scene_text
+    assert 'name="PublishingButtons"' in scene_text
+    assert 'name="StatisticsButtons"' in scene_text
+
+    assert "HideDebugMetricLabels()" in feedback_hud
+    assert "CompanyLogoLabel" in feedback_hud
+    assert "CompanyNameLabel" in feedback_hud
+    assert "FormatCash" in feedback_hud
+    assert "FormatUsers" in feedback_hud
+    assert "MVP" not in feedback_hud
+    assert "MRR" not in feedback_hud
+    assert "阶段" not in feedback_hud
+
+    assert "EmployeeManagementButton" in build_hud
+    assert "AdministrationButton" in build_hud
+    assert "PublishingButton" in build_hud
+    assert "StatisticsButton" in build_hud
+    assert "EmployeeManagementButtons" in build_hud
+    assert "AdministrationButtons" in build_hud
+    assert "PublishingButtons" in build_hud
+    assert "StatisticsButtons" in build_hud
+    assert "TryHandleToolbarClick(mouseButton.Position)" in build_hud
+    assert "RefreshToolbarLayout()" in build_hud
+    assert "管理部" in build_hud
+    assert "发行部" in build_hud
+    assert "财务数据" in scene_text
+
+    assert "ReportWindowColor" in monthly_report_hud
+    assert "TitleBarColor" in monthly_report_hud
+    assert "ConfigureTitleBar()" in monthly_report_hud
+    assert "ConfigureBodyLabel(_deltaLabel, fontSize: 15, minHeight: 170)" in monthly_report_hud
+    assert "FormatReportLine" in monthly_report_hud
+    assert "现金结余" in monthly_report_hud
+    assert "开发进度" in monthly_report_hud
+    assert "用户数量" in monthly_report_hud
+
+    assert "LayoutBottomHud(viewportSize)" in main_controller
+    assert 'control.Name == "BuildModePanel"' in main_controller
+    assert 'control.Name == "MonthlyReportPanel"' in main_controller

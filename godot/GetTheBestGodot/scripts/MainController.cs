@@ -9,6 +9,8 @@ public partial class MainController : Node3D
     private Control? _businessFeedbackPanel;
     private Control? _buildModePanel;
     private Control? _buildConfirmPanel;
+    private Control? _businessCalendarPanel;
+    private Control? _monthlyReportPanel;
     private Control? _timeScalePanel;
     private Control? _floatingTooltip;
     private Vector2 _lastViewportSize;
@@ -19,6 +21,8 @@ public partial class MainController : Node3D
         _businessFeedbackPanel = GetNodeOrNull<Control>("HudRoot/BusinessFeedbackPanel");
         _buildModePanel = GetNodeOrNull<Control>("HudRoot/BuildModePanel");
         _buildConfirmPanel = GetNodeOrNull<Control>("HudRoot/BuildConfirmPanel");
+        _businessCalendarPanel = GetNodeOrNull<Control>("HudRoot/BusinessCalendarPanel");
+        _monthlyReportPanel = GetNodeOrNull<Control>("HudRoot/MonthlyReportPanel");
         _timeScalePanel = GetNodeOrNull<Control>("HudRoot/TimeScalePanel");
         _floatingTooltip = GetNodeOrNull<Control>("HudRoot/FloatingTooltip");
         _statusLabel = GetNodeOrNull<Label>("HudRoot/TopStatusBar/StatusLabel");
@@ -60,28 +64,12 @@ public partial class MainController : Node3D
 
         if (_topStatusBar != null)
         {
+            _topStatusBar.Visible = false;
             _topStatusBar.Position = new Vector2(16.0f, 12.0f);
             _topStatusBar.Size = new Vector2(Mathf.Clamp(viewportSize.X * 0.58f, 520.0f, 920.0f), 40.0f);
         }
 
-        if (_buildModePanel != null)
-        {
-            var width = Mathf.Clamp(viewportSize.X * 0.14f, 180.0f, 220.0f);
-            _buildModePanel.Position = new Vector2(
-                Mathf.Max(16.0f, viewportSize.X - width - 180.0f),
-                12.0f
-            );
-            _buildModePanel.Size = new Vector2(width, 180.0f);
-        }
-
-        if (_businessFeedbackPanel != null)
-        {
-            _businessFeedbackPanel.Position = new Vector2(16.0f, 58.0f);
-            _businessFeedbackPanel.Size = new Vector2(
-                Mathf.Clamp(viewportSize.X * 0.54f, 560.0f, 860.0f),
-                58.0f
-            );
-        }
+        LayoutBottomHud(viewportSize);
 
         if (_buildConfirmPanel != null)
         {
@@ -91,13 +79,54 @@ public partial class MainController : Node3D
 
         if (_timeScalePanel != null)
         {
-            _timeScalePanel.Position = new Vector2(Mathf.Max(16.0f, viewportSize.X - 320.0f), 58.0f);
-            _timeScalePanel.Size = new Vector2(268.0f, 40.0f);
+            _timeScalePanel.Position = new Vector2(
+                Mathf.Max(16.0f, viewportSize.X - 232.0f),
+                viewportSize.Y - 54.0f
+            );
+            _timeScalePanel.Size = new Vector2(224.0f, 50.0f);
         }
 
         if (_floatingTooltip != null)
         {
             _floatingTooltip.Size = Vector2.Zero;
+        }
+    }
+
+    private void LayoutBottomHud(Vector2 viewportSize)
+    {
+        var bottomY = viewportSize.Y - 54.0f;
+        var businessWidth = Mathf.Clamp(viewportSize.X * 0.42f, 420.0f, 540.0f);
+        if (_businessFeedbackPanel != null)
+        {
+            _businessFeedbackPanel.Position = new Vector2(8.0f, bottomY);
+            _businessFeedbackPanel.Size = new Vector2(businessWidth, 50.0f);
+        }
+
+        if (_buildModePanel != null)
+        {
+            _buildModePanel.Position = new Vector2(businessWidth + 8.0f, bottomY);
+            _buildModePanel.Size = new Vector2(
+                Mathf.Max(420.0f, viewportSize.X - businessWidth - 248.0f),
+                50.0f
+            );
+        }
+
+        if (_businessCalendarPanel != null)
+        {
+            _businessCalendarPanel.Position = new Vector2(
+                Mathf.Max(16.0f, viewportSize.X - 232.0f),
+                bottomY - 44.0f
+            );
+            _businessCalendarPanel.Size = new Vector2(224.0f, 38.0f);
+        }
+
+        if (_monthlyReportPanel != null)
+        {
+            _monthlyReportPanel.Position = new Vector2(
+                viewportSize.X / 2.0f - 250.0f,
+                viewportSize.Y / 2.0f - 192.0f
+            );
+            _monthlyReportPanel.Size = new Vector2(500.0f, 384.0f);
         }
     }
 
@@ -122,6 +151,9 @@ public partial class MainController : Node3D
         if (
             control.Name == "BuildConfirmPanel"
             || control.Name == "BusinessFeedbackPanel"
+            || control.Name == "BuildModePanel"
+            || control.Name == "BusinessCalendarPanel"
+            || control.Name == "MonthlyReportPanel"
             || control.Name == "TimeScalePanel"
         )
         {
