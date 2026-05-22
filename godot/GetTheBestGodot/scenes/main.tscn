@@ -15,9 +15,10 @@
 [ext_resource type="Script" uid="uid://bcwbjkvrjrvi8" path="res://scripts/BusinessFeedbackHudController.cs" id="9_gqmmt"]
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
 [ext_resource type="Script" uid="uid://ba0mt7nlp55mf" path="res://scripts/TimeScaleHudController.cs" id="10_yc10j"]
-[ext_resource type="Script" path="res://scripts/BusinessCalendarHudController.cs" id="11_jscy8"]
+[ext_resource type="Script" uid="uid://bor6t6qv3xdl1" path="res://scripts/BusinessCalendarHudController.cs" id="11_jscy8"]
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
 [ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
+[ext_resource type="Script" uid="uid://byupja4fvflu8" path="res://scripts/MonthlyReportHudController.cs" id="12_pm3ni"]
 [ext_resource type="Script" uid="uid://vwi5tn4mcavf" path="res://scripts/EmployeeStore.cs" id="16_jbj1t"]
 [ext_resource type="Script" uid="uid://dihs32kp50ure" path="res://scripts/Employee3DRenderer.cs" id="17_muem4"]
 [ext_resource type="Script" uid="uid://d4l5mgyjwnfar" path="res://scripts/OfficeNavigationStore.cs" id="18_dp3eg"]
@@ -267,6 +268,44 @@ script = ExtResource("11_jscy8")
 [node name="CalendarStatusLabel" type="Label" parent="HudRoot/BusinessCalendarPanel" unique_id=125247731]
 layout_mode = 2
 text = "第 1 月 第 1 天"
+
+[node name="MonthlyReportPanel" type="PanelContainer" parent="HudRoot" unique_id=649682595]
+visible = false
+offset_left = 960.0
+offset_top = 232.0
+offset_right = 1580.0
+offset_bottom = 456.0
+script = ExtResource("12_pm3ni")
+
+[node name="MonthlyReportRows" type="VBoxContainer" parent="HudRoot/MonthlyReportPanel" unique_id=1477879304]
+layout_mode = 2
+
+[node name="MonthlyReportTitleLabel" type="Label" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows" unique_id=1223123008]
+layout_mode = 2
+text = "月报待查看"
+
+[node name="MonthlyReportMetricsLabel" type="Label" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows" unique_id=1360612090]
+layout_mode = 2
+text = "现金 --    MVP --    用户 --    MRR --"
+
+[node name="MonthlyReportDeltaLabel" type="Label" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows" unique_id=601972835]
+layout_mode = 2
+text = "本月变化 --"
+
+[node name="MonthlyReportReasonLabel" type="Label" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows" unique_id=178838152]
+layout_mode = 2
+text = "原因 --"
+
+[node name="MonthlyReportNextStepLabel" type="Label" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows" unique_id=1705758190]
+layout_mode = 2
+text = "下一步 --"
+
+[node name="MonthlyReportButtonRow" type="HBoxContainer" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows" unique_id=1515691595]
+layout_mode = 2
+
+[node name="ContinueMonthlyReportButton" type="Button" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows/MonthlyReportButtonRow" unique_id=1483640011]
+layout_mode = 2
+text = "继续经营"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

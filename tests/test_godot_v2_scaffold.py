@@ -1866,3 +1866,36 @@ def test_get_the_best_v2_1_6_business_calendar_monthly_report_and_auto_pause() -
     assert "isMonthEnd" in core_bridge
     assert "new SimulationTickOptions(" in core_bridge
     assert "IsMonthEnd: isMonthEnd" in core_bridge
+
+
+def test_get_the_best_v2_1_7_monthly_report_panel_consumes_core_result() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    monthly_report_hud = read_text(GODOT_ROOT / "scripts" / "MonthlyReportHudController.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "MonthlyReportHudController.cs" in scene_text
+    assert 'name="MonthlyReportPanel"' in scene_text
+    assert 'name="ContinueMonthlyReportButton"' in scene_text
+    assert 'name="MonthlyReportTitleLabel"' in scene_text
+    assert 'name="MonthlyReportReasonLabel"' in scene_text
+
+    assert "public partial class MonthlyReportHudController : PanelContainer" in monthly_report_hud
+    assert "public void ShowMonthlyReport(CoreOfficeSimulationResult result)" in monthly_report_hud
+    assert "public void HideMonthlyReport()" in monthly_report_hud
+    assert "public override void _Input(InputEvent @event)" in monthly_report_hud
+    assert "ContinueMonthlyReportButton" in monthly_report_hud
+    assert "Visible = false" in monthly_report_hud
+    assert "MonthlyReportReady" in monthly_report_hud
+    assert "现金" in monthly_report_hud
+    assert "MVP" in monthly_report_hud
+    assert "用户" in monthly_report_hud
+    assert "MRR" in monthly_report_hud
+    assert "本月变化" in monthly_report_hud
+    assert "下一步" in monthly_report_hud
+
+    assert "MonthlyReportHudController? _monthlyReportHud" in employee_autonomy
+    assert (
+        'GetNodeOrNull<MonthlyReportHudController>("../../HudRoot/MonthlyReportPanel")'
+        in employee_autonomy
+    )
+    assert "_monthlyReportHud?.ShowMonthlyReport(simulationResult)" in employee_autonomy

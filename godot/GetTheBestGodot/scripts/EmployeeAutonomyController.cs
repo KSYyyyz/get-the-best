@@ -45,6 +45,7 @@ public partial class EmployeeAutonomyController : Node
     private V2CoreBridge? _v2CoreBridge;
     private BusinessFeedbackHudController? _businessFeedbackHud;
     private BusinessCalendarHudController? _businessCalendarHud;
+    private MonthlyReportHudController? _monthlyReportHud;
     private TimeScaleHudController? _timeScaleHud;
     private CoreOfficeSimulationResult? _pendingCoreIntentResult;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
@@ -64,6 +65,7 @@ public partial class EmployeeAutonomyController : Node
         _v2CoreBridge = GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge");
         _businessFeedbackHud = GetNodeOrNull<BusinessFeedbackHudController>("../../HudRoot/BusinessFeedbackPanel");
         _businessCalendarHud = GetNodeOrNull<BusinessCalendarHudController>("../../HudRoot/BusinessCalendarPanel");
+        _monthlyReportHud = GetNodeOrNull<MonthlyReportHudController>("../../HudRoot/MonthlyReportPanel");
         _timeScaleHud = GetNodeOrNull<TimeScaleHudController>("../../HudRoot/TimeScalePanel");
         InitializeEmployeeStates();
     }
@@ -490,6 +492,7 @@ public partial class EmployeeAutonomyController : Node
         )
         {
             _businessCalendarHud?.MarkMonthlyReportReady(simulationResult);
+            _monthlyReportHud?.ShowMonthlyReport(simulationResult);
             _timeScaleHud?.PauseForMonthlyReport();
         }
 
