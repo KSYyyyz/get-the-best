@@ -43,6 +43,32 @@ public enum EmployeeIntentKind
     Work,
 }
 
+public enum ProductStage
+{
+    Prototype,
+    MvpReady,
+    Launched,
+}
+
+public enum PhaseOutcomeKind
+{
+    InProgress,
+    MvpCompleted,
+    FirstUsersAcquired,
+    RevenuePositive,
+    FailedCashDepleted,
+}
+
+public enum SimulationEventKind
+{
+    IntentPlanned,
+    ActivityChanged,
+    FacilityUpdated,
+    MetricChanged,
+    MonthlyReportReady,
+    PhaseOutcomeReached,
+}
+
 public sealed record GridCell(int X, int Y);
 
 public sealed record EmployeeState(
@@ -83,7 +109,18 @@ public sealed record RoomState(
 
 public sealed record ProjectState(string Id, double Progress, double RequiredProgress);
 
-public sealed record CompanyState(double Cash, double MonthlyCostRate, ProjectState ActiveProject);
+public sealed record ProductMarketState(
+    ProductStage Stage,
+    int ActiveUsers,
+    double MonthlyRecurringRevenue
+);
+
+public sealed record CompanyState(
+    double Cash,
+    double MonthlyCostRate,
+    ProjectState ActiveProject,
+    ProductMarketState? ProductMarket = null
+);
 
 public sealed record OfficeRuleSnapshot(
     IReadOnlyList<EmployeeState> Employees,
@@ -116,17 +153,67 @@ public sealed record FacilityTickDelta(
 public sealed record CompanyTickDelta(
     double ProjectProgressDelta,
     double CashDelta,
-    double OperatingCostDelta
+    double OperatingCostDelta,
+    double RevenueDelta = 0
+);
+
+public sealed record ProductMarketTickDelta(
+    ProductStage PreviousStage,
+    ProductStage NextStage,
+    int ActiveUsersDelta,
+    double MonthlyRecurringRevenueDelta
 );
 
 public sealed record TickResult(
     IReadOnlyList<EmployeeIntent> Intents,
     IReadOnlyList<EmployeeTickDelta> EmployeeDeltas,
     IReadOnlyList<FacilityTickDelta> FacilityDeltas,
-    CompanyTickDelta CompanyDelta
+    CompanyTickDelta CompanyDelta,
+    ProductMarketTickDelta? ProductMarketDelta = null,
+    MonthlyReport? MonthlyReport = null
 );
 
 public sealed record BusinessTickOptions(double TickHours)
 {
     public static BusinessTickOptions Default { get; } = new(TickHours: 1.0);
 }
+
+public sealed record MonthlyReport(
+    string PeriodLabel,
+    double ProjectProgress,
+    int ActiveUsers,
+    double Revenue,
+    double Cash,
+    IReadOnlyList<string> Reasons
+);
+
+public sealed record FirstLoopBusinessTickOptions(double TickHours, bool IsMonthEnd = false)
+{
+    public static FirstLoopBusinessTickOptions Default { get; } = new(TickHours: 1.0);
+}
+
+public sealed record SimulationTickOptions(double TickHours, bool IsMonthEnd = false)
+{
+    public static SimulationTickOptions Default { get; } = new(TickHours: 1.0);
+}
+
+public sealed record PhaseOutcome(
+    PhaseOutcomeKind Kind,
+    IReadOnlyList<string> Reasons
+)
+{
+    public static PhaseOutcome InProgress { get; } = new(PhaseOutcomeKind.InProgress, []);
+}
+
+public sealed record SimulationPresentationEvent(
+    SimulationEventKind Kind,
+    string SubjectId,
+    string Message
+);
+
+public sealed record SimulationTickResult(
+    TickResult Tick,
+    OfficeRuleSnapshot NextSnapshot,
+    PhaseOutcome Outcome,
+    IReadOnlyList<SimulationPresentationEvent> PresentationEvents
+);

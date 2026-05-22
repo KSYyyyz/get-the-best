@@ -230,4 +230,114 @@ internal static class TestSnapshots
                 ],
         };
     }
+
+    public static OfficeRuleSnapshot FirstLoopEngineerUsingDesk(
+        double projectProgress = 10,
+        double requiredProgress = 100
+    )
+    {
+        var snapshot = SingleEngineerUsingDesk(fatigue: 20);
+        return snapshot with
+        {
+            Company = new CompanyState(
+                Cash: 50_000,
+                MonthlyCostRate: 6_000,
+                ActiveProject: new ProjectState(
+                    "mvp-project",
+                    Progress: projectProgress,
+                    RequiredProgress: requiredProgress
+                ),
+                ProductMarket: new ProductMarketState(
+                    Stage: ProductStage.Prototype,
+                    ActiveUsers: 0,
+                    MonthlyRecurringRevenue: 0
+                )
+            ),
+        };
+    }
+
+    public static OfficeRuleSnapshot FirstLoopEngineerMovingToDesk(double projectProgress = 10)
+    {
+        var snapshot = FirstLoopEngineerUsingDesk(projectProgress);
+        return snapshot with
+        {
+            Employees =
+            [
+                snapshot.Employees[0] with
+                {
+                    CurrentActivity = EmployeeActivityKind.MoveToFacility,
+                    ActiveFacilityId = "desk-1",
+                    RemainingActivityTicks = 1,
+                },
+            ],
+            Facilities =
+            [
+                snapshot.Facilities[0] with { OccupiedByEmployeeIds = [] },
+                snapshot.Facilities[1],
+                snapshot.Facilities[2],
+            ],
+        };
+    }
+
+    public static OfficeRuleSnapshot FirstLoopMarketingUsingWhiteboard(
+        double projectProgress = 100,
+        double requiredProgress = 100,
+        int activeUsers = 0
+    )
+    {
+        return new OfficeRuleSnapshot(
+            Employees: [
+                new EmployeeState(
+                    Id: "employee-marketing-1",
+                    DisplayName: "\u5468\u5c0f\u5b81",
+                    Role: EmployeeRole.Marketing,
+                    Skill: 1.4,
+                    Energy: 85,
+                    Fatigue: 20,
+                    Satisfaction: 72,
+                    CurrentActivity: EmployeeActivityKind.UseFacility,
+                    RoomId: "market-room",
+                    Cell: new GridCell(5, 8),
+                    ActiveFacilityId: "market-whiteboard-1",
+                    RemainingActivityTicks: 2
+                ),
+            ],
+            Facilities: [
+                new FacilityState(
+                    Id: "market-whiteboard-1",
+                    Type: FacilityType.ProductWhiteboard,
+                    RoomId: "market-room",
+                    Capacity: 1,
+                    OccupiedByEmployeeIds: ["employee-marketing-1"],
+                    EfficiencyModifier: 1.1
+                ),
+            ],
+            Rooms: [
+                new RoomState(
+                    Id: "market-room",
+                    Type: RoomType.MarketRoom,
+                    Comfort: 0.08,
+                    Noise: 0.04,
+                    Capacity: 4,
+                    FacilityIds: ["market-whiteboard-1"]
+                ),
+            ],
+            Company: new CompanyState(
+                Cash: 50_000,
+                MonthlyCostRate: 6_000,
+                ActiveProject: new ProjectState(
+                    "mvp-project",
+                    Progress: projectProgress,
+                    RequiredProgress: requiredProgress
+                ),
+                ProductMarket: new ProductMarketState(
+                    Stage: projectProgress >= requiredProgress
+                        ? ProductStage.MvpReady
+                        : ProductStage.Prototype,
+                    ActiveUsers: activeUsers,
+                    MonthlyRecurringRevenue: activeUsers * 12.0
+                )
+            )
+        );
+    }
 }
