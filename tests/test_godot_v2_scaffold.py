@@ -1821,3 +1821,48 @@ def test_get_the_best_v2_1_5_time_scale_keyboard_shortcuts_exist() -> None:
     assert "private float _previousNonPausedTimeScale = 1.0f;" in time_scale_hud
     assert "SetSimulationTimeScale(_previousNonPausedTimeScale)" in time_scale_hud
     assert "SetSimulationTimeScale(GetNextTimeScale())" in time_scale_hud
+
+
+def test_get_the_best_v2_1_6_pause_keeps_manual_editing_tweens_live() -> None:
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    tween_target_block = employee_renderer[
+        employee_renderer.index("private void TweenEmployeeToTarget") : employee_renderer.index(
+            "private static void TweenEmployeePathStep"
+        )
+    ]
+    assert "CreateEditorTween()" in tween_target_block
+    assert "CreateScaledTween()" not in tween_target_block
+    assert "TweenEmployeePathStep" in employee_renderer
+    assert "var tween = CreateScaledTween();" in employee_renderer
+    assert "_employeeRenderer?.SetPresentationTimeScale(_simulationTimeScale)" in employee_autonomy
+
+
+def test_get_the_best_v2_1_6_business_calendar_monthly_report_and_auto_pause() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    calendar_hud = read_text(GODOT_ROOT / "scripts" / "BusinessCalendarHudController.cs")
+    time_scale_hud = read_text(GODOT_ROOT / "scripts" / "TimeScaleHudController.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    core_bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+
+    assert "BusinessCalendarHudController.cs" in scene_text
+    assert 'name="BusinessCalendarPanel"' in scene_text
+    assert 'name="CalendarStatusLabel"' in scene_text
+
+    assert "public partial class BusinessCalendarHudController : PanelContainer" in calendar_hud
+    assert "public bool AdvanceBusinessDay(out BusinessCalendarTick tick)" in calendar_hud
+    assert "DaysPerMonth" in calendar_hud
+    assert "tick.IsMonthEnd" in calendar_hud
+    assert "_pendingMonthlyReportMonth = tickMonth" in calendar_hud
+    assert "月报待查看" in calendar_hud
+    assert "public void MarkMonthlyReportReady(CoreOfficeSimulationResult result)" in calendar_hud
+
+    assert "public void PauseForMonthlyReport()" in time_scale_hud
+    assert "PauseForMonthlyReport();" in employee_autonomy
+    assert "_businessCalendarHud?.AdvanceBusinessDay(out var calendarTick)" in employee_autonomy
+    assert "calendarTick.IsMonthEnd" in employee_autonomy
+    assert "AdvanceOfficeSimulation(" in employee_autonomy
+    assert "isMonthEnd" in core_bridge
+    assert "new SimulationTickOptions(" in core_bridge
+    assert "IsMonthEnd: isMonthEnd" in core_bridge

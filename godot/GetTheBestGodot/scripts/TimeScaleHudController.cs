@@ -9,6 +9,7 @@ public partial class TimeScaleHudController : PanelContainer
     private static readonly Color ActiveTextColor = new(0.52f, 0.95f, 0.64f, 0.96f);
 
     private EmployeeAutonomyController? _employeeAutonomyController;
+    private BusinessCalendarHudController? _businessCalendarHud;
     private Label? _speedStatusLabel;
     private Button? _pauseButton;
     private Button? _normalSpeedButton;
@@ -23,6 +24,9 @@ public partial class TimeScaleHudController : PanelContainer
         SetProcessInput(true);
         _employeeAutonomyController = GetNodeOrNull<EmployeeAutonomyController>(
             "../../InteractionRoot/EmployeeAutonomyController"
+        );
+        _businessCalendarHud = GetNodeOrNull<BusinessCalendarHudController>(
+            "../BusinessCalendarPanel"
         );
         _speedStatusLabel = GetNodeOrNull<Label>("TimeScaleRows/SpeedStatusLabel");
         _pauseButton = GetNodeOrNull<Button>("TimeScaleRows/TimeScaleButtons/PauseButton");
@@ -84,11 +88,22 @@ public partial class TimeScaleHudController : PanelContainer
         if (_currentTimeScale > 0.0f)
         {
             _previousNonPausedTimeScale = _currentTimeScale;
+            _businessCalendarHud?.ResumeAfterMonthlyReport();
         }
 
         _employeeAutonomyController?.SetSimulationTimeScale(scale);
         UpdateStatusLabel();
         ApplyButtonState();
+    }
+
+    public void PauseForMonthlyReport()
+    {
+        if (_currentTimeScale > 0.0f)
+        {
+            _previousNonPausedTimeScale = _currentTimeScale;
+        }
+
+        SetSimulationTimeScale(0.0f);
     }
 
     private void TogglePausedTimeScale()

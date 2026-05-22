@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://bcwbjkvrjrvi8" path="res://scripts/BusinessFeedbackHudController.cs" id="9_gqmmt"]
 [ext_resource type="Script" uid="uid://y5eqmxr3f2wc" path="res://scripts/RoomOverlay3DRenderer.cs" id="10_jbj1t"]
 [ext_resource type="Script" uid="uid://ba0mt7nlp55mf" path="res://scripts/TimeScaleHudController.cs" id="10_yc10j"]
+[ext_resource type="Script" path="res://scripts/BusinessCalendarHudController.cs" id="11_jscy8"]
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
 [ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
 [ext_resource type="Script" uid="uid://vwi5tn4mcavf" path="res://scripts/EmployeeStore.cs" id="16_jbj1t"]
@@ -254,6 +255,18 @@ text = "2x"
 [node name="TripleSpeedButton" type="Button" parent="HudRoot/TimeScalePanel/TimeScaleRows/TimeScaleButtons" unique_id=821907139]
 layout_mode = 2
 text = "3x"
+
+[node name="BusinessCalendarPanel" type="PanelContainer" parent="HudRoot" unique_id=1382784868]
+offset_left = 1046.0
+offset_top = 104.0
+offset_right = 1314.0
+offset_bottom = 144.0
+mouse_filter = 2
+script = ExtResource("11_jscy8")
+
+[node name="CalendarStatusLabel" type="Label" parent="HudRoot/BusinessCalendarPanel" unique_id=125247731]
+layout_mode = 2
+text = "第 1 月 第 1 天"
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

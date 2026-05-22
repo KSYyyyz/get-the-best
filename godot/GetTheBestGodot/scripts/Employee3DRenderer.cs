@@ -380,7 +380,7 @@ public partial class Employee3DRenderer : Node3D
             return;
         }
 
-        CreateScaledTween()
+        CreateEditorTween()
             .TweenProperty(modelRoot, "position", targetPosition, SmoothMoveDurationSeconds)
             .SetTrans(Tween.TransitionType.Cubic)
             .SetEase(Tween.EaseType.Out);
@@ -434,6 +434,11 @@ public partial class Employee3DRenderer : Node3D
         var tween = CreateTween();
         ApplyTweenTimeScale(tween);
         return tween;
+    }
+
+    private Tween CreateEditorTween()
+    {
+        return CreateTween();
     }
 
     private void SetActiveTweenSpeedScale()

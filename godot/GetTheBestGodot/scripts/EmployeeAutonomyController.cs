@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using StartupSim.Core;
 
@@ -43,6 +44,8 @@ public partial class EmployeeAutonomyController : Node
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
     private BusinessFeedbackHudController? _businessFeedbackHud;
+    private BusinessCalendarHudController? _businessCalendarHud;
+    private TimeScaleHudController? _timeScaleHud;
     private CoreOfficeSimulationResult? _pendingCoreIntentResult;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
     private float _coreSimulationTimer = CoreSimulationTickSeconds;
@@ -60,6 +63,8 @@ public partial class EmployeeAutonomyController : Node
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         _v2CoreBridge = GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge");
         _businessFeedbackHud = GetNodeOrNull<BusinessFeedbackHudController>("../../HudRoot/BusinessFeedbackPanel");
+        _businessCalendarHud = GetNodeOrNull<BusinessCalendarHudController>("../../HudRoot/BusinessCalendarPanel");
+        _timeScaleHud = GetNodeOrNull<TimeScaleHudController>("../../HudRoot/TimeScalePanel");
         InitializeEmployeeStates();
     }
 
@@ -419,15 +424,18 @@ public partial class EmployeeAutonomyController : Node
         }
 
         _coreSimulationTimer = CoreSimulationTickSeconds;
-        AdvanceAndApplyCoreSimulation();
+        var isMonthEnd =
+            _businessCalendarHud?.AdvanceBusinessDay(out var calendarTick) == true
+            && calendarTick.IsMonthEnd;
+        AdvanceAndApplyCoreSimulation(isMonthEnd);
     }
 
-    private void AdvanceAndApplyCoreSimulation()
+    private void AdvanceAndApplyCoreSimulation(bool isMonthEnd = false)
     {
-        ApplyCoreSimulationStates(AdvanceCoreSimulation());
+        ApplyCoreSimulationStates(AdvanceCoreSimulation(isMonthEnd));
     }
 
-    private CoreOfficeSimulationResult? AdvanceCoreSimulation()
+    private CoreOfficeSimulationResult? AdvanceCoreSimulation(bool isMonthEnd = false)
     {
         if (
             _employeeStore == null
@@ -442,7 +450,8 @@ public partial class EmployeeAutonomyController : Node
         return _v2CoreBridge.AdvanceOfficeSimulation(
             _employeeStore,
             _facilityPlacementStore,
-            _roomFootprintStore
+            _roomFootprintStore,
+            isMonthEnd
         );
     }
 
@@ -472,6 +481,16 @@ public partial class EmployeeAutonomyController : Node
         if (_businessFeedbackHud != null)
         {
             _businessFeedbackHud.ApplySimulationResult(simulationResult);
+        }
+
+        if (
+            simulationResult.PresentationEvents.Any(
+                eventSummary => eventSummary.Kind == SimulationEventKind.MonthlyReportReady
+            )
+        )
+        {
+            _businessCalendarHud?.MarkMonthlyReportReady(simulationResult);
+            _timeScaleHud?.PauseForMonthlyReport();
         }
 
         var activeFacilityIds = new HashSet<int>();

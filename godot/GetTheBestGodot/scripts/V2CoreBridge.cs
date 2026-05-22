@@ -17,12 +17,12 @@ public partial class V2CoreBridge : Node
         SimulationFrontendContract.Cadence.RecommendedRealSecondsPerTick;
 
     private readonly GodotCoreBridgeContract _bridgeContract = new();
-    private readonly OfficeSimulationEngine _simulationEngine = new(
-        new SimulationTickOptions(
-            TickHours: SimulationFrontendContract.Cadence.DefaultTickHours,
-            IsMonthEnd: SimulationFrontendContract.Cadence.UseMonthEndInV026Bridge
-        )
-    );
+    private readonly OfficeSimulationEngine _simulationEngine =
+        new(
+            new SimulationTickOptions(
+                TickHours: SimulationFrontendContract.Cadence.DefaultTickHours
+            )
+        );
     private readonly Dictionary<int, CoreEmployeeLifecycleState> _employeeLifecycleStates = [];
     private readonly Dictionary<int, IReadOnlyList<int>> _facilityOccupants = [];
     private CompanyState? _companyState;
@@ -35,11 +35,20 @@ public partial class V2CoreBridge : Node
     public CoreOfficeSimulationResult AdvanceOfficeSimulation(
         EmployeeStore employeeStore,
         FacilityPlacementStore facilityPlacementStore,
-        RoomFootprintStore roomFootprintStore
+        RoomFootprintStore roomFootprintStore,
+        bool isMonthEnd = false
     )
     {
         var snapshot = BuildSnapshot(employeeStore, facilityPlacementStore, roomFootprintStore);
-        var result = _simulationEngine.Advance(snapshot);
+        var simulationEngine = isMonthEnd
+            ? new OfficeSimulationEngine(
+                new SimulationTickOptions(
+                    TickHours: SimulationFrontendContract.Cadence.DefaultTickHours,
+                    IsMonthEnd: isMonthEnd
+                )
+            )
+            : _simulationEngine;
+        var result = simulationEngine.Advance(snapshot);
         StoreSimulationState(result.NextSnapshot);
         return MapSimulationResult(result);
     }
