@@ -11,6 +11,8 @@ public partial class Employee3DRenderer : Node3D
     private const float PathMoveStepDurationSeconds = 0.18f;
     private static readonly Color OutlineStroke = new(0.38f, 0.82f, 1.0f, 1.0f);
     private static readonly Color IllegalDragFill = new(0.95f, 0.32f, 0.28f, 1.0f);
+    private static readonly Color ActivityBadgeFill = new(0.96f, 0.98f, 1.0f, 1.0f);
+    private static readonly Color ActivityBadgeOutline = new(0.10f, 0.14f, 0.18f, 1.0f);
     private static readonly string[] EmployeeModelScenePaths =
     [
         "res://assets/third_party_placeholder_assets/kenney_blocky_characters/character-a.glb",
@@ -24,6 +26,7 @@ public partial class Employee3DRenderer : Node3D
         "res://assets/third_party_placeholder_assets/kenney_blocky_characters/Textures/texture-c.png",
     ];
     private readonly HashSet<int> _highlightedEmployeeIds = [];
+    private readonly Dictionary<int, string> _employeeActivityLabels = [];
     private readonly Dictionary<int, Vector3> _lastEmployeePositions = [];
     private readonly List<Node> _renderedEmployees = [];
     private int? _hoveredEmployeeId;
@@ -117,6 +120,20 @@ public partial class Employee3DRenderer : Node3D
         RefreshEmployees();
     }
 
+    public void SetEmployeeActivityLabel(int employeeId, string? labelText)
+    {
+        if (string.IsNullOrWhiteSpace(labelText))
+        {
+            _employeeActivityLabels.Remove(employeeId);
+        }
+        else
+        {
+            _employeeActivityLabels[employeeId] = labelText;
+        }
+
+        RefreshEmployees();
+    }
+
     public void PlayEmployeePathMove(
         EmployeeVisual employee,
         IReadOnlyList<Vector2I> path,
@@ -188,6 +205,8 @@ public partial class Employee3DRenderer : Node3D
         {
             ApplyEmployeeOutline(modelRoot, GetRenderOutlineColor(employee));
         }
+
+        AddEmployeeActivityBadge(modelRoot, employee);
     }
 
     private static PackedScene? GetEmployeeModelScene(EmployeeVisual employee)
@@ -267,6 +286,32 @@ public partial class Employee3DRenderer : Node3D
         return _dragPreviewEmployeeId == employee.Id && !_dragPreviewIsLegal
             ? IllegalDragFill
             : OutlineStroke;
+    }
+
+    private void AddEmployeeActivityBadge(Node3D modelRoot, EmployeeVisual employee)
+    {
+        if (!_employeeActivityLabels.TryGetValue(employee.Id, out var labelText))
+        {
+            return;
+        }
+
+        var badge = new Label3D
+        {
+            Name = "ActivityBadge",
+            Text = labelText,
+            Position = new Vector3(0.0f, 2.35f, 0.0f),
+            PixelSize = 0.010f,
+            FontSize = 22,
+            Modulate = ActivityBadgeFill,
+            OutlineModulate = ActivityBadgeOutline,
+            OutlineSize = 4,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            NoDepthTest = true,
+            FixedSize = false,
+        };
+        modelRoot.AddChild(badge);
     }
 
     private static void ApplyEmployeeTint(Node node, Color color)

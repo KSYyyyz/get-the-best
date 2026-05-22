@@ -80,12 +80,7 @@ public partial class EmployeeAutonomyController : Node
 
         foreach (var employee in _employeeStore.GetEmployees())
         {
-            _employeeStates[employee.Id] = new EmployeeAutonomyState(
-                employee.Id,
-                EmployeeActivityKind.Idle,
-                TargetCell: null,
-                FacilityId: null
-            );
+            SetEmployeeActivity(employee.Id, EmployeeActivityKind.Idle);
         }
     }
 
@@ -122,12 +117,7 @@ public partial class EmployeeAutonomyController : Node
             }
 
             _isEmployeeMoveInProgress = true;
-            _employeeStates[employee.Id] = new EmployeeAutonomyState(
-                employee.Id,
-                EmployeeActivityKind.WalkingToTarget,
-                targetCell,
-                FacilityId: null
-            );
+            SetEmployeeActivity(employee.Id, EmployeeActivityKind.WalkingToTarget, targetCell);
             _employeeRenderer?.PlayEmployeePathMove(employee, path, () =>
                 FinishAutonomousMove(employee.Id, targetCell)
             );
@@ -152,7 +142,7 @@ public partial class EmployeeAutonomyController : Node
 
         _reservedFacilityIds.Add(target.Facility.Id);
         _isEmployeeMoveInProgress = true;
-        _employeeStates[employee.Id] = new EmployeeAutonomyState(
+        SetEmployeeActivity(
             employee.Id,
             EmployeeActivityKind.WalkingToFacility,
             target.StandCell,
@@ -207,12 +197,7 @@ public partial class EmployeeAutonomyController : Node
             _employeeRenderer?.RefreshEmployees();
         }
 
-        _employeeStates[employeeId] = new EmployeeAutonomyState(
-            employeeId,
-            EmployeeActivityKind.Idle,
-            TargetCell: null,
-            FacilityId: null
-        );
+        ClearEmployeeActivity(employeeId);
         _isEmployeeMoveInProgress = false;
     }
 
@@ -306,7 +291,7 @@ public partial class EmployeeAutonomyController : Node
             _employeeRenderer?.RefreshEmployees();
             _facilityUseTimers[target.Facility.Id] = UseFacilityDurationSeconds;
             _facilityRenderer?.SetFacilityUseState(target.Facility.Id, isInUse: true);
-            _employeeStates[employeeId] = new EmployeeAutonomyState(
+            SetEmployeeActivity(
                 employeeId,
                 EmployeeActivityKind.UsingFacility,
                 target.StandCell,
@@ -316,12 +301,7 @@ public partial class EmployeeAutonomyController : Node
         else
         {
             _reservedFacilityIds.Remove(target.Facility.Id);
-            _employeeStates[employeeId] = new EmployeeAutonomyState(
-                employeeId,
-                EmployeeActivityKind.Idle,
-                TargetCell: null,
-                FacilityId: null
-            );
+            ClearEmployeeActivity(employeeId);
         }
 
         _isEmployeeMoveInProgress = false;
@@ -385,7 +365,40 @@ public partial class EmployeeAutonomyController : Node
                 TargetCell = null,
                 FacilityId = null,
             };
+            _employeeRenderer?.SetEmployeeActivityLabel(employeeId, null);
         }
+    }
+
+    private void SetEmployeeActivity(
+        int employeeId,
+        EmployeeActivityKind activityKind,
+        Vector2I? targetCell = null,
+        int? facilityId = null
+    )
+    {
+        _employeeStates[employeeId] = new EmployeeAutonomyState(
+            employeeId,
+            activityKind,
+            targetCell,
+            facilityId
+        );
+        _employeeRenderer?.SetEmployeeActivityLabel(employeeId, GetActivityLabel(activityKind));
+    }
+
+    private void ClearEmployeeActivity(int employeeId)
+    {
+        SetEmployeeActivity(employeeId, EmployeeActivityKind.Idle);
+    }
+
+    private static string? GetActivityLabel(EmployeeActivityKind activityKind)
+    {
+        return activityKind switch
+        {
+            EmployeeActivityKind.WalkingToFacility => "\u524d\u5f80\u8bbe\u65bd",
+            EmployeeActivityKind.UsingFacility => "\u6b63\u5728\u4f7f\u7528",
+            EmployeeActivityKind.WalkingToTarget => "\u79fb\u52a8\u4e2d",
+            _ => null,
+        };
     }
 }
 

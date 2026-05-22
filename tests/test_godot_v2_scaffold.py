@@ -1353,3 +1353,22 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
     assert "_usingFacilityIds" in facility_renderer
     assert "SetFacilityUseState(int facilityId, bool isInUse)" in facility_renderer
     assert "_usingFacilityIds.Contains(facility.Id)" in facility_renderer
+
+
+def test_get_the_best_v2_0_22_employee_activity_badges_follow_autonomy_state() -> None:
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
+
+    assert "_employeeActivityLabels" in employee_renderer
+    assert "SetEmployeeActivityLabel(int employeeId, string? labelText)" in employee_renderer
+    assert "AddEmployeeActivityBadge(modelRoot, employee)" in employee_renderer
+    assert "new Label3D" in employee_renderer
+    assert "Text = labelText" in employee_renderer
+    assert "Billboard = BaseMaterial3D.BillboardModeEnum.Enabled" in employee_renderer
+    assert "NoDepthTest = true" in employee_renderer
+    assert "FixedSize = false" in employee_renderer
+
+    assert "EmployeeActivityKind.WalkingToFacility" in employee_autonomy
+    assert "EmployeeActivityKind.UsingFacility" in employee_autonomy
+    assert "ClearEmployeeActivity(employeeId)" in employee_autonomy
+    assert "GetActivityLabel(activityKind)" in employee_autonomy
