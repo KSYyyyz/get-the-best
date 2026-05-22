@@ -1758,3 +1758,66 @@ def test_get_the_best_v2_1_4_dragging_working_employee_clears_work_pose_preview_
     ]
     assert "var isDragPreviewEmployee = _dragPreviewEmployeeId == employee.Id;" in add_model_block
     assert "if (workFacility != null && !isDragPreviewEmployee)" in add_model_block
+
+
+def test_get_the_best_v2_1_5_delete_mode_prioritizes_facilities_before_rooms() -> None:
+    selection = read_text(GODOT_ROOT / "scripts" / "OfficeSelection3DController.cs")
+    build_mode = read_text(GODOT_ROOT / "scripts" / "BuildModeController.cs")
+    facility_store = read_text(GODOT_ROOT / "scripts" / "FacilityPlacementStore.cs")
+
+    finish_delete_block = selection[
+        selection.index("private void FinishDeleteSelection") : selection.index(
+            "private void DeleteSingleCellAtPointer"
+        )
+    ]
+    assert finish_delete_block.index("if (deletedFacilities > 0)") < finish_delete_block.index(
+        "TryDeleteRoomsInSelection("
+    )
+    assert (
+        "return;"
+        in finish_delete_block[
+            finish_delete_block.index("if (deletedFacilities > 0)") : finish_delete_block.index(
+                "TryDeleteRoomsInSelection("
+            )
+        ]
+    )
+    assert "已出售 {deletedFacilities} 个设施" in finish_delete_block
+
+    room_selection_delete_block = build_mode[
+        build_mode.index("public bool TryDeleteRoomsInSelection") : build_mode.index(
+            "public RoomFootprint? FindRoomAtCell"
+        )
+    ]
+    assert "HasFacilitiesInSelection(startCell, endCell)" in room_selection_delete_block
+    assert "SellFixturesInSelection" not in room_selection_delete_block
+    assert "DeleteFacilitiesInSelection" not in room_selection_delete_block
+
+    room_cell_delete_block = build_mode[
+        build_mode.index("public bool TryDeleteRoomAtCell") : build_mode.index(
+            "public bool TryDeleteRoomDoorAtWorldPosition"
+        )
+    ]
+    assert "HasFacilitiesInSelection(cell, cell)" in room_cell_delete_block
+    assert "SellFixturesInSelection" not in room_cell_delete_block
+    assert "DeleteFacilitiesInSelection" not in room_cell_delete_block
+
+    assert (
+        "public bool HasFacilitiesInSelection(Vector2I startCell, Vector2I endCell)" in build_mode
+    )
+    assert "public bool HasAnyInSelection(Vector2I startCell, Vector2I endCell)" in facility_store
+
+
+def test_get_the_best_v2_1_5_time_scale_keyboard_shortcuts_exist() -> None:
+    time_scale_hud = read_text(GODOT_ROOT / "scripts" / "TimeScaleHudController.cs")
+
+    assert "public override void _Input(InputEvent @event)" in time_scale_hud
+    assert "SetProcessInput(true)" in time_scale_hud
+    assert "Key.Space" in time_scale_hud
+    assert "keyEvent.PhysicalKeycode" in time_scale_hud
+    assert "TogglePausedTimeScale();" in time_scale_hud
+    assert "Key.Tab" in time_scale_hud
+    assert "CycleTimeScale();" in time_scale_hud
+    assert "GetViewport().SetInputAsHandled();" in time_scale_hud
+    assert "private float _previousNonPausedTimeScale = 1.0f;" in time_scale_hud
+    assert "SetSimulationTimeScale(_previousNonPausedTimeScale)" in time_scale_hud
+    assert "SetSimulationTimeScale(GetNextTimeScale())" in time_scale_hud

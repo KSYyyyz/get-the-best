@@ -346,6 +346,11 @@ public partial class BuildModeController : Node
         return _facilityPlacementStore?.RemoveInSelection(startCell, endCell) ?? 0;
     }
 
+    public bool HasFacilitiesInSelection(Vector2I startCell, Vector2I endCell)
+    {
+        return _facilityPlacementStore?.HasAnyInSelection(startCell, endCell) == true;
+    }
+
     public bool TryDeleteRoomAtCell(Vector2I cell, out RoomFootprint? room)
     {
         if (_roomFootprintStore == null)
@@ -354,7 +359,12 @@ public partial class BuildModeController : Node
             return false;
         }
 
-        SellFixturesInSelection(cell, cell);
+        if (HasFacilitiesInSelection(cell, cell))
+        {
+            room = null;
+            return false;
+        }
+
         if (_roomFootprintStore.RemoveAtCell(cell, out room))
         {
             return true;
@@ -401,7 +411,11 @@ public partial class BuildModeController : Node
             return false;
         }
 
-        SellFixturesInSelection(startCell, endCell);
+        if (HasFacilitiesInSelection(startCell, endCell))
+        {
+            return false;
+        }
+
         return _roomFootprintStore.RemoveCells(startCell, endCell, out deletedCount);
     }
 

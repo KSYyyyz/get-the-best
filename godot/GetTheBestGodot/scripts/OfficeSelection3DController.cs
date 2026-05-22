@@ -315,6 +315,15 @@ public partial class OfficeSelection3DController : Node
         _isDraggingSelection = false;
         var deletedFacilities =
             _buildModeController?.DeleteFacilitiesInSelection(_dragStartCell, _dragCurrentCell) ?? 0;
+        if (deletedFacilities > 0)
+        {
+            _placementPreviewController?.ClearPreview();
+            ClearSelectedObjects();
+            _facilityRenderer?.RefreshFacilities();
+            ShowPointerTooltip($"已出售 {deletedFacilities} 个设施", screenPosition);
+            return;
+        }
+
         if (
             _buildModeController?.TryDeleteRoomsInSelection(
                 _dragStartCell,
@@ -327,16 +336,7 @@ public partial class OfficeSelection3DController : Node
             ClearSelectedObjects();
             _roomOverlayRenderer?.RefreshRooms();
             _facilityRenderer?.RefreshFacilities();
-            ShowPointerTooltip($"已删除 {deletedCount} 格，出售 {deletedFacilities} 个设施", screenPosition);
-            return;
-        }
-
-        if (deletedFacilities > 0)
-        {
-            _placementPreviewController?.ClearPreview();
-            ClearSelectedObjects();
-            _facilityRenderer?.RefreshFacilities();
-            ShowPointerTooltip($"已出售 {deletedFacilities} 个设施", screenPosition);
+            ShowPointerTooltip($"已删除 {deletedCount} 格", screenPosition);
             return;
         }
 

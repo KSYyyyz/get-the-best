@@ -15,10 +15,12 @@ public partial class TimeScaleHudController : PanelContainer
     private Button? _doubleSpeedButton;
     private Button? _tripleSpeedButton;
     private float _currentTimeScale = 1.0f;
+    private float _previousNonPausedTimeScale = 1.0f;
 
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Stop;
+        SetProcessInput(true);
         _employeeAutonomyController = GetNodeOrNull<EmployeeAutonomyController>(
             "../../InteractionRoot/EmployeeAutonomyController"
         );
@@ -55,12 +57,76 @@ public partial class TimeScaleHudController : PanelContainer
         SetSimulationTimeScale(1.0f);
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is not InputEventKey keyEvent || !keyEvent.Pressed || keyEvent.Echo)
+        {
+            return;
+        }
+
+        if (IsShortcutKey(keyEvent, Key.Space))
+        {
+            TogglePausedTimeScale();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (IsShortcutKey(keyEvent, Key.Tab))
+        {
+            CycleTimeScale();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     private void SetSimulationTimeScale(float scale)
     {
         _currentTimeScale = Mathf.Clamp(scale, 0.0f, 3.0f);
+        if (_currentTimeScale > 0.0f)
+        {
+            _previousNonPausedTimeScale = _currentTimeScale;
+        }
+
         _employeeAutonomyController?.SetSimulationTimeScale(scale);
         UpdateStatusLabel();
         ApplyButtonState();
+    }
+
+    private void TogglePausedTimeScale()
+    {
+        if (_currentTimeScale <= 0.0f)
+        {
+            SetSimulationTimeScale(_previousNonPausedTimeScale);
+            return;
+        }
+
+        _previousNonPausedTimeScale = _currentTimeScale;
+        SetSimulationTimeScale(0.0f);
+    }
+
+    private void CycleTimeScale()
+    {
+        SetSimulationTimeScale(GetNextTimeScale());
+    }
+
+    private float GetNextTimeScale()
+    {
+        var baseScale = _currentTimeScale <= 0.0f ? _previousNonPausedTimeScale : _currentTimeScale;
+        if (baseScale < 1.5f)
+        {
+            return 2.0f;
+        }
+
+        if (baseScale < 2.5f)
+        {
+            return 3.0f;
+        }
+
+        return 1.0f;
+    }
+
+    private static bool IsShortcutKey(InputEventKey keyEvent, Key key)
+    {
+        return keyEvent.Keycode == key || keyEvent.PhysicalKeycode == key;
     }
 
     private void UpdateStatusLabel()

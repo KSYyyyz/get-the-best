@@ -203,6 +203,25 @@ public partial class FacilityPlacementStore : Node
         return null;
     }
 
+    public bool HasAnyInSelection(Vector2I startCell, Vector2I endCell)
+    {
+        var minX = Mathf.Min(startCell.X, endCell.X);
+        var maxX = Mathf.Max(startCell.X, endCell.X);
+        var minY = Mathf.Min(startCell.Y, endCell.Y);
+        var maxY = Mathf.Max(startCell.Y, endCell.Y);
+
+        foreach (var facility in _facilities)
+        {
+            var cell = facility.Cell;
+            if (cell.X >= minX && cell.X <= maxX && cell.Y >= minY && cell.Y <= maxY)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public int RemoveInSelection(Vector2I startCell, Vector2I endCell)
     {
         var minX = Mathf.Min(startCell.X, endCell.X);
