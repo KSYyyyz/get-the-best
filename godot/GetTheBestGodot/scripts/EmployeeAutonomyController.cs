@@ -38,7 +38,9 @@ public partial class EmployeeAutonomyController : Node
     private Employee3DRenderer? _employeeRenderer;
     private FacilityPlacementStore? _facilityPlacementStore;
     private Facility3DRenderer? _facilityRenderer;
+    private RoomFootprintStore? _roomFootprintStore;
     private OfficeNavigationStore? _officeNavigationStore;
+    private V2CoreBridge? _v2CoreBridge;
     private float _autonomyTimer = AutonomousMoveIntervalSeconds;
     private int _nextEmployeeIndex;
     private bool _isEmployeeMoveInProgress;
@@ -49,7 +51,9 @@ public partial class EmployeeAutonomyController : Node
         _employeeRenderer = GetNodeOrNull<Employee3DRenderer>("../Employee3DRenderer");
         _facilityPlacementStore = GetNodeOrNull<FacilityPlacementStore>("../FacilityPlacementStore");
         _facilityRenderer = GetNodeOrNull<Facility3DRenderer>("../Facility3DRenderer");
+        _roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
+        _v2CoreBridge = GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge");
         InitializeEmployeeStates();
     }
 
@@ -135,11 +139,42 @@ public partial class EmployeeAutonomyController : Node
 
     private bool TryStartFacilityUseBehavior(EmployeeVisual employee)
     {
-        if (!FindFacilityUseTarget(employee, out var target))
+        if (
+            _employeeStore == null
+            || _facilityPlacementStore == null
+            || _roomFootprintStore == null
+            || _v2CoreBridge == null
+        )
         {
             return false;
         }
 
+        var coreIntents = _v2CoreBridge.PlanEmployeeIntents(
+            _employeeStore,
+            _facilityPlacementStore,
+            _roomFootprintStore
+        );
+        foreach (var coreIntent in coreIntents)
+        {
+            if (
+                coreIntent.EmployeeId != employee.Id
+                || coreIntent.Kind != StartupSim.Core.EmployeeIntentKind.MoveToFacility
+                || coreIntent.FacilityId == null
+                || !FindFacilityUseTarget(employee, coreIntent.FacilityId, out var target)
+            )
+            {
+                continue;
+            }
+
+            StartFacilityMove(employee, target);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void StartFacilityMove(EmployeeVisual employee, FacilityInteractionTarget target)
+    {
         _reservedFacilityIds.Add(target.Facility.Id);
         _isEmployeeMoveInProgress = true;
         SetEmployeeActivity(
@@ -151,7 +186,6 @@ public partial class EmployeeAutonomyController : Node
         _employeeRenderer?.PlayEmployeePathMove(employee, target.Path, () =>
             FinishFacilityArrival(employee.Id, target)
         );
-        return true;
     }
 
     private bool FindAutonomousTarget(
@@ -203,6 +237,7 @@ public partial class EmployeeAutonomyController : Node
 
     private bool FindFacilityUseTarget(
         EmployeeVisual employee,
+        int? preferredFacilityId,
         out FacilityInteractionTarget target
     )
     {
@@ -216,11 +251,10 @@ public partial class EmployeeAutonomyController : Node
             return false;
         }
 
-        var desiredFacilityTypes = GetDesiredFacilityTypes(employee);
         foreach (var facility in _facilityPlacementStore.GetFacilities())
         {
             if (
-                !IsDesiredFacilityType(desiredFacilityTypes, facility.FacilityType)
+                (preferredFacilityId != null && facility.Id != preferredFacilityId.Value)
                 || _reservedFacilityIds.Contains(facility.Id)
             )
             {
@@ -241,33 +275,6 @@ public partial class EmployeeAutonomyController : Node
                 }
 
                 target = new FacilityInteractionTarget(facility, standCell, path);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static IReadOnlyList<FacilityBuildType> GetDesiredFacilityTypes(EmployeeVisual employee)
-    {
-        return employee.RoleLabel switch
-        {
-            "\u7a0b\u5e8f" => [FacilityBuildType.OfficeDesk],
-            "\u7b56\u5212" => [FacilityBuildType.ProductWhiteboard],
-            "\u5e02\u573a" => [FacilityBuildType.ProductWhiteboard],
-            _ => [FacilityBuildType.OfficeDesk],
-        };
-    }
-
-    private static bool IsDesiredFacilityType(
-        IReadOnlyList<FacilityBuildType> desiredFacilityTypes,
-        FacilityBuildType facilityType
-    )
-    {
-        foreach (var desiredFacilityType in desiredFacilityTypes)
-        {
-            if (desiredFacilityType == facilityType)
-            {
                 return true;
             }
         }

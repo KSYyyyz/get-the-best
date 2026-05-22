@@ -13,6 +13,20 @@ public sealed class EmployeeBehaviorEngine
         {
             if (employee.Fatigue >= RestFatigueThreshold)
             {
+                var restFacility = FindBestAvailableRestFacility(snapshot, reservedFacilityIds);
+                if (restFacility != null)
+                {
+                    reservedFacilityIds.Add(restFacility.Id);
+                    intents.Add(
+                        new EmployeeIntent(
+                            employee.Id,
+                            EmployeeIntentKind.Rest,
+                            new IntentTarget(FacilityId: restFacility.Id, RoomId: restFacility.RoomId)
+                        )
+                    );
+                    continue;
+                }
+
                 intents.Add(new EmployeeIntent(employee.Id, EmployeeIntentKind.Rest, new IntentTarget()));
                 continue;
             }
@@ -58,6 +72,22 @@ public sealed class EmployeeBehaviorEngine
             )
             .OrderBy(facility => Array.IndexOf(desiredTypes, facility.Type))
             .ThenByDescending(facility => facility.EfficiencyModifier)
+            .ThenBy(facility => facility.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+    }
+
+    private static FacilityState? FindBestAvailableRestFacility(
+        OfficeRuleSnapshot snapshot,
+        HashSet<string> reservedFacilityIds
+    )
+    {
+        return snapshot.Facilities
+            .Where(facility =>
+                facility.Type == FacilityType.RestSeat
+                && facility.HasAvailableCapacity
+                && !reservedFacilityIds.Contains(facility.Id)
+            )
+            .OrderByDescending(facility => facility.EfficiencyModifier)
             .ThenBy(facility => facility.Id, StringComparer.Ordinal)
             .FirstOrDefault();
     }

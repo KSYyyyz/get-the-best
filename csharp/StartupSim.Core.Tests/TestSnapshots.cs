@@ -4,13 +4,60 @@ namespace StartupSim.Core.Tests;
 
 internal static class TestSnapshots
 {
+    public static GodotOfficeSnapshotDto ValidGodotDto()
+    {
+        return new GodotOfficeSnapshotDto(
+            Employees: [
+                new GodotEmployeeFactDto(
+                    Id: 1,
+                    DisplayName: "\u6797\u5c0f\u5b89",
+                    RoleLabel: "\u7a0b\u5e8f",
+                    Skill: 1.2,
+                    Energy: 80,
+                    Fatigue: 20,
+                    Satisfaction: 70,
+                    ActivityCode: "Idle",
+                    RoomId: "research-room",
+                    CellX: 9,
+                    CellY: 7
+                ),
+            ],
+            Facilities: [
+                new GodotFacilityFactDto(
+                    Id: 1,
+                    FacilityTypeCode: "OfficeDesk",
+                    RoomId: "research-room",
+                    Capacity: 1,
+                    OccupiedByEmployeeIds: [],
+                    EfficiencyModifier: 1.0
+                ),
+            ],
+            Rooms: [
+                new GodotRoomFactDto(
+                    Id: "research-room",
+                    RoomTypeCode: "ResearchRoom",
+                    Comfort: 0.1,
+                    Noise: 0.05,
+                    Capacity: 4,
+                    FacilityIds: ["facility-1"]
+                ),
+            ],
+            Company: new GodotCompanyFactDto(
+                Cash: 50_000,
+                MonthlyCostRate: 6_000,
+                ProjectId: "project-1",
+                ProjectProgress: 10,
+                ProjectRequiredProgress: 100
+            )
+        );
+    }
+
     public static OfficeRuleSnapshot SingleEngineerWithTwoFacilities(
         IReadOnlyList<string>? deskOccupants = null
     )
     {
         return new OfficeRuleSnapshot(
-            Employees:
-            [
+            Employees: [
                 new EmployeeState(
                     Id: "employee-1",
                     DisplayName: "\u6797\u5c0f\u5b89",
@@ -24,8 +71,7 @@ internal static class TestSnapshots
                     Cell: new GridCell(9, 7)
                 ),
             ],
-            Facilities:
-            [
+            Facilities: [
                 new FacilityState(
                     Id: "desk-1",
                     Type: FacilityType.OfficeDesk,
@@ -51,8 +97,7 @@ internal static class TestSnapshots
                     EfficiencyModifier: 1.1
                 ),
             ],
-            Rooms:
-            [
+            Rooms: [
                 new RoomState(
                     Id: "research-room",
                     Type: RoomType.ResearchRoom,
@@ -97,6 +142,92 @@ internal static class TestSnapshots
                 snapshot.Facilities[1],
                 snapshot.Facilities[2],
             ],
+        };
+    }
+
+    public static OfficeRuleSnapshot TwoEngineersOneDesk()
+    {
+        var snapshot = SingleEngineerWithTwoFacilities();
+        return snapshot with
+        {
+            Employees =
+            [
+                snapshot.Employees[0],
+                snapshot.Employees[0] with
+                {
+                    Id = "employee-2",
+                    DisplayName = "\u9648\u5b50\u822a",
+                    Cell = new GridCell(10, 7),
+                },
+            ],
+            Facilities =
+            [
+                snapshot.Facilities[0],
+            ],
+        };
+    }
+
+    public static OfficeRuleSnapshot HighFatigueEngineerWithRestSeat()
+    {
+        var snapshot = SingleEngineerWithTwoFacilities();
+        return snapshot with
+        {
+            Employees =
+            [
+                snapshot.Employees[0] with { Fatigue = 90, Energy = 20 },
+            ],
+            Facilities =
+            [
+                snapshot.Facilities[0],
+                new FacilityState(
+                    Id: "rest-seat-1",
+                    Type: FacilityType.RestSeat,
+                    RoomId: "rest-room",
+                    Capacity: 1,
+                    OccupiedByEmployeeIds: [],
+                    EfficiencyModifier: 1.2
+                ),
+            ],
+            Rooms =
+            [
+                snapshot.Rooms[0],
+                new RoomState(
+                    Id: "rest-room",
+                    Type: RoomType.RestRoom,
+                    Comfort: 0.2,
+                    Noise: 0.02,
+                    Capacity: 2,
+                    FacilityIds: ["rest-seat-1"]
+                ),
+            ],
+        };
+    }
+
+    public static OfficeRuleSnapshot EngineerResting(double fatigue, bool useRestSeat = true)
+    {
+        var snapshot = HighFatigueEngineerWithRestSeat();
+        return snapshot with
+        {
+            Employees =
+            [
+                snapshot.Employees[0] with
+                {
+                    CurrentActivity = EmployeeActivityKind.Rest,
+                    ActiveFacilityId = useRestSeat ? "rest-seat-1" : null,
+                    RemainingActivityTicks = 1,
+                },
+            ],
+            Facilities = useRestSeat
+                ?
+                [
+                    snapshot.Facilities[0],
+                    snapshot.Facilities[1] with { OccupiedByEmployeeIds = ["employee-1"] },
+                ]
+                :
+                [
+                    snapshot.Facilities[0],
+                    snapshot.Facilities[1],
+                ],
         };
     }
 }

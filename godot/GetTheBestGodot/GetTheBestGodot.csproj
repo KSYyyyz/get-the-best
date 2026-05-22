@@ -5,5 +5,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>GetTheBestGodot</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\csharp\StartupSim.Core\StartupSim.Core.csproj" />
+  </ItemGroup>
 </Project>
-

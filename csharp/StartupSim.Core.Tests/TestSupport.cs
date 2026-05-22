@@ -27,4 +27,25 @@ internal static class Assert
             throw new InvalidOperationException(message ?? "Expected condition to be true.");
         }
     }
+
+    public static void Throws<TException>(Action action)
+        where TException : Exception
+    {
+        try
+        {
+            action();
+        }
+        catch (TException)
+        {
+            return;
+        }
+        catch (Exception exc)
+        {
+            throw new InvalidOperationException(
+                $"Expected {typeof(TException).Name}, got {exc.GetType().Name}."
+            );
+        }
+
+        throw new InvalidOperationException($"Expected {typeof(TException).Name}.");
+    }
 }

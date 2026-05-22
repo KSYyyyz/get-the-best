@@ -23,6 +23,17 @@ public sealed class BusinessTickEngine
 
         foreach (var employee in snapshot.Employees.OrderBy(employee => employee.Id, StringComparer.Ordinal))
         {
+            if (employee.CurrentActivity == EmployeeActivityKind.Rest)
+            {
+                employeeDeltas.Add(CreateRestDelta(snapshot, employee));
+                var restFacility = FindActiveFacility(snapshot, employee);
+                if (restFacility != null)
+                {
+                    facilityDeltas.Add(CreateFacilityDelta(restFacility, snapshot, employee));
+                }
+                continue;
+            }
+
             var facility = FindFacilityUsedBy(snapshot, employee.Id);
             if (facility == null || employee.CurrentActivity != EmployeeActivityKind.UseFacility)
             {
@@ -51,12 +62,7 @@ public sealed class BusinessTickEngine
             );
 
             facilityDeltas.Add(
-                new FacilityTickDelta(
-                    facility.Id,
-                    IsInUse: true,
-                    facility.OccupiedByEmployeeIds.Count,
-                    efficiency
-                )
+                new FacilityTickDelta(facility.Id, IsInUse: true, facility.OccupiedByEmployeeIds.Count, efficiency)
             );
         }
 
@@ -119,6 +125,58 @@ public sealed class BusinessTickEngine
             SatisfactionDelta: 0,
             WorkOutput: 0
         );
+    }
+
+    private EmployeeTickDelta CreateRestDelta(
+        OfficeRuleSnapshot snapshot,
+        EmployeeState employee
+    )
+    {
+        var facility = FindActiveFacility(snapshot, employee);
+        var room = facility != null
+            ? snapshot.Rooms.FirstOrDefault(room => room.Id == facility.RoomId)
+            : snapshot.Rooms.FirstOrDefault(room => room.Id == employee.RoomId);
+        var facilityMultiplier = facility?.EfficiencyModifier ?? 1.0;
+        var roomMultiplier = room == null ? 1.0 : Clamp(1.0 + room.Comfort - room.Noise, 0.8, 1.3);
+        var recoveryMultiplier = facilityMultiplier * roomMultiplier;
+
+        return new EmployeeTickDelta(
+            employee.Id,
+            employee.CurrentActivity,
+            EmployeeActivityKind.Rest,
+            FatigueDelta: Math.Round(-5.0 * recoveryMultiplier * _options.TickHours, 4),
+            EnergyDelta: Math.Round(4.0 * recoveryMultiplier * _options.TickHours, 4),
+            SatisfactionDelta: Math.Round(0.2 * recoveryMultiplier, 4),
+            WorkOutput: 0
+        );
+    }
+
+    private static FacilityTickDelta CreateFacilityDelta(
+        FacilityState facility,
+        OfficeRuleSnapshot snapshot,
+        EmployeeState employee
+    )
+    {
+        var room = snapshot.Rooms.FirstOrDefault(room => room.Id == facility.RoomId);
+        var efficiency = CalculateEfficiency(employee, facility, room);
+        return new FacilityTickDelta(
+            facility.Id,
+            IsInUse: true,
+            facility.OccupiedByEmployeeIds.Count,
+            efficiency
+        );
+    }
+
+    private static FacilityState? FindActiveFacility(OfficeRuleSnapshot snapshot, EmployeeState employee)
+    {
+        if (employee.ActiveFacilityId != null)
+        {
+            return snapshot.Facilities.FirstOrDefault(facility =>
+                facility.Id == employee.ActiveFacilityId
+            );
+        }
+
+        return FindFacilityUsedBy(snapshot, employee.Id);
     }
 
     private static double CalculateFatigueMultiplier(double fatigue)

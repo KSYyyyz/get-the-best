@@ -93,7 +93,7 @@ def test_get_the_best_v2_scripts_keep_rules_boundary_explicit() -> None:
     assert "TryScreenPositionToCell" in scripts["OfficeSelection3DController.cs"]
     assert "TryWorldToCell" in scripts["OfficeWorld3DConfig.cs"]
     assert "CellToWorldPosition" in scripts["OfficeWorld3DConfig.cs"]
-    assert "规则核心桥接待接入" in scripts["V2CoreBridge.cs"]
+    assert "GodotCoreBridgeContract" in scripts["V2CoreBridge.cs"]
     assert "G2OperationsPanel" not in "\n".join(scripts.values())
 
 
@@ -1336,7 +1336,7 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
     assert "UsingFacility" in employee_autonomy
     assert "TryStartFacilityUseBehavior" in employee_autonomy
     assert "FindFacilityUseTarget" in employee_autonomy
-    assert "GetDesiredFacilityTypes(employee)" in employee_autonomy
+    assert "PlanEmployeeIntents(" in employee_autonomy
     assert "GetFacilityInteractionCells(facility)" in employee_autonomy
     assert "_officeNavigationStore.FindPath(employee.Cell, standCell)" in employee_autonomy
     assert (
@@ -1355,7 +1355,7 @@ def test_get_the_best_v2_0_21_employee_autonomy_uses_facility_targets() -> None:
     assert "_usingFacilityIds.Contains(facility.Id)" in facility_renderer
 
 
-def test_get_the_best_v2_0_22_employee_activity_badges_follow_autonomy_state() -> None:
+def test_get_the_best_v2_0_23_employee_activity_badges_follow_autonomy_state() -> None:
     employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
     employee_renderer = read_text(GODOT_ROOT / "scripts" / "Employee3DRenderer.cs")
 
@@ -1372,3 +1372,28 @@ def test_get_the_best_v2_0_22_employee_activity_badges_follow_autonomy_state() -
     assert "EmployeeActivityKind.UsingFacility" in employee_autonomy
     assert "ClearEmployeeActivity(employeeId)" in employee_autonomy
     assert "GetActivityLabel(activityKind)" in employee_autonomy
+
+
+def test_get_the_best_v2_0_24_godot_autonomy_consumes_core_intents() -> None:
+    csproj = read_text(GODOT_ROOT / "GetTheBestGodot.csproj")
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+
+    assert "..\\..\\csharp\\StartupSim.Core\\StartupSim.Core.csproj" in csproj
+    assert "using StartupSim.Core;" in bridge
+    assert "GodotCoreBridgeContract" in bridge
+    assert "EmployeeBehaviorEngine" in bridge
+    assert "BuildSnapshot(" in bridge
+    assert "PlanEmployeeIntents(" in bridge
+    assert "GodotOfficeSnapshotDto" in bridge
+    assert "GodotEmployeeFactDto" in bridge
+    assert "GodotFacilityFactDto" in bridge
+    assert "GodotRoomFactDto" in bridge
+    assert "CoreEmployeeIntent" in bridge
+    assert "ParseCoreFacilityId" in bridge
+
+    assert "V2CoreBridge? _v2CoreBridge" in employee_autonomy
+    assert 'GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge")' in employee_autonomy
+    assert "_v2CoreBridge.PlanEmployeeIntents(" in employee_autonomy
+    assert "FindFacilityUseTarget(employee, coreIntent.FacilityId" in employee_autonomy
+    assert "GetDesiredFacilityTypes" not in employee_autonomy

@@ -55,7 +55,9 @@ public sealed record EmployeeState(
     double Satisfaction,
     EmployeeActivityKind CurrentActivity,
     string? RoomId,
-    GridCell? Cell
+    GridCell? Cell,
+    string? ActiveFacilityId = null,
+    int RemainingActivityTicks = 0
 );
 
 public sealed record FacilityState(
