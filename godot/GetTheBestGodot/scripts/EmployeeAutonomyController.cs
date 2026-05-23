@@ -44,6 +44,7 @@ public partial class EmployeeAutonomyController : Node
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
     private BusinessFeedbackHudController? _businessFeedbackHud;
+    private CoreSummaryHudController? _coreSummaryHud;
     private BusinessCalendarHudController? _businessCalendarHud;
     private MonthlyReportHudController? _monthlyReportHud;
     private TimeScaleHudController? _timeScaleHud;
@@ -64,6 +65,7 @@ public partial class EmployeeAutonomyController : Node
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         _v2CoreBridge = GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge");
         _businessFeedbackHud = GetNodeOrNull<BusinessFeedbackHudController>("../../HudRoot/BusinessFeedbackPanel");
+        _coreSummaryHud = GetNodeOrNull<CoreSummaryHudController>("../../HudRoot/CoreSummaryPanel");
         _businessCalendarHud = GetNodeOrNull<BusinessCalendarHudController>("../../HudRoot/BusinessCalendarPanel");
         _monthlyReportHud = GetNodeOrNull<MonthlyReportHudController>("../../HudRoot/MonthlyReportPanel");
         _timeScaleHud = GetNodeOrNull<TimeScaleHudController>("../../HudRoot/TimeScalePanel");
@@ -484,6 +486,8 @@ public partial class EmployeeAutonomyController : Node
         {
             _businessFeedbackHud.ApplySimulationResult(simulationResult);
         }
+
+        _coreSummaryHud?.ApplySimulationResult(simulationResult);
 
         if (
             simulationResult.PresentationEvents.Any(

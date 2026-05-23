@@ -14,6 +14,7 @@ public partial class MonthlyReportHudController : PanelContainer
     private static readonly Color PrimaryTextColor = new(0.14f, 0.15f, 0.15f, 1.0f);
     private static readonly Color MutedTextColor = new(0.36f, 0.38f, 0.38f, 1.0f);
     private static readonly Color ButtonTextColor = new(0.08f, 0.22f, 0.10f, 1.0f);
+    private static readonly Vector2 MonthlyReportSize = new Vector2(460.0f, 430.0f);
 
     private Label? _titleLabel;
     private Label? _metricsLabel;
@@ -37,12 +38,13 @@ public partial class MonthlyReportHudController : PanelContainer
 
         ConfigurePanel();
         ConfigureTitleBar();
-        CustomMinimumSize = new Vector2(500.0f, 500.0f);
+        CustomMinimumSize = MonthlyReportSize;
+        Size = MonthlyReportSize;
         ConfigureTitleLabel(_titleLabel);
-        ConfigureBodyLabel(_metricsLabel, fontSize: 15, minHeight: 72);
-        ConfigureBodyLabel(_deltaLabel, fontSize: 15, minHeight: 170);
-        ConfigureBodyLabel(_reasonLabel, fontSize: 14, minHeight: 72, isMuted: true);
-        ConfigureBodyLabel(_nextStepLabel, fontSize: 14, minHeight: 68, isMuted: true);
+        ConfigureBodyLabel(_metricsLabel, fontSize: 14, minHeight: 54);
+        ConfigureBodyLabel(_deltaLabel, fontSize: 14, minHeight: 126);
+        ConfigureBodyLabel(_reasonLabel, fontSize: 13, minHeight: 58, isMuted: true);
+        ConfigureBodyLabel(_nextStepLabel, fontSize: 13, minHeight: 52, isMuted: true);
         ConfigureButton(_continueButton);
 
         if (_continueButton != null)
@@ -65,7 +67,11 @@ public partial class MonthlyReportHudController : PanelContainer
             return;
         }
 
-        HideMonthlyReport();
+        if (_continueButton?.GetGlobalRect().HasPoint(mouseButton.Position) == true)
+        {
+            return;
+        }
+
         GetViewport().SetInputAsHandled();
     }
 

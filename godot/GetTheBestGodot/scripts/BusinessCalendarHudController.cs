@@ -7,13 +7,16 @@ namespace GetTheBestGodot;
 public partial class BusinessCalendarHudController : PanelContainer
 {
     private const int DaysPerMonth = 20;
+    private const int MonthsPerYear = 12;
     private static readonly Color PanelColor = new(0.05f, 0.07f, 0.08f, 0.58f);
     private static readonly Color TextColor = new(0.92f, 0.96f, 0.94f, 0.96f);
     private static readonly Color ReportReadyColor = new(1.0f, 0.86f, 0.46f, 0.96f);
 
     private Label? _calendarStatusLabel;
+    private int _currentYear = 1;
     private int _currentMonth = 1;
     private int _currentDay = 1;
+    private int? _pendingMonthlyReportYear;
     private int? _pendingMonthlyReportMonth;
     private bool _isWaitingForMonthlyReport;
 
@@ -40,10 +43,13 @@ public partial class BusinessCalendarHudController : PanelContainer
 
         if (tick.IsMonthEnd)
         {
+            var reportYear = _currentYear;
+            var reportMonth = tickMonth;
             _isWaitingForMonthlyReport = true;
+            _pendingMonthlyReportYear = reportYear;
             _pendingMonthlyReportMonth = tickMonth;
-            SetCalendarText($"第 {tickMonth} 月 月报待查看", ReportReadyColor);
-            _currentMonth++;
+            SetCalendarText($"第{reportYear}年 第{reportMonth}月 月报待查看", ReportReadyColor);
+            AdvanceToNextMonth();
             _currentDay = 1;
             return true;
         }
@@ -65,7 +71,7 @@ public partial class BusinessCalendarHudController : PanelContainer
 
         _isWaitingForMonthlyReport = true;
         SetCalendarText(
-            $"第 {_pendingMonthlyReportMonth ?? _currentMonth - 1} 月 月报待查看",
+            $"第{_pendingMonthlyReportYear ?? _currentYear}年 第{_pendingMonthlyReportMonth ?? _currentMonth}月 月报待查看",
             ReportReadyColor
         );
     }
@@ -73,13 +79,29 @@ public partial class BusinessCalendarHudController : PanelContainer
     public void ResumeAfterMonthlyReport()
     {
         _isWaitingForMonthlyReport = false;
+        _pendingMonthlyReportYear = null;
         _pendingMonthlyReportMonth = null;
         UpdateCalendarLabel();
     }
 
     private void UpdateCalendarLabel()
     {
-        SetCalendarText($"第 {_currentMonth} 月 第 {_currentDay} 天", TextColor);
+        SetCalendarText(FormatCalendarText(), TextColor);
+    }
+
+    private string FormatCalendarText()
+    {
+        return $"第{_currentYear}年 第{_currentMonth}月 第{_currentDay}天";
+    }
+
+    private void AdvanceToNextMonth()
+    {
+        _currentMonth++;
+        if (_currentMonth > MonthsPerYear)
+        {
+            _currentMonth = 1;
+            _currentYear++;
+        }
     }
 
     private void SetCalendarText(string text, Color color)

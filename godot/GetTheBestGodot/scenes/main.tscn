@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://dw5xoqj53qu2u" path="res://scripts/FacilityPlacementStore.cs" id="11_ya4ey"]
 [ext_resource type="Script" uid="uid://b51h405g5xgqx" path="res://scripts/Facility3DRenderer.cs" id="12_muem4"]
 [ext_resource type="Script" uid="uid://byupja4fvflu8" path="res://scripts/MonthlyReportHudController.cs" id="12_pm3ni"]
+[ext_resource type="Script" uid="uid://de1a05yknhp76" path="res://scripts/CoreSummaryHudController.cs" id="13_y6deb"]
 [ext_resource type="Script" uid="uid://vwi5tn4mcavf" path="res://scripts/EmployeeStore.cs" id="16_jbj1t"]
 [ext_resource type="Script" uid="uid://dihs32kp50ure" path="res://scripts/Employee3DRenderer.cs" id="17_muem4"]
 [ext_resource type="Script" uid="uid://d4l5mgyjwnfar" path="res://scripts/OfficeNavigationStore.cs" id="18_dp3eg"]
@@ -416,6 +417,34 @@ layout_mode = 2
 [node name="ContinueMonthlyReportButton" type="Button" parent="HudRoot/MonthlyReportPanel/MonthlyReportRows/MonthlyReportButtonRow" unique_id=1483640011]
 layout_mode = 2
 text = "继续经营"
+
+[node name="CoreSummaryPanel" type="PanelContainer" parent="HudRoot" unique_id=1927343347]
+offset_left = 1048.0
+offset_top = 8.0
+offset_right = 1272.0
+offset_bottom = 66.0
+script = ExtResource("13_y6deb")
+
+[node name="CoreSummaryRows" type="VBoxContainer" parent="HudRoot/CoreSummaryPanel" unique_id=368500836]
+layout_mode = 2
+
+[node name="StageSummaryLabel" type="Label" parent="HudRoot/CoreSummaryPanel/CoreSummaryRows" unique_id=710562087]
+layout_mode = 2
+text = "阶段 原型 / 进行中"
+
+[node name="ScoreSummaryLabel" type="Label" parent="HudRoot/CoreSummaryPanel/CoreSummaryRows" unique_id=875489639]
+layout_mode = 2
+text = "用户评分 观察中"
+
+[node name="BuildModeMenuPopup" type="PanelContainer" parent="HudRoot" unique_id=2106087461]
+visible = false
+offset_left = 376.0
+offset_top = 560.0
+offset_right = 562.0
+offset_bottom = 660.0
+
+[node name="BuildModeMenuPopupRows" type="VBoxContainer" parent="HudRoot/BuildModeMenuPopup" unique_id=187654469]
+layout_mode = 2
 
 [node name="InteractionRoot" type="Node" parent="." unique_id=2051251072]
 

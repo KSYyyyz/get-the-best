@@ -231,7 +231,8 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "HoverButtonColor" in scripts["BuildModeHudController.cs"]
     assert "GetButtonPrefix" not in scripts["BuildModeHudController.cs"]
     assert "minWidth: 64.0f" in scripts["BuildModeHudController.cs"]
-    assert "new Vector2(businessWidth + 8.0f" in scripts["BuildModeHudController.cs"]
+    assert "new Vector2(368.0f" in scripts["BuildModeHudController.cs"]
+    assert "ToolbarCompactWidth" in scripts["BuildModeHudController.cs"]
     assert (
         "CustomMinimumSize = new Vector2(minWidth, 36.0f)" in scripts["BuildModeHudController.cs"]
     )
@@ -1947,7 +1948,7 @@ def test_get_the_best_v2_1_8_management_toolbar_and_report_window() -> None:
     assert "ReportWindowColor" in monthly_report_hud
     assert "TitleBarColor" in monthly_report_hud
     assert "ConfigureTitleBar()" in monthly_report_hud
-    assert "ConfigureBodyLabel(_deltaLabel, fontSize: 15, minHeight: 170)" in monthly_report_hud
+    assert "ConfigureBodyLabel(_deltaLabel, fontSize: 14, minHeight: 126)" in monthly_report_hud
     assert "FormatReportLine" in monthly_report_hud
     assert "现金结余" in monthly_report_hud
     assert "开发进度" in monthly_report_hud
@@ -1956,3 +1957,67 @@ def test_get_the_best_v2_1_8_management_toolbar_and_report_window() -> None:
     assert "LayoutBottomHud(viewportSize)" in main_controller
     assert 'control.Name == "BuildModePanel"' in main_controller
     assert 'control.Name == "MonthlyReportPanel"' in main_controller
+
+
+def test_get_the_best_v2_1_9_hud_layout_report_and_summary_fix() -> None:
+    scene_text = read_text(GODOT_ROOT / "scenes" / "main.tscn")
+    build_hud = read_text(GODOT_ROOT / "scripts" / "BuildModeHudController.cs")
+    calendar_hud = read_text(GODOT_ROOT / "scripts" / "BusinessCalendarHudController.cs")
+    monthly_report_hud = read_text(GODOT_ROOT / "scripts" / "MonthlyReportHudController.cs")
+    main_controller = read_text(GODOT_ROOT / "scripts" / "MainController.cs")
+    camera_controller = read_text(GODOT_ROOT / "scripts" / "OfficeCamera3DController.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    core_summary_path = GODOT_ROOT / "scripts" / "CoreSummaryHudController.cs"
+    assert core_summary_path.exists()
+    core_summary = read_text(core_summary_path)
+
+    assert 'name="CoreSummaryPanel"' in scene_text
+    assert 'name="CoreSummaryRows"' in scene_text
+    assert 'name="StageSummaryLabel"' in scene_text
+    assert 'name="ScoreSummaryLabel"' in scene_text
+    assert "CoreSummaryHudController.cs" in scene_text
+
+    assert "MenuPopupWidth" in build_hud
+    assert "_menuPopup" in build_hud
+    assert "CreateMenuPopup()" in build_hud
+    assert "MoveMenuToPopup(_roomTypeButtons)" in build_hud
+    assert "PositionPopupMenu()" in build_hud
+    assert "ToolbarOpenHeight" not in build_hud
+    assert "CustomMinimumSize = new Vector2(ToolbarCompactWidth, ToolbarClosedHeight)" in build_hud
+
+    assert "private const int MonthsPerYear = 12;" in calendar_hud
+    assert "private int _currentYear = 1;" in calendar_hud
+    assert "FormatCalendarText()" in calendar_hud
+    assert '"第{_currentYear}年 第{_currentMonth}月 第{_currentDay}天"' in calendar_hud
+    assert '"第{reportYear}年 第{reportMonth}月 月报待查看"' in calendar_hud
+
+    assert "CoreSummaryHudController? _coreSummaryHud" in employee_autonomy
+    assert "_coreSummaryHud?.ApplySimulationResult(simulationResult)" in employee_autonomy
+    assert "public partial class CoreSummaryHudController : PanelContainer" in core_summary
+    assert "FormatStage(" in core_summary
+    assert "FormatUserScore(" in core_summary
+    assert "用户评分" in core_summary
+    assert "阶段" in core_summary
+
+    assert "BusinessPanelWidth = 360.0f" in main_controller
+    assert "ToolbarCompactWidth = 542.0f" in main_controller
+    assert "TimeScalePanelWidth = 316.0f" in main_controller
+    assert "LayoutTopCenterCalendar(viewportSize)" in main_controller
+    assert "LayoutTopRightSummary(viewportSize)" in main_controller
+    assert "MonthlyReportSize" in main_controller
+    assert "(viewportSize - MonthlyReportSize) / 2.0f" in main_controller
+
+    assert "MonthlyReportSize = new Vector2(460.0f, 430.0f)" in monthly_report_hud
+    assert (
+        "HideMonthlyReport();"
+        not in monthly_report_hud[
+            monthly_report_hud.index("public override void _Input") : monthly_report_hud.index(
+                "public void ShowMonthlyReport"
+            )
+        ]
+    )
+    assert "GetViewport().SetInputAsHandled();" in monthly_report_hud
+
+    assert "IsHudModalOpen()" in camera_controller
+    assert '"../../HudRoot/MonthlyReportPanel"' in camera_controller
+    assert "if (IsHudModalOpen())" in camera_controller

@@ -25,7 +25,8 @@ public partial class BuildModeHudController : PanelContainer
     private static readonly Color ActiveButtonColor = new(0.02f, 0.45f, 0.18f, 1.0f);
     private static readonly Color DisabledTextColor = new(0.55f, 0.57f, 0.56f, 1.0f);
     private const float ToolbarClosedHeight = 50.0f;
-    private const float ToolbarOpenHeight = 230.0f;
+    private const float ToolbarCompactWidth = 542.0f;
+    private const float MenuPopupWidth = 186.0f;
     private const string BuildMenuText = "建造";
     private const string FacilityMenuText = "设施";
     private const string EmployeeManagementMenuText = "员工";
@@ -58,6 +59,8 @@ public partial class BuildModeHudController : PanelContainer
     private Button? _whiteboardFacilityButton;
     private Button? _serverRackFacilityButton;
     private Button? _hoveredButton;
+    private PanelContainer? _menuPopup;
+    private VBoxContainer? _menuPopupRows;
     private CommandMenu _openMenu = CommandMenu.None;
 
     public override void _Ready()
@@ -111,6 +114,13 @@ public partial class BuildModeHudController : PanelContainer
         );
 
         ConfigurePanel();
+        CreateMenuPopup();
+        MoveMenuToPopup(_roomTypeButtons);
+        MoveMenuToPopup(_facilityTypeButtons);
+        MoveMenuToPopup(_employeeManagementButtons);
+        MoveMenuToPopup(_administrationButtons);
+        MoveMenuToPopup(_publishingButtons);
+        MoveMenuToPopup(_statisticsButtons);
         ConfigureEntryButtons();
         ConfigureSeparator(_entrySeparator);
         ConfigureSeparator(_facilityEntrySeparator);
@@ -306,19 +316,141 @@ public partial class BuildModeHudController : PanelContainer
         SetMenuVisible(_administrationButtons, _openMenu == CommandMenu.Administration);
         SetMenuVisible(_publishingButtons, _openMenu == CommandMenu.Publishing);
         SetMenuVisible(_statisticsButtons, _openMenu == CommandMenu.Statistics);
+        if (_menuPopup != null)
+        {
+            _menuPopup.Visible = _openMenu != CommandMenu.None;
+            PositionPopupMenu();
+        }
         RefreshToolbarLayout();
     }
 
     private void RefreshToolbarLayout()
     {
-        var isOpen = _openMenu != CommandMenu.None;
         var viewportSize = GetViewport().GetVisibleRect().Size;
-        var businessWidth = Mathf.Clamp(viewportSize.X * 0.42f, 420.0f, 540.0f);
-        var toolbarWidth = Mathf.Max(420.0f, viewportSize.X - businessWidth - 248.0f);
-        var toolbarHeight = isOpen ? ToolbarOpenHeight : ToolbarClosedHeight;
-        Position = new Vector2(businessWidth + 8.0f, viewportSize.Y - 4.0f - toolbarHeight);
-        CustomMinimumSize = new Vector2(toolbarWidth, toolbarHeight);
+        Position = new Vector2(368.0f, viewportSize.Y - 4.0f - ToolbarClosedHeight);
+        CustomMinimumSize = new Vector2(ToolbarCompactWidth, ToolbarClosedHeight);
         Size = CustomMinimumSize;
+        PositionPopupMenu();
+    }
+
+    private void CreateMenuPopup()
+    {
+        if (_menuPopup != null)
+        {
+            return;
+        }
+
+        _menuPopup = GetNodeOrNull<PanelContainer>("../BuildModeMenuPopup");
+        _menuPopupRows = GetNodeOrNull<VBoxContainer>("../BuildModeMenuPopup/BuildModeMenuPopupRows");
+        if (_menuPopupRows == null)
+        {
+            _menuPopupRows = new VBoxContainer
+            {
+                Name = "BuildModeMenuPopupRows",
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            };
+        }
+        _menuPopupRows.AddThemeConstantOverride("separation", 0);
+
+        _menuPopup ??= new PanelContainer
+        {
+            Name = "BuildModeMenuPopup",
+            Visible = false,
+            CustomMinimumSize = new Vector2(MenuPopupWidth, 36.0f),
+            MouseFilter = MouseFilterEnum.Stop,
+        };
+        _menuPopup.Visible = false;
+        _menuPopup.CustomMinimumSize = new Vector2(MenuPopupWidth, 36.0f);
+        _menuPopup.MouseFilter = MouseFilterEnum.Stop;
+        var popupStyle = new StyleBoxFlat
+        {
+            BgColor = MenuColor,
+            BorderColor = BorderColor,
+            ContentMarginLeft = 3.0f,
+            ContentMarginTop = 3.0f,
+            ContentMarginRight = 3.0f,
+            ContentMarginBottom = 3.0f,
+        };
+        popupStyle.SetBorderWidthAll(1);
+        _menuPopup.AddThemeStyleboxOverride("panel", popupStyle);
+        if (_menuPopupRows.GetParent() == null)
+        {
+            _menuPopup.AddChild(_menuPopupRows);
+        }
+        if (_menuPopup.GetParent() == null)
+        {
+            GetParent()?.AddChild(_menuPopup);
+        }
+    }
+
+    private void MoveMenuToPopup(VBoxContainer? menu)
+    {
+        if (menu == null || _menuPopupRows == null)
+        {
+            return;
+        }
+
+        menu.GetParent()?.RemoveChild(menu);
+        menu.Visible = false;
+        menu.CustomMinimumSize = new Vector2(MenuPopupWidth - 6.0f, 0.0f);
+        _menuPopupRows.AddChild(menu);
+    }
+
+    private void PositionPopupMenu()
+    {
+        if (_menuPopup?.Visible != true)
+        {
+            return;
+        }
+
+        var activeButton = GetActiveMenuButton();
+        if (activeButton == null)
+        {
+            _menuPopup.Visible = false;
+            return;
+        }
+
+        var itemCount = GetActiveMenuItemCount();
+        var popupHeight = Mathf.Max(36.0f, itemCount * 30.0f + 8.0f);
+        var viewportSize = GetViewport().GetVisibleRect().Size;
+        var buttonRect = activeButton.GetGlobalRect();
+        _menuPopup.Size = new Vector2(MenuPopupWidth, popupHeight);
+        _menuPopup.Position = new Vector2(
+            Mathf.Clamp(
+                buttonRect.Position.X + buttonRect.Size.X / 2.0f - MenuPopupWidth / 2.0f,
+                8.0f,
+                Mathf.Max(8.0f, viewportSize.X - MenuPopupWidth - 8.0f)
+            ),
+            Mathf.Max(8.0f, Position.Y - popupHeight - 4.0f)
+        );
+    }
+
+    private Button? GetActiveMenuButton()
+    {
+        return _openMenu switch
+        {
+            CommandMenu.Build => _buildMenuButton,
+            CommandMenu.Facility => _facilityMenuButton,
+            CommandMenu.EmployeeManagement => _employeeManagementButton,
+            CommandMenu.Administration => _administrationButton,
+            CommandMenu.Publishing => _publishingButton,
+            CommandMenu.Statistics => _statisticsButton,
+            _ => null,
+        };
+    }
+
+    private int GetActiveMenuItemCount()
+    {
+        return _openMenu switch
+        {
+            CommandMenu.Build => _roomTypeButtons?.GetChildCount() ?? 0,
+            CommandMenu.Facility => _facilityTypeButtons?.GetChildCount() ?? 0,
+            CommandMenu.EmployeeManagement => _employeeManagementButtons?.GetChildCount() ?? 0,
+            CommandMenu.Administration => _administrationButtons?.GetChildCount() ?? 0,
+            CommandMenu.Publishing => _publishingButtons?.GetChildCount() ?? 0,
+            CommandMenu.Statistics => _statisticsButtons?.GetChildCount() ?? 0,
+            _ => 0,
+        };
     }
 
     private void ConfigureBuildMenuButtons()

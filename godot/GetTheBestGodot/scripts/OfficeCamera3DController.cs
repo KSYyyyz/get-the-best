@@ -23,6 +23,7 @@ public partial class OfficeCamera3DController : Camera3D
     private bool _isMouseInsideViewport = true;
     private bool _hasMousePosition;
     private Vector2 _lastMousePosition;
+    private Control? _monthlyReportPanel;
     private float YawDegrees = 0.0f;
     private Vector3 _focus = DefaultFocus;
 
@@ -30,6 +31,7 @@ public partial class OfficeCamera3DController : Camera3D
     {
         Projection = ProjectionType.Orthogonal;
         Current = true;
+        _monthlyReportPanel = GetNodeOrNull<Control>("../../HudRoot/MonthlyReportPanel");
         GetViewport().SizeChanged += ApplyDefaultCameraSize;
         ApplyDefaultCameraSize();
         ApplyCameraPose();
@@ -216,6 +218,11 @@ public partial class OfficeCamera3DController : Camera3D
 
     private Vector3 GetEdgePanDirection()
     {
+        if (IsHudModalOpen())
+        {
+            return Vector3.Zero;
+        }
+
         if (!_hasMousePosition || !_isMouseInsideViewport || _isMiddleRotating)
         {
             return Vector3.Zero;
@@ -249,6 +256,11 @@ public partial class OfficeCamera3DController : Camera3D
         }
 
         return direction;
+    }
+
+    private bool IsHudModalOpen()
+    {
+        return _monthlyReportPanel?.Visible == true;
     }
 
     private bool IsMousePositionInsideViewport(Vector2 mousePosition)
