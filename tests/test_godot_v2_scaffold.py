@@ -231,7 +231,7 @@ def test_get_the_best_v2_0_2_room_type_build_mode_exists() -> None:
     assert "HoverButtonColor" in scripts["BuildModeHudController.cs"]
     assert "GetButtonPrefix" not in scripts["BuildModeHudController.cs"]
     assert "minWidth: 64.0f" in scripts["BuildModeHudController.cs"]
-    assert "new Vector2(368.0f" in scripts["BuildModeHudController.cs"]
+    assert "BusinessPanelWidth + BottomHudGap * 2.0f" in scripts["BuildModeHudController.cs"]
     assert "ToolbarCompactWidth" in scripts["BuildModeHudController.cs"]
     assert (
         "CustomMinimumSize = new Vector2(minWidth, 36.0f)" in scripts["BuildModeHudController.cs"]
@@ -1983,7 +1983,10 @@ def test_get_the_best_v2_1_9_hud_layout_report_and_summary_fix() -> None:
     assert "MoveMenuToPopup(_roomTypeButtons)" in build_hud
     assert "PositionPopupMenu()" in build_hud
     assert "ToolbarOpenHeight" not in build_hud
-    assert "CustomMinimumSize = new Vector2(ToolbarCompactWidth, ToolbarClosedHeight)" in build_hud
+    assert (
+        "CustomMinimumSize = new Vector2(LayoutBuildToolbarWidth(viewportSize), ToolbarClosedHeight)"
+        in build_hud
+    )
 
     assert "private const int MonthsPerYear = 12;" in calendar_hud
     assert "private int _currentYear = 1;" in calendar_hud
@@ -1999,7 +2002,7 @@ def test_get_the_best_v2_1_9_hud_layout_report_and_summary_fix() -> None:
     assert "用户评分" in core_summary
     assert "阶段" in core_summary
 
-    assert "BusinessPanelWidth = 360.0f" in main_controller
+    assert "BusinessPanelWidth = 560.0f" in main_controller
     assert "ToolbarCompactWidth = 542.0f" in main_controller
     assert "TimeScalePanelWidth = 316.0f" in main_controller
     assert "LayoutTopCenterCalendar(viewportSize)" in main_controller
@@ -2021,3 +2024,19 @@ def test_get_the_best_v2_1_9_hud_layout_report_and_summary_fix() -> None:
     assert "IsHudModalOpen()" in camera_controller
     assert '"../../HudRoot/MonthlyReportPanel"' in camera_controller
     assert "if (IsHudModalOpen())" in camera_controller
+
+
+def test_get_the_best_v2_1_10_bottom_toolbar_sections_do_not_overlap() -> None:
+    main_controller = read_text(GODOT_ROOT / "scripts" / "MainController.cs")
+    build_hud = read_text(GODOT_ROOT / "scripts" / "BuildModeHudController.cs")
+
+    assert "BusinessPanelWidth = 560.0f" in main_controller
+    assert "BottomHudGap = 8.0f" in main_controller
+    assert "LayoutBuildToolbarWidth(viewportSize)" in main_controller
+    assert "BusinessPanelWidth + BottomHudGap * 2.0f" in main_controller
+    assert "viewportSize.X - TimeScalePanelWidth - BottomHudGap" in main_controller
+
+    assert "BusinessPanelWidth = 560.0f" in build_hud
+    assert "BottomHudGap = 8.0f" in build_hud
+    assert "LayoutBuildToolbarWidth(viewportSize)" in build_hud
+    assert "BusinessPanelWidth + BottomHudGap * 2.0f" in build_hud

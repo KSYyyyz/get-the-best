@@ -4,9 +4,11 @@ namespace GetTheBestGodot;
 
 public partial class MainController : Node3D
 {
-    private const float BusinessPanelWidth = 360.0f;
+    private const float BusinessPanelWidth = 560.0f;
     private const float ToolbarCompactWidth = 542.0f;
+    private const float ToolbarMinimumWidth = 430.0f;
     private const float TimeScalePanelWidth = 316.0f;
+    private const float BottomHudGap = 8.0f;
     private static readonly Vector2 MonthlyReportSize = new(460.0f, 430.0f);
 
     private Label? _statusLabel;
@@ -89,7 +91,7 @@ public partial class MainController : Node3D
         if (_timeScalePanel != null)
         {
             _timeScalePanel.Position = new Vector2(
-                Mathf.Max(16.0f, viewportSize.X - TimeScalePanelWidth - 8.0f),
+                Mathf.Max(16.0f, viewportSize.X - TimeScalePanelWidth - BottomHudGap),
                 viewportSize.Y - 54.0f
             );
             _timeScalePanel.Size = new Vector2(TimeScalePanelWidth, 50.0f);
@@ -106,14 +108,17 @@ public partial class MainController : Node3D
         var bottomY = viewportSize.Y - 54.0f;
         if (_businessFeedbackPanel != null)
         {
-            _businessFeedbackPanel.Position = new Vector2(8.0f, bottomY);
+            _businessFeedbackPanel.Position = new Vector2(BottomHudGap, bottomY);
             _businessFeedbackPanel.Size = new Vector2(BusinessPanelWidth, 50.0f);
         }
 
         if (_buildModePanel != null)
         {
-            _buildModePanel.Position = new Vector2(BusinessPanelWidth + 8.0f, bottomY);
-            _buildModePanel.Size = new Vector2(ToolbarCompactWidth, 50.0f);
+            _buildModePanel.Position = new Vector2(
+                BusinessPanelWidth + BottomHudGap * 2.0f,
+                bottomY
+            );
+            _buildModePanel.Size = new Vector2(LayoutBuildToolbarWidth(viewportSize), 50.0f);
         }
 
         if (_monthlyReportPanel != null)
@@ -121,6 +126,14 @@ public partial class MainController : Node3D
             _monthlyReportPanel.Position = (viewportSize - MonthlyReportSize) / 2.0f;
             _monthlyReportPanel.Size = MonthlyReportSize;
         }
+    }
+
+    private static float LayoutBuildToolbarWidth(Vector2 viewportSize)
+    {
+        var buildPanelX = BusinessPanelWidth + BottomHudGap * 2.0f;
+        var timePanelX = viewportSize.X - TimeScalePanelWidth - BottomHudGap;
+        var availableWidth = timePanelX - buildPanelX - BottomHudGap;
+        return Mathf.Clamp(availableWidth, ToolbarMinimumWidth, ToolbarCompactWidth);
     }
 
     private void LayoutTopCenterCalendar(Vector2 viewportSize)

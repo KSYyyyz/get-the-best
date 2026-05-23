@@ -25,7 +25,11 @@ public partial class BuildModeHudController : PanelContainer
     private static readonly Color ActiveButtonColor = new(0.02f, 0.45f, 0.18f, 1.0f);
     private static readonly Color DisabledTextColor = new(0.55f, 0.57f, 0.56f, 1.0f);
     private const float ToolbarClosedHeight = 50.0f;
+    private const float BusinessPanelWidth = 560.0f;
     private const float ToolbarCompactWidth = 542.0f;
+    private const float ToolbarMinimumWidth = 430.0f;
+    private const float TimeScalePanelWidth = 316.0f;
+    private const float BottomHudGap = 8.0f;
     private const float MenuPopupWidth = 186.0f;
     private const string BuildMenuText = "建造";
     private const string FacilityMenuText = "设施";
@@ -327,10 +331,21 @@ public partial class BuildModeHudController : PanelContainer
     private void RefreshToolbarLayout()
     {
         var viewportSize = GetViewport().GetVisibleRect().Size;
-        Position = new Vector2(368.0f, viewportSize.Y - 4.0f - ToolbarClosedHeight);
-        CustomMinimumSize = new Vector2(ToolbarCompactWidth, ToolbarClosedHeight);
+        Position = new Vector2(
+            BusinessPanelWidth + BottomHudGap * 2.0f,
+            viewportSize.Y - 4.0f - ToolbarClosedHeight
+        );
+        CustomMinimumSize = new Vector2(LayoutBuildToolbarWidth(viewportSize), ToolbarClosedHeight);
         Size = CustomMinimumSize;
         PositionPopupMenu();
+    }
+
+    private static float LayoutBuildToolbarWidth(Vector2 viewportSize)
+    {
+        var buildPanelX = BusinessPanelWidth + BottomHudGap * 2.0f;
+        var timePanelX = viewportSize.X - TimeScalePanelWidth - BottomHudGap;
+        var availableWidth = timePanelX - buildPanelX - BottomHudGap;
+        return Mathf.Clamp(availableWidth, ToolbarMinimumWidth, ToolbarCompactWidth);
     }
 
     private void CreateMenuPopup()

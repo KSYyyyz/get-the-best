@@ -89,6 +89,7 @@
 - `docs/get_the_best_v2_1_7_monthly_report_panel_acceptance_report.md`
 - `docs/get_the_best_v2_1_8_management_toolbar_monthly_report_acceptance_report.md`
 - `docs/get_the_best_v2_1_9_hud_layout_summary_acceptance_report.md`
+- `docs/get_the_best_v2_1_10_bottom_toolbar_overlap_fix_acceptance_report.md`
 - `docs/get_the_best_v2_animation_asset_plan.md`
 
 ## 5. 第一原则
