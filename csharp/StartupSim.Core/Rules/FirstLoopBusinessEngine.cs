@@ -4,6 +4,9 @@ public sealed class FirstLoopBusinessEngine
 {
     private const double UsersPerSalesOutput = 2.0;
     private const double MonthlyRevenuePerUser = 12.0;
+    private const double MarketResearchCost = 500.0;
+    private const double MarketResearchPrototypeProgress = 2.0;
+    private const int MarketResearchLaunchUsers = 5;
 
     private readonly FirstLoopBusinessTickOptions _options;
     private readonly EmployeeBehaviorEngine _behaviorEngine;
@@ -27,6 +30,7 @@ public sealed class FirstLoopBusinessEngine
         var facilityDeltas = new List<FacilityTickDelta>();
         var projectProgressDelta = 0.0;
         var salesOutput = 0.0;
+        var playerCommandResults = ApplyPlayerCommands(snapshot);
 
         foreach (var employee in snapshot.Employees.OrderBy(employee => employee.Id, StringComparer.Ordinal))
         {
@@ -66,18 +70,22 @@ public sealed class FirstLoopBusinessEngine
             );
         }
 
-        projectProgressDelta = Math.Round(projectProgressDelta, 4);
+        projectProgressDelta = Math.Round(
+            projectProgressDelta + playerCommandResults.Sum(result => result.ProjectProgressDelta),
+            4
+        );
         var productMarket = snapshot.Company.ProductMarket ?? CreateProductMarket(snapshot.Company);
         var nextProgress = Math.Min(
             snapshot.Company.ActiveProject.Progress + projectProgressDelta,
             snapshot.Company.ActiveProject.RequiredProgress
         );
-        var activeUsersDelta = CalculateActiveUsersDelta(
-            productMarket,
-            nextProgress,
-            snapshot.Company.ActiveProject.RequiredProgress,
-            salesOutput
-        );
+        var activeUsersDelta =
+            CalculateActiveUsersDelta(
+                productMarket,
+                nextProgress,
+                snapshot.Company.ActiveProject.RequiredProgress,
+                salesOutput
+            ) + playerCommandResults.Sum(result => result.ActiveUsersDelta);
         var monthlyRecurringRevenueDelta = Math.Round(activeUsersDelta * MonthlyRevenuePerUser, 4);
         var nextMonthlyRecurringRevenue =
             productMarket.MonthlyRecurringRevenue + monthlyRecurringRevenueDelta;
@@ -94,7 +102,8 @@ public sealed class FirstLoopBusinessEngine
             -snapshot.Company.MonthlyCostRate / 30.0 / 8.0 * _options.TickHours,
             4
         );
-        var cashDelta = Math.Round(operatingCostDelta + revenueDelta, 4);
+        var commandCashDelta = playerCommandResults.Sum(result => result.CashDelta);
+        var cashDelta = Math.Round(operatingCostDelta + revenueDelta + commandCashDelta, 4);
         var monthlyReport = _options.IsMonthEnd
             ? CreateMonthlyReport(
                 nextProgress,
@@ -120,8 +129,43 @@ public sealed class FirstLoopBusinessEngine
                 ActiveUsersDelta: activeUsersDelta,
                 MonthlyRecurringRevenueDelta: monthlyRecurringRevenueDelta
             ),
-            monthlyReport
+            monthlyReport,
+            playerCommandResults
         );
+    }
+
+    private IReadOnlyList<PlayerCommandResult> ApplyPlayerCommands(OfficeRuleSnapshot snapshot)
+    {
+        var commands = _options.PlayerCommands ?? [];
+        if (commands.Count == 0)
+        {
+            return [];
+        }
+
+        var results = new List<PlayerCommandResult>();
+        var productMarket = snapshot.Company.ProductMarket ?? CreateProductMarket(snapshot.Company);
+        foreach (var command in commands)
+        {
+            if (command.Kind != PlayerCommandKind.MarketResearch)
+            {
+                continue;
+            }
+
+            var isPrototype = productMarket.Stage == ProductStage.Prototype;
+            results.Add(
+                new PlayerCommandResult(
+                    PlayerCommandKind.MarketResearch,
+                    CashDelta: -MarketResearchCost,
+                    ProjectProgressDelta: isPrototype ? MarketResearchPrototypeProgress : 0.0,
+                    ActiveUsersDelta: isPrototype ? 0 : MarketResearchLaunchUsers,
+                    Message: isPrototype
+                        ? "市场调研完成：获得用户画像，MVP 方向更清晰。"
+                        : "市场调研完成：定位首批用户，市场转化提高。"
+                )
+            );
+        }
+
+        return results;
     }
 
     private static bool ContributesToSales(

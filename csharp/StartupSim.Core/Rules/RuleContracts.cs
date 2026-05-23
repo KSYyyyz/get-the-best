@@ -59,6 +59,11 @@ public enum ProductStage
     Launched,
 }
 
+public enum PlayerCommandKind
+{
+    MarketResearch,
+}
+
 public enum PhaseOutcomeKind
 {
     InProgress,
@@ -74,6 +79,7 @@ public enum SimulationEventKind
     ActivityChanged,
     FacilityUpdated,
     MetricChanged,
+    PlayerCommandCompleted,
     MonthlyReportReady,
     PhaseOutcomeReached,
 }
@@ -89,6 +95,7 @@ public enum SimulationEventSubjectKind
     Employee,
     Facility,
     Metric,
+    Command,
     Report,
     Outcome,
 }
@@ -226,13 +233,24 @@ public sealed record ProductMarketTickDelta(
     double MonthlyRecurringRevenueDelta
 );
 
+public sealed record PlayerCommand(PlayerCommandKind Kind);
+
+public sealed record PlayerCommandResult(
+    PlayerCommandKind Kind,
+    double CashDelta,
+    double ProjectProgressDelta,
+    int ActiveUsersDelta,
+    string Message
+);
+
 public sealed record TickResult(
     IReadOnlyList<EmployeeIntent> Intents,
     IReadOnlyList<EmployeeTickDelta> EmployeeDeltas,
     IReadOnlyList<FacilityTickDelta> FacilityDeltas,
     CompanyTickDelta CompanyDelta,
     ProductMarketTickDelta? ProductMarketDelta = null,
-    MonthlyReport? MonthlyReport = null
+    MonthlyReport? MonthlyReport = null,
+    IReadOnlyList<PlayerCommandResult>? PlayerCommandResults = null
 );
 
 public sealed record BusinessTickOptions(double TickHours)
@@ -249,12 +267,20 @@ public sealed record MonthlyReport(
     IReadOnlyList<string> Reasons
 );
 
-public sealed record FirstLoopBusinessTickOptions(double TickHours, bool IsMonthEnd = false)
+public sealed record FirstLoopBusinessTickOptions(
+    double TickHours,
+    bool IsMonthEnd = false,
+    IReadOnlyList<PlayerCommand>? PlayerCommands = null
+)
 {
     public static FirstLoopBusinessTickOptions Default { get; } = new(TickHours: 1.0);
 }
 
-public sealed record SimulationTickOptions(double TickHours, bool IsMonthEnd = false)
+public sealed record SimulationTickOptions(
+    double TickHours,
+    bool IsMonthEnd = false,
+    IReadOnlyList<PlayerCommand>? PlayerCommands = null
+)
 {
     public static SimulationTickOptions Default { get; } = new(TickHours: 1.0);
 }

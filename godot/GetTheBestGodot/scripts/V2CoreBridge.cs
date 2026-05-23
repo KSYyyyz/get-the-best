@@ -25,6 +25,7 @@ public partial class V2CoreBridge : Node
         );
     private readonly Dictionary<int, CoreEmployeeLifecycleState> _employeeLifecycleStates = [];
     private readonly Dictionary<int, IReadOnlyList<int>> _facilityOccupants = [];
+    private readonly List<PlayerCommand> _queuedPlayerCommands = [];
     private CompanyState? _companyState;
 
     public string GetInitialStatusText()
@@ -40,17 +41,25 @@ public partial class V2CoreBridge : Node
     )
     {
         var snapshot = BuildSnapshot(employeeStore, facilityPlacementStore, roomFootprintStore);
-        var simulationEngine = isMonthEnd
+        var queuedCommands = _queuedPlayerCommands.ToArray();
+        _queuedPlayerCommands.Clear();
+        var simulationEngine = isMonthEnd || queuedCommands.Length > 0
             ? new OfficeSimulationEngine(
                 new SimulationTickOptions(
                     TickHours: SimulationFrontendContract.Cadence.DefaultTickHours,
-                    IsMonthEnd: isMonthEnd
+                    IsMonthEnd: isMonthEnd,
+                    PlayerCommands: queuedCommands
                 )
             )
             : _simulationEngine;
         var result = simulationEngine.Advance(snapshot);
         StoreSimulationState(result.NextSnapshot);
         return MapSimulationResult(result);
+    }
+
+    public void QueueMarketResearchCommand()
+    {
+        _queuedPlayerCommands.Add(new PlayerCommand(PlayerCommandKind.MarketResearch));
     }
 
     public OfficeRuleSnapshot BuildSnapshot(
@@ -177,6 +186,9 @@ public partial class V2CoreBridge : Node
             EmployeeStates: result.NextSnapshot.Employees.Select(MapLifecycleState).ToArray(),
             FacilityStates: result.NextSnapshot.Facilities.Select(MapFacilityState).ToArray(),
             PresentationEvents: result.PresentationEvents.Select(MapPresentationEvent).ToArray(),
+            PlayerCommandResults: (result.Tick.PlayerCommandResults ?? [])
+                .Select(MapPlayerCommandResult)
+                .ToArray(),
             CompanyTotals: MapCompanyTotals(result.NextSnapshot.Company),
             OutcomeKind: result.Outcome.Kind,
             ProjectProgressDelta: result.Tick.CompanyDelta.ProjectProgressDelta,
@@ -224,6 +236,17 @@ public partial class V2CoreBridge : Node
             Kind: presentationEvent.Kind,
             SubjectId: presentationEvent.SubjectId,
             Message: presentationEvent.Message
+        );
+    }
+
+    private static CorePlayerCommandResult MapPlayerCommandResult(PlayerCommandResult result)
+    {
+        return new CorePlayerCommandResult(
+            Kind: result.Kind,
+            CashDelta: result.CashDelta,
+            ProjectProgressDelta: result.ProjectProgressDelta,
+            ActiveUsersDelta: result.ActiveUsersDelta,
+            Message: result.Message
         );
     }
 
@@ -321,6 +344,14 @@ public sealed record CoreSimulationPresentationEvent(
     string Message
 );
 
+public sealed record CorePlayerCommandResult(
+    PlayerCommandKind Kind,
+    double CashDelta,
+    double ProjectProgressDelta,
+    int ActiveUsersDelta,
+    string Message
+);
+
 public sealed record CoreCompanySimulationTotals(
     double CurrentCash,
     double CurrentProjectProgress,
@@ -335,6 +366,7 @@ public sealed record CoreOfficeSimulationResult(
     IReadOnlyList<CoreEmployeeLifecycleState> EmployeeStates,
     IReadOnlyList<CoreFacilitySimulationState> FacilityStates,
     IReadOnlyList<CoreSimulationPresentationEvent> PresentationEvents,
+    IReadOnlyList<CorePlayerCommandResult> PlayerCommandResults,
     CoreCompanySimulationTotals CompanyTotals,
     PhaseOutcomeKind OutcomeKind,
     double ProjectProgressDelta,

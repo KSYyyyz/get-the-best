@@ -43,6 +43,7 @@ public partial class EmployeeAutonomyController : Node
     private RoomFootprintStore? _roomFootprintStore;
     private OfficeNavigationStore? _officeNavigationStore;
     private V2CoreBridge? _v2CoreBridge;
+    private BuildModeHudController? _buildModeHud;
     private BusinessFeedbackHudController? _businessFeedbackHud;
     private CoreSummaryHudController? _coreSummaryHud;
     private BusinessCalendarHudController? _businessCalendarHud;
@@ -64,12 +65,25 @@ public partial class EmployeeAutonomyController : Node
         _roomFootprintStore = GetNodeOrNull<RoomFootprintStore>("../RoomFootprintStore");
         _officeNavigationStore = GetNodeOrNull<OfficeNavigationStore>("../OfficeNavigationStore");
         _v2CoreBridge = GetNodeOrNull<V2CoreBridge>("../../V2CoreBridge");
+        _buildModeHud = GetNodeOrNull<BuildModeHudController>("../../HudRoot/BuildModePanel");
         _businessFeedbackHud = GetNodeOrNull<BusinessFeedbackHudController>("../../HudRoot/BusinessFeedbackPanel");
         _coreSummaryHud = GetNodeOrNull<CoreSummaryHudController>("../../HudRoot/CoreSummaryPanel");
         _businessCalendarHud = GetNodeOrNull<BusinessCalendarHudController>("../../HudRoot/BusinessCalendarPanel");
         _monthlyReportHud = GetNodeOrNull<MonthlyReportHudController>("../../HudRoot/MonthlyReportPanel");
         _timeScaleHud = GetNodeOrNull<TimeScaleHudController>("../../HudRoot/TimeScalePanel");
+        if (_buildModeHud != null)
+        {
+            _buildModeHud.MarketResearchRequested += RequestMarketResearchCommand;
+        }
         InitializeEmployeeStates();
+    }
+
+    public override void _ExitTree()
+    {
+        if (_buildModeHud != null)
+        {
+            _buildModeHud.MarketResearchRequested -= RequestMarketResearchCommand;
+        }
     }
 
     public override void _Process(double delta)
@@ -138,6 +152,12 @@ public partial class EmployeeAutonomyController : Node
         {
             _employeeRenderer?.SetEmployeeWorkState(employeeId, isWorking: false);
         }
+    }
+
+    private void RequestMarketResearchCommand()
+    {
+        _v2CoreBridge?.QueueMarketResearchCommand();
+        AdvanceAndApplyCoreSimulation();
     }
 
     private void InitializeEmployeeStates()

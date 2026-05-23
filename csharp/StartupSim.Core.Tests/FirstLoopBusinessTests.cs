@@ -10,6 +10,7 @@ public static class FirstLoopBusinessTests
         ResearchWorkContinuesFromWorkState();
         PlannerDoesNotReserveMarketWhiteboardBeforeMvp();
         MarketingWorkAddsFirstUsersAfterMvp();
+        MarketResearchCommandCostsCashAndAddsFirstLoopInsight();
         RevenueOffsetsOperatingCost();
         MonthEndReportExplainsProgressUsersRevenueAndCash();
         NonMonthEndDoesNotEmitMonthlyReport();
@@ -135,6 +136,35 @@ public static class FirstLoopBusinessTests
             ),
             result.CompanyDelta.CashDelta,
             "cash delta should combine revenue and operating cost"
+        );
+    }
+
+    private static void MarketResearchCommandCostsCashAndAddsFirstLoopInsight()
+    {
+        var snapshot = TestSnapshots.FirstLoopEngineerUsingDesk(projectProgress: 20);
+        var engine = new FirstLoopBusinessEngine(
+            new FirstLoopBusinessTickOptions(
+                TickHours: 1.0,
+                IsMonthEnd: false,
+                PlayerCommands: [new PlayerCommand(PlayerCommandKind.MarketResearch)]
+            ),
+            new EmployeeBehaviorEngine()
+        );
+
+        var result = engine.Tick(snapshot);
+        var commandResults = result.PlayerCommandResults ?? [];
+        Assert.Equal(1, commandResults.Count);
+        var commandResult = commandResults[0];
+
+        Assert.Equal(PlayerCommandKind.MarketResearch, commandResult.Kind);
+        Assert.Equal(-500.0, commandResult.CashDelta);
+        Assert.True(
+            result.CompanyDelta.ProjectProgressDelta > 0,
+            "market research should feed the first-loop product insight back into MVP progress"
+        );
+        Assert.True(
+            result.CompanyDelta.CashDelta <= -500.0,
+            "market research cost should be owned by Core and included in cash delta"
         );
     }
 

@@ -83,6 +83,14 @@ public static class SimulationFrontendContract
             CanIgnoreIfSubjectMissing: true
         ),
         new SimulationEventSemanticContract(
+            SimulationEventKind.PlayerCommandCompleted,
+            SimulationEventLifetime.Instant,
+            TextDisplayPolicy.Recommended,
+            SimulationEventSubjectKind.Command,
+            "PlayerCommandKind",
+            CanIgnoreIfSubjectMissing: true
+        ),
+        new SimulationEventSemanticContract(
             SimulationEventKind.MonthlyReportReady,
             SimulationEventLifetime.Instant,
             TextDisplayPolicy.Recommended,

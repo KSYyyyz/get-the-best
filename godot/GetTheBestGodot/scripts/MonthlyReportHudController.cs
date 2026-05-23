@@ -256,6 +256,14 @@ public partial class MonthlyReportHudController : PanelContainer
             return $"经营说明\nCore 已生成月报，本月现金变化 {FormatDelta(result.CashDelta)}，收入变化 {FormatDelta(result.RevenueDelta)}。";
         }
 
+        var commandEvent = result.PresentationEvents.LastOrDefault(
+            eventSummary => eventSummary.Kind == SimulationEventKind.PlayerCommandCompleted
+        );
+        if (commandEvent?.SubjectId == PlayerCommandKind.MarketResearch.ToString())
+        {
+            return $"缁忚惀璇存槑\n{commandEvent.Message}";
+        }
+
         var recentEvent = result.PresentationEvents.LastOrDefault();
         return recentEvent == null ? "经营说明\n本月暂无额外事件。" : $"经营说明\n{recentEvent.Message}";
     }

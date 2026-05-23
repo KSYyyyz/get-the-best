@@ -2040,3 +2040,28 @@ def test_get_the_best_v2_1_10_bottom_toolbar_sections_do_not_overlap() -> None:
     assert "BottomHudGap = 8.0f" in build_hud
     assert "LayoutBuildToolbarWidth(viewportSize)" in build_hud
     assert "BusinessPanelWidth + BottomHudGap * 2.0f" in build_hud
+
+
+def test_get_the_best_v2_1_11_market_research_command_enters_core_loop() -> None:
+    build_hud = read_text(GODOT_ROOT / "scripts" / "BuildModeHudController.cs")
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    monthly_report_hud = read_text(GODOT_ROOT / "scripts" / "MonthlyReportHudController.cs")
+
+    assert "BuildModeRows/AdministrationButtons/MarketResearchButton" in build_hud
+    assert "MarketResearchRequested" in build_hud
+    assert "EmitSignal(SignalName.MarketResearchRequested)" in build_hud
+    assert "RequestMarketResearchCommand" in employee_autonomy
+    assert (
+        "_buildModeHud.MarketResearchRequested += RequestMarketResearchCommand" in employee_autonomy
+    )
+
+    assert "QueueMarketResearchCommand()" in bridge
+    assert "new PlayerCommand(PlayerCommandKind.MarketResearch)" in bridge
+    assert "PlayerCommands:" in bridge
+    assert "queuedCommands" in bridge
+    assert "CorePlayerCommandResult" in bridge
+    assert "PlayerCommandResults:" in bridge
+
+    assert "PlayerCommandCompleted" in monthly_report_hud
+    assert "MarketResearch" in monthly_report_hud

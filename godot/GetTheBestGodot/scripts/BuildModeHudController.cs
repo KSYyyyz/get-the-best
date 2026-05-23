@@ -6,6 +6,9 @@ namespace GetTheBestGodot;
 
 public partial class BuildModeHudController : PanelContainer
 {
+    [Signal]
+    public delegate void MarketResearchRequestedEventHandler();
+
     private enum CommandMenu
     {
         None,
@@ -62,6 +65,7 @@ public partial class BuildModeHudController : PanelContainer
     private Button? _deskFacilityButton;
     private Button? _whiteboardFacilityButton;
     private Button? _serverRackFacilityButton;
+    private Button? _marketResearchButton;
     private Button? _hoveredButton;
     private PanelContainer? _menuPopup;
     private VBoxContainer? _menuPopupRows;
@@ -116,6 +120,9 @@ public partial class BuildModeHudController : PanelContainer
         _serverRackFacilityButton = GetNodeOrNull<Button>(
             "BuildModeRows/FacilityTypeButtons/ServerRackFacilityButton"
         );
+        _marketResearchButton = GetNodeOrNull<Button>(
+            "BuildModeRows/AdministrationButtons/MarketResearchButton"
+        );
 
         ConfigurePanel();
         CreateMenuPopup();
@@ -159,6 +166,7 @@ public partial class BuildModeHudController : PanelContainer
         ConfigurePassiveMenu(_administrationButtons);
         ConfigurePassiveMenu(_publishingButtons);
         ConfigurePassiveMenu(_statisticsButtons);
+        ConfigureMarketResearchButton();
 
         RefreshToolMenuVisibility();
         ApplyToolButtonState();
@@ -175,9 +183,32 @@ public partial class BuildModeHudController : PanelContainer
             return;
         }
 
+        if (GetGlobalRect().HasPoint(mouseButton.Position))
+        {
+            return;
+        }
+
         if (TryHandleToolbarClick(mouseButton.Position))
         {
             GetViewport().SetInputAsHandled();
+        }
+    }
+
+    public override void _GuiInput(InputEvent @event)
+    {
+        if (
+            @event is not InputEventMouseButton mouseButton
+            || !mouseButton.Pressed
+            || mouseButton.ButtonIndex != MouseButton.Left
+        )
+        {
+            return;
+        }
+
+        var screenPosition = GlobalPosition + mouseButton.Position;
+        if (TryHandleToolbarClick(screenPosition))
+        {
+            AcceptEvent();
         }
     }
 
@@ -310,6 +341,14 @@ public partial class BuildModeHudController : PanelContainer
         _openMenu = CommandMenu.None;
         RefreshToolMenuVisibility();
         ApplyToolButtonState();
+    }
+
+    private void RequestMarketResearch()
+    {
+        _openMenu = CommandMenu.None;
+        RefreshToolMenuVisibility();
+        ApplyToolButtonState();
+        EmitSignal(SignalName.MarketResearchRequested);
     }
 
     private void RefreshToolMenuVisibility()
@@ -506,6 +545,11 @@ public partial class BuildModeHudController : PanelContainer
         );
     }
 
+    private void ConfigureMarketResearchButton()
+    {
+        ConfigureMenuButton(_marketResearchButton, _marketResearchButton?.Text ?? "市场调研", RequestMarketResearch);
+    }
+
     private void ConfigurePassiveMenu(VBoxContainer? menu)
     {
         if (menu == null)
@@ -567,7 +611,18 @@ public partial class BuildModeHudController : PanelContainer
         button.FocusMode = FocusModeEnum.None;
         button.CustomMinimumSize = new Vector2(minWidth, 36.0f);
         button.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
-        button.Pressed += action;
+        button.GuiInput += @event =>
+        {
+            if (
+                @event is InputEventMouseButton mouseButton
+                && mouseButton.Pressed
+                && mouseButton.ButtonIndex == MouseButton.Left
+            )
+            {
+                action();
+                button.AcceptEvent();
+            }
+        };
         button.MouseEntered += () => ApplyHoverState(button, isHovered: true);
         button.MouseExited += () => ApplyHoverState(button, isHovered: false);
     }

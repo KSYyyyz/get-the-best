@@ -42,7 +42,11 @@ public sealed class OfficeSimulationEngine
         var intents = behaviorPlan.Intents;
         var lifecycleSnapshot = _lifecycleEngine.Advance(snapshot, intents);
         var businessEngine = new FirstLoopBusinessEngine(
-            new FirstLoopBusinessTickOptions(_options.TickHours, _options.IsMonthEnd),
+            new FirstLoopBusinessTickOptions(
+                _options.TickHours,
+                _options.IsMonthEnd,
+                _options.PlayerCommands
+            ),
             _behaviorEngine
         );
         var businessTick = businessEngine.Tick(lifecycleSnapshot);
@@ -152,6 +156,17 @@ public sealed class OfficeSimulationEngine
                     SimulationEventKind.MetricChanged,
                     next.Company.ActiveProject.Id,
                     $"指标变化：MVP 总进度 {next.Company.ActiveProject.Progress:0.####}"
+                )
+            );
+        }
+
+        foreach (var commandResult in tick.PlayerCommandResults ?? [])
+        {
+            events.Add(
+                new SimulationPresentationEvent(
+                    SimulationEventKind.PlayerCommandCompleted,
+                    commandResult.Kind.ToString(),
+                    commandResult.Message
                 )
             );
         }
