@@ -383,4 +383,141 @@ internal static class TestSnapshots
             )
         );
     }
+
+    public static OfficeRuleSnapshot ReadyMvpWithMarketState(double marketAwareness)
+    {
+        var snapshot = FirstLoopMarketingUsingWhiteboard(
+            projectProgress: 100,
+            requiredProgress: 100,
+            activeUsers: 0
+        );
+        return snapshot with
+        {
+            Employees = [],
+            Facilities =
+            [
+                snapshot.Facilities[0] with { OccupiedByEmployeeIds = [] },
+            ],
+            Company = snapshot.Company with
+            {
+                ProductMarket = snapshot.Company.ProductMarket! with
+                {
+                    MarketAwareness = marketAwareness,
+                },
+            },
+        };
+    }
+
+    public static OfficeRuleSnapshot LaunchedProductWithMarketAndServerWork(
+        int activeUsers,
+        double userRating,
+        double marketAwareness,
+        bool includeMarketing = true,
+        bool includeServerMaintenance = true
+    )
+    {
+        var employees = new List<EmployeeState>();
+        var facilities = new List<FacilityState>();
+        var rooms = new List<RoomState>();
+
+        if (includeMarketing)
+        {
+            employees.Add(
+                new EmployeeState(
+                    Id: "employee-marketing-1",
+                    DisplayName: "\u5468\u5c0f\u5b81",
+                    Role: EmployeeRole.Marketing,
+                    Skill: 1.4,
+                    Energy: 85,
+                    Fatigue: 20,
+                    Satisfaction: 72,
+                    CurrentActivity: EmployeeActivityKind.UseFacility,
+                    RoomId: "market-room",
+                    Cell: new GridCell(5, 8),
+                    ActiveFacilityId: "market-whiteboard-1",
+                    RemainingActivityTicks: 2
+                )
+            );
+            facilities.Add(
+                new FacilityState(
+                    Id: "market-whiteboard-1",
+                    Type: FacilityType.ProductWhiteboard,
+                    RoomId: "market-room",
+                    Capacity: 1,
+                    OccupiedByEmployeeIds: ["employee-marketing-1"],
+                    EfficiencyModifier: 1.1
+                )
+            );
+            rooms.Add(
+                new RoomState(
+                    Id: "market-room",
+                    Type: RoomType.MarketRoom,
+                    Comfort: 0.08,
+                    Noise: 0.04,
+                    Capacity: 4,
+                    FacilityIds: ["market-whiteboard-1"]
+                )
+            );
+        }
+
+        if (includeServerMaintenance)
+        {
+            employees.Add(
+                new EmployeeState(
+                    Id: "employee-ops-1",
+                    DisplayName: "\u9ad8\u5b50\u8212",
+                    Role: EmployeeRole.Operations,
+                    Skill: 1.2,
+                    Energy: 82,
+                    Fatigue: 18,
+                    Satisfaction: 70,
+                    CurrentActivity: EmployeeActivityKind.UseFacility,
+                    RoomId: "server-room",
+                    Cell: new GridCell(3, 4),
+                    ActiveFacilityId: "server-rack-1",
+                    RemainingActivityTicks: 2
+                )
+            );
+            facilities.Add(
+                new FacilityState(
+                    Id: "server-rack-1",
+                    Type: FacilityType.ServerRack,
+                    RoomId: "server-room",
+                    Capacity: 1,
+                    OccupiedByEmployeeIds: ["employee-ops-1"],
+                    EfficiencyModifier: 1.0
+                )
+            );
+            rooms.Add(
+                new RoomState(
+                    Id: "server-room",
+                    Type: RoomType.ServerRoom,
+                    Comfort: 0.04,
+                    Noise: 0.03,
+                    Capacity: 3,
+                    FacilityIds: ["server-rack-1"]
+                )
+            );
+        }
+
+        return new OfficeRuleSnapshot(
+            Employees: employees,
+            Facilities: facilities,
+            Rooms: rooms,
+            Company: new CompanyState(
+                Cash: 50_000,
+                MonthlyCostRate: 6_000,
+                ActiveProject: new ProjectState("mvp-project", Progress: 100, RequiredProgress: 100),
+                ProductMarket: new ProductMarketState(
+                    Stage: ProductStage.Launched,
+                    ActiveUsers: activeUsers,
+                    MonthlyRecurringRevenue: activeUsers * 12.0,
+                    UserRating: userRating,
+                    MarketAwareness: marketAwareness,
+                    LaunchQuality: 0.85,
+                    Retention: 0.82
+                )
+            )
+        );
+    }
 }

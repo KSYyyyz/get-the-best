@@ -160,6 +160,24 @@ public sealed class OfficeSimulationEngine
             );
         }
 
+        if (
+            tick.ProductMarketDelta is { } productMarketDelta
+            && (
+                productMarketDelta.ActiveUsersDelta != 0
+                || productMarketDelta.MonthlyRecurringRevenueDelta != 0
+                || productMarketDelta.UserRatingDelta != 0
+            )
+        )
+        {
+            events.Add(
+                new SimulationPresentationEvent(
+                    SimulationEventKind.MetricChanged,
+                    "product-market",
+                    BuildProductMarketMessage(productMarketDelta)
+                )
+            );
+        }
+
         foreach (var commandResult in tick.PlayerCommandResults ?? [])
         {
             events.Add(
@@ -223,5 +241,21 @@ public sealed class OfficeSimulationEngine
             EmployeeActivityKind.Rest => $"正在休息：{employee.ActiveFacilityId ?? "rest"}",
             _ => employee.CurrentActivity.ToString(),
         };
+    }
+
+    private static string BuildProductMarketMessage(ProductMarketTickDelta delta)
+    {
+        var headline = delta.ActiveUsersDelta switch
+        {
+            > 0 => $"用户增长：+{delta.ActiveUsersDelta}",
+            < 0 => $"用户流失：{delta.ActiveUsersDelta}",
+            _ => "增长停滞：用户无变化",
+        };
+        var revenue = delta.MonthlyRecurringRevenueDelta == 0
+            ? "收入变化：0"
+            : $"收入变化：{delta.MonthlyRecurringRevenueDelta:+0.####;-0.####}";
+        var reason = delta.Reasons?.FirstOrDefault() ?? "暂无市场反馈原因";
+
+        return $"{headline}；{revenue}；{reason}";
     }
 }

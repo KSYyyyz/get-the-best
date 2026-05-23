@@ -1,26 +1,34 @@
 # 《壮志凌云 / Get The Best》经营算法执行索引
 
-状态：Algorithm A0.27 员工 Utility 自主行动基线
-日期：2026-05-22
+状态：Algorithm A0.28 发布后增长与产品表现基线
+日期：2026-05-23
 适用范围：C# Core 经营规则、算法契约、算法测试、算法验收文档
 
 ## 版本规则
 
-算法线使用 `Algorithm A主版本.次版本.补丁版本`，例如 `A0.27.1`。
-算法版本只描述 C# Core 规则和契约，不占用 Godot 表现层 `V2-0.x` 版本号。
+算法线使用 `Algorithm A主版本.次版本.补丁版本`，例如 `A0.28.1`。
+算法版本只描述 C# Core 规则和契约，不占用 Godot 表现层 `V2-0.x` 或 `V2-1.x` 版本号。
 
 ## 当前基线
 
-- `docs/get_the_best_algorithm_a0_27_baseline.md`
+- `docs/get_the_best_algorithm_a0_28_baseline.md`
 
 ## 历史基线
 
+- `docs/get_the_best_algorithm_a0_27_baseline.md`
 - `docs/get_the_best_algorithm_a0_26_baseline.md`
 - `docs/get_the_best_algorithm_a0_25_baseline.md`
 - `docs/get_the_best_algorithm_a0_24_baseline.md`
 - `docs/get_the_best_algorithm_a0_23_baseline.md`
 
-## A0.27 本轮验收文档
+## A0.28 本轮验收文档
+
+- `docs/get_the_best_algorithm_a0_28_1_publish_quality_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_28_2_post_launch_growth_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_28_3_feedback_events_acceptance_report.md`
+- `docs/get_the_best_algorithm_a0_28_4_frontend_contract_acceptance_report.md`
+
+## A0.27 验收文档
 
 - `docs/get_the_best_algorithm_a0_27_1_utility_scoring_acceptance_report.md`
 - `docs/get_the_best_algorithm_a0_27_2_facility_reservation_acceptance_report.md`

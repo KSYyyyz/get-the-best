@@ -154,7 +154,11 @@ public sealed record ProjectState(string Id, double Progress, double RequiredPro
 public sealed record ProductMarketState(
     ProductStage Stage,
     int ActiveUsers,
-    double MonthlyRecurringRevenue
+    double MonthlyRecurringRevenue,
+    double UserRating = 0,
+    double MarketAwareness = 0,
+    double LaunchQuality = 0,
+    double Retention = 0.75
 );
 
 public sealed record CompanyState(
@@ -231,7 +235,12 @@ public sealed record ProductMarketTickDelta(
     ProductStage PreviousStage,
     ProductStage NextStage,
     int ActiveUsersDelta,
-    double MonthlyRecurringRevenueDelta
+    double MonthlyRecurringRevenueDelta,
+    double UserRatingDelta = 0,
+    double MarketAwarenessDelta = 0,
+    double LaunchQualityDelta = 0,
+    double RetentionDelta = 0,
+    IReadOnlyList<string>? Reasons = null
 );
 
 public sealed record PlayerCommand(PlayerCommandKind Kind);
@@ -241,7 +250,11 @@ public sealed record PlayerCommandResult(
     double CashDelta,
     double ProjectProgressDelta,
     int ActiveUsersDelta,
-    string Message
+    string Message,
+    double UserRatingDelta = 0,
+    double MarketAwarenessDelta = 0,
+    double LaunchQualityDelta = 0,
+    double RetentionDelta = 0
 );
 
 public sealed record TickResult(
