@@ -91,6 +91,7 @@
 - `docs/get_the_best_v2_1_9_hud_layout_summary_acceptance_report.md`
 - `docs/get_the_best_v2_1_10_bottom_toolbar_overlap_fix_acceptance_report.md`
 - `docs/get_the_best_v2_1_11_market_research_command_acceptance_report.md`
+- `docs/get_the_best_v2_1_12_publish_prototype_command_acceptance_report.md`
 - `docs/get_the_best_v2_animation_asset_plan.md`
 
 ## 5. 第一原则

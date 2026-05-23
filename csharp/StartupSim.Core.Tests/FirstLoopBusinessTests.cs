@@ -11,6 +11,7 @@ public static class FirstLoopBusinessTests
         PlannerDoesNotReserveMarketWhiteboardBeforeMvp();
         MarketingWorkAddsFirstUsersAfterMvp();
         MarketResearchCommandCostsCashAndAddsFirstLoopInsight();
+        PublishPrototypeCommandLaunchesReadyMvpWithInitialUsers();
         RevenueOffsetsOperatingCost();
         MonthEndReportExplainsProgressUsersRevenueAndCash();
         NonMonthEndDoesNotEmitMonthlyReport();
@@ -165,6 +166,37 @@ public static class FirstLoopBusinessTests
         Assert.True(
             result.CompanyDelta.CashDelta <= -500.0,
             "market research cost should be owned by Core and included in cash delta"
+        );
+    }
+
+    private static void PublishPrototypeCommandLaunchesReadyMvpWithInitialUsers()
+    {
+        var snapshot = TestSnapshots.FirstLoopMarketingUsingWhiteboard(
+            projectProgress: 100,
+            requiredProgress: 100,
+            activeUsers: 0
+        );
+        var engine = new FirstLoopBusinessEngine(
+            new FirstLoopBusinessTickOptions(
+                TickHours: 1.0,
+                IsMonthEnd: false,
+                PlayerCommands: [new PlayerCommand(PlayerCommandKind.PublishPrototype)]
+            ),
+            new EmployeeBehaviorEngine()
+        );
+
+        var result = engine.Tick(snapshot);
+        var next = new OfficeStateReducer().ApplyTickResult(snapshot, result);
+        var commandResult = (result.PlayerCommandResults ?? [])[0];
+
+        Assert.Equal(PlayerCommandKind.PublishPrototype, commandResult.Kind);
+        Assert.True(commandResult.CashDelta < 0, "publishing should have a Core-owned launch cost");
+        Assert.True(commandResult.ActiveUsersDelta > 0, "publishing should seed first active users");
+        Assert.Equal(ProductStage.Launched, result.ProductMarketDelta!.NextStage);
+        Assert.Equal(ProductStage.Launched, next.Company.ProductMarket!.Stage);
+        Assert.True(
+            next.Company.ProductMarket.ActiveUsers > 0,
+            "published MVP should be visible as active users in next company state"
         );
     }
 

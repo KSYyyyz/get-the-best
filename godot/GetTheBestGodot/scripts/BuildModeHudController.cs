@@ -9,6 +9,9 @@ public partial class BuildModeHudController : PanelContainer
     [Signal]
     public delegate void MarketResearchRequestedEventHandler();
 
+    [Signal]
+    public delegate void PublishPrototypeRequestedEventHandler();
+
     private enum CommandMenu
     {
         None,
@@ -66,6 +69,7 @@ public partial class BuildModeHudController : PanelContainer
     private Button? _whiteboardFacilityButton;
     private Button? _serverRackFacilityButton;
     private Button? _marketResearchButton;
+    private Button? _publishSoftwareButton;
     private Button? _hoveredButton;
     private PanelContainer? _menuPopup;
     private VBoxContainer? _menuPopupRows;
@@ -123,6 +127,9 @@ public partial class BuildModeHudController : PanelContainer
         _marketResearchButton = GetNodeOrNull<Button>(
             "BuildModeRows/AdministrationButtons/MarketResearchButton"
         );
+        _publishSoftwareButton = GetNodeOrNull<Button>(
+            "BuildModeRows/PublishingButtons/PublishSoftwareButton"
+        );
 
         ConfigurePanel();
         CreateMenuPopup();
@@ -167,6 +174,7 @@ public partial class BuildModeHudController : PanelContainer
         ConfigurePassiveMenu(_publishingButtons);
         ConfigurePassiveMenu(_statisticsButtons);
         ConfigureMarketResearchButton();
+        ConfigurePublishSoftwareButton();
 
         RefreshToolMenuVisibility();
         ApplyToolButtonState();
@@ -183,14 +191,15 @@ public partial class BuildModeHudController : PanelContainer
             return;
         }
 
-        if (GetGlobalRect().HasPoint(mouseButton.Position))
-        {
-            return;
-        }
-
         if (TryHandleToolbarClick(mouseButton.Position))
         {
             GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (GetGlobalRect().HasPoint(mouseButton.Position))
+        {
+            return;
         }
     }
 
@@ -349,6 +358,14 @@ public partial class BuildModeHudController : PanelContainer
         RefreshToolMenuVisibility();
         ApplyToolButtonState();
         EmitSignal(SignalName.MarketResearchRequested);
+    }
+
+    private void RequestPublishPrototype()
+    {
+        _openMenu = CommandMenu.None;
+        RefreshToolMenuVisibility();
+        ApplyToolButtonState();
+        EmitSignal(SignalName.PublishPrototypeRequested);
     }
 
     private void RefreshToolMenuVisibility()
@@ -548,6 +565,15 @@ public partial class BuildModeHudController : PanelContainer
     private void ConfigureMarketResearchButton()
     {
         ConfigureMenuButton(_marketResearchButton, _marketResearchButton?.Text ?? "市场调研", RequestMarketResearch);
+    }
+
+    private void ConfigurePublishSoftwareButton()
+    {
+        ConfigureMenuButton(
+            _publishSoftwareButton,
+            _publishSoftwareButton?.Text ?? "发布软件",
+            RequestPublishPrototype
+        );
     }
 
     private void ConfigurePassiveMenu(VBoxContainer? menu)

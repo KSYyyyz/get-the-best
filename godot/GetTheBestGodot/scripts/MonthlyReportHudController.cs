@@ -259,9 +259,12 @@ public partial class MonthlyReportHudController : PanelContainer
         var commandEvent = result.PresentationEvents.LastOrDefault(
             eventSummary => eventSummary.Kind == SimulationEventKind.PlayerCommandCompleted
         );
-        if (commandEvent?.SubjectId == PlayerCommandKind.MarketResearch.ToString())
+        if (
+            commandEvent?.SubjectId == PlayerCommandKind.MarketResearch.ToString()
+            || commandEvent?.SubjectId == PlayerCommandKind.PublishPrototype.ToString()
+        )
         {
-            return $"缁忚惀璇存槑\n{commandEvent.Message}";
+            return $"经营说明\n{commandEvent.Message}";
         }
 
         var recentEvent = result.PresentationEvents.LastOrDefault();

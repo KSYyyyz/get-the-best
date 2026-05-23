@@ -62,6 +62,7 @@ public enum ProductStage
 public enum PlayerCommandKind
 {
     MarketResearch,
+    PublishPrototype,
 }
 
 public enum PhaseOutcomeKind

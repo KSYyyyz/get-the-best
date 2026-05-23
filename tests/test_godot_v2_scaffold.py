@@ -2065,3 +2065,35 @@ def test_get_the_best_v2_1_11_market_research_command_enters_core_loop() -> None
 
     assert "PlayerCommandCompleted" in monthly_report_hud
     assert "MarketResearch" in monthly_report_hud
+
+
+def test_get_the_best_v2_1_12_publish_prototype_command_enters_core_loop() -> None:
+    build_hud = read_text(GODOT_ROOT / "scripts" / "BuildModeHudController.cs")
+    bridge = read_text(GODOT_ROOT / "scripts" / "V2CoreBridge.cs")
+    employee_autonomy = read_text(GODOT_ROOT / "scripts" / "EmployeeAutonomyController.cs")
+    monthly_report_hud = read_text(GODOT_ROOT / "scripts" / "MonthlyReportHudController.cs")
+
+    assert "BuildModeRows/PublishingButtons/PublishSoftwareButton" in build_hud
+    assert "PublishPrototypeRequested" in build_hud
+    assert "EmitSignal(SignalName.PublishPrototypeRequested)" in build_hud
+    assert "ConfigurePublishSoftwareButton" in build_hud
+    assert "RequestPublishPrototypeCommand" in employee_autonomy
+    assert (
+        "_buildModeHud.PublishPrototypeRequested += RequestPublishPrototypeCommand"
+        in employee_autonomy
+    )
+
+    assert "QueuePublishPrototypeCommand()" in bridge
+    assert "new PlayerCommand(PlayerCommandKind.PublishPrototype)" in bridge
+
+    assert "PlayerCommandCompleted" in monthly_report_hud
+    assert "PublishPrototype" in monthly_report_hud
+
+    input_block = build_hud[
+        build_hud.index("public override void _Input") : build_hud.index(
+            "public override void _GuiInput"
+        )
+    ]
+    assert input_block.index("TryHandleToolbarClick(mouseButton.Position)") < input_block.index(
+        "GetGlobalRect().HasPoint(mouseButton.Position)"
+    )

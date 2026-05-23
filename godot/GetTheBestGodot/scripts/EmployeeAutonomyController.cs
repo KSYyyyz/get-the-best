@@ -74,6 +74,7 @@ public partial class EmployeeAutonomyController : Node
         if (_buildModeHud != null)
         {
             _buildModeHud.MarketResearchRequested += RequestMarketResearchCommand;
+            _buildModeHud.PublishPrototypeRequested += RequestPublishPrototypeCommand;
         }
         InitializeEmployeeStates();
     }
@@ -83,6 +84,7 @@ public partial class EmployeeAutonomyController : Node
         if (_buildModeHud != null)
         {
             _buildModeHud.MarketResearchRequested -= RequestMarketResearchCommand;
+            _buildModeHud.PublishPrototypeRequested -= RequestPublishPrototypeCommand;
         }
     }
 
@@ -157,6 +159,12 @@ public partial class EmployeeAutonomyController : Node
     private void RequestMarketResearchCommand()
     {
         _v2CoreBridge?.QueueMarketResearchCommand();
+        AdvanceAndApplyCoreSimulation();
+    }
+
+    private void RequestPublishPrototypeCommand()
+    {
+        _v2CoreBridge?.QueuePublishPrototypeCommand();
         AdvanceAndApplyCoreSimulation();
     }
 

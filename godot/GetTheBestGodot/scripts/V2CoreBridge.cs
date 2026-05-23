@@ -62,6 +62,11 @@ public partial class V2CoreBridge : Node
         _queuedPlayerCommands.Add(new PlayerCommand(PlayerCommandKind.MarketResearch));
     }
 
+    public void QueuePublishPrototypeCommand()
+    {
+        _queuedPlayerCommands.Add(new PlayerCommand(PlayerCommandKind.PublishPrototype));
+    }
+
     public OfficeRuleSnapshot BuildSnapshot(
         EmployeeStore employeeStore,
         FacilityPlacementStore facilityPlacementStore,

@@ -7,6 +7,8 @@ public sealed class FirstLoopBusinessEngine
     private const double MarketResearchCost = 500.0;
     private const double MarketResearchPrototypeProgress = 2.0;
     private const int MarketResearchLaunchUsers = 5;
+    private const double PublishPrototypeCost = 1200.0;
+    private const int PublishPrototypeInitialUsers = 20;
 
     private readonly FirstLoopBusinessTickOptions _options;
     private readonly EmployeeBehaviorEngine _behaviorEngine;
@@ -146,26 +148,62 @@ public sealed class FirstLoopBusinessEngine
         var productMarket = snapshot.Company.ProductMarket ?? CreateProductMarket(snapshot.Company);
         foreach (var command in commands)
         {
-            if (command.Kind != PlayerCommandKind.MarketResearch)
+            if (command.Kind == PlayerCommandKind.MarketResearch)
             {
+                results.Add(CreateMarketResearchResult(productMarket));
                 continue;
             }
 
-            var isPrototype = productMarket.Stage == ProductStage.Prototype;
-            results.Add(
-                new PlayerCommandResult(
-                    PlayerCommandKind.MarketResearch,
-                    CashDelta: -MarketResearchCost,
-                    ProjectProgressDelta: isPrototype ? MarketResearchPrototypeProgress : 0.0,
-                    ActiveUsersDelta: isPrototype ? 0 : MarketResearchLaunchUsers,
-                    Message: isPrototype
-                        ? "市场调研完成：获得用户画像，MVP 方向更清晰。"
-                        : "市场调研完成：定位首批用户，市场转化提高。"
-                )
-            );
+            if (command.Kind == PlayerCommandKind.PublishPrototype)
+            {
+                results.Add(CreatePublishPrototypeResult(snapshot, productMarket));
+            }
         }
 
         return results;
+    }
+
+    private static PlayerCommandResult CreateMarketResearchResult(ProductMarketState productMarket)
+    {
+        var isPrototype = productMarket.Stage == ProductStage.Prototype;
+        return new PlayerCommandResult(
+            PlayerCommandKind.MarketResearch,
+            CashDelta: -MarketResearchCost,
+            ProjectProgressDelta: isPrototype ? MarketResearchPrototypeProgress : 0.0,
+            ActiveUsersDelta: isPrototype ? 0 : MarketResearchLaunchUsers,
+            Message: isPrototype
+                ? "市场调研完成：获得用户画像，MVP 方向更清晰。"
+                : "市场调研完成：定位首批用户，市场转化提高。"
+        );
+    }
+
+    private static PlayerCommandResult CreatePublishPrototypeResult(
+        OfficeRuleSnapshot snapshot,
+        ProductMarketState productMarket
+    )
+    {
+        var project = snapshot.Company.ActiveProject;
+        var isReady =
+            productMarket.Stage != ProductStage.Prototype
+            || project.Progress >= project.RequiredProgress;
+        if (!isReady)
+        {
+            return new PlayerCommandResult(
+                PlayerCommandKind.PublishPrototype,
+                CashDelta: 0.0,
+                ProjectProgressDelta: 0.0,
+                ActiveUsersDelta: 0,
+                Message: "发布失败：MVP 尚未完成，先让研发室继续推进原型。"
+            );
+        }
+
+        return new PlayerCommandResult(
+            PlayerCommandKind.PublishPrototype,
+            CashDelta: -PublishPrototypeCost,
+            ProjectProgressDelta: 0.0,
+            ActiveUsersDelta: PublishPrototypeInitialUsers,
+            Message: "发布完成：原型软件上线，获得首批真实用户。"
+        );
     }
 
     private static bool ContributesToSales(
