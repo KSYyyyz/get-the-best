@@ -49,6 +49,10 @@ public sealed class OfficeStateReducer
                 Math.Max(0, current.MonthlyRecurringRevenue + delta.MonthlyRecurringRevenueDelta),
                 4
             ),
+            UserRating = Clamp(current.UserRating + delta.UserRatingDelta, 0, 5),
+            MarketAwareness = Clamp(current.MarketAwareness + delta.MarketAwarenessDelta, 0, 1),
+            LaunchQuality = Clamp(current.LaunchQuality + delta.LaunchQualityDelta, 0, 1),
+            Retention = Clamp(current.Retention + delta.RetentionDelta, 0, 1),
         };
     }
 
